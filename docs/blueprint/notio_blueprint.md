@@ -161,15 +161,15 @@ Phase 4 (완전한 MSA):
 | 레이어 | 서비스 | 언어/프레임워크 | 주요 라이브러리 |
 |--------|--------|-----------------|----------------|
 | **Client** | Flutter App | Dart 3.x / Flutter | Riverpod, go_router, Dio, Drift, FCM |
-| **Gateway** | API Gateway | Java 21 / Spring Cloud Gateway | Resilience4j, JWT, Micrometer |
-| **Core** | Notification Service | Java 21 / Spring Boot 3.x | JPA, QueryDSL, Kafka, pgvector |
-| **Core** | Webhook Service | Java 21 / Spring Boot 3.x | Kafka, HMAC 검증, Security |
-| **Core** | Chat Service | Java 21 / Spring Boot 3.x + WebFlux | OpenFeign, Redis, Kafka |
-| **Core** | Todo Service | Java 21 / Spring Boot 3.x | JPA, Kafka |
+| **Gateway** | API Gateway | Java 25 / Spring Cloud Gateway | Resilience4j, JWT, Micrometer |
+| **Core** | Notification Service | Java 25 / Spring Boot 4.x | JPA, QueryDSL, Kafka, pgvector |
+| **Core** | Webhook Service | Java 25 / Spring Boot 4.x | Kafka, HMAC 검증, Security |
+| **Core** | Chat Service | Java 25 / Spring Boot 4.x + WebFlux | OpenFeign, Redis, Kafka |
+| **Core** | Todo Service | Java 25 / Spring Boot 4.x | JPA, Kafka |
 | **AI** | AI Service | Python 3.12 / FastAPI | LangChain, Ollama, pgvector, Celery |
-| **Platform** | Auth Service | Java 21 / Spring Boot 3.x | Spring Security, JWT, BCrypt |
-| **Platform** | Push Service | Java 21 / Spring Boot 3.x | Firebase Admin, APNs, Kafka |
-| **Platform** | Analytics Service | Java 21 / Spring Boot 3.x | Kafka, OpenFeign, Scheduler |
+| **Platform** | Auth Service | Java 25 / Spring Boot 4.x | Spring Security, JWT, BCrypt |
+| **Platform** | Push Service | Java 25 / Spring Boot 4.x | Firebase Admin, APNs, Kafka |
+| **Platform** | Analytics Service | Java 25 / Spring Boot 4.x | Kafka, OpenFeign, Scheduler |
 | **Infra** | Message Broker | — / Apache Kafka 3.6 | Zookeeper / KRaft |
 | **Infra** | Primary DB | — / PostgreSQL 16 | pgvector (Notification DB) |
 | **Infra** | Cache / Queue | — / Redis 7 | Pub/Sub, Sorted Set |
@@ -183,8 +183,8 @@ Phase 4 (완전한 MSA):
 
 | 기술 | 버전 | LTS 여부 | 이유 |
 |------|------|----------|------|
-| Java | 21 | ✅ LTS (2029까지) | 최신 LTS. Virtual Threads, Record 패턴 |
-| Spring Boot | 3.3.x | ✅ | Spring 6 기반. Native 이미지 지원 |
+| Java | 25 | ✅ | 최신 버전. 향상된 성능 및 최신 기능 지원 |
+| Spring Boot | 4.x | ✅ | 최신 Spring Framework 기반. 향상된 기능 지원 |
 | Python | 3.12 | ✅ | 최신 안정 버전. 성능 향상 |
 | PostgreSQL | 16 | ✅ | pgvector 0.5.x 호환 |
 | Flutter | 3.x stable | ✅ | Material 3, 안정적인 Riverpod 지원 |

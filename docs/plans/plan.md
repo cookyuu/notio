@@ -8,7 +8,7 @@
 
 ```
 notio/
-├── backend/          # Spring Boot 3.x (Java 21)
+├── backend/          # Spring Boot 4.x (Java 25)
 ├── frontend/         # Flutter (iOS / Android)
 ├── ai/               # Python FastAPI — Phase 1 이후 추가
 ├── infra/            # Docker Compose, K8s manifests

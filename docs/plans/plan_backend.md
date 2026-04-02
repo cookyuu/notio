@@ -1,6 +1,6 @@
 # Notio — Backend 개발 계획서 (plan_backend.md)
 
-> Spring Boot 3.x · Java 21 · Gradle · MVP (Phase 0)
+> Spring Boot 4.x · Java 25 · Gradle · MVP (Phase 0)
 
 ---
 
@@ -8,8 +8,8 @@
 
 | 분류 | 기술 | 버전 |
 |------|------|------|
-| 언어 | Java | 21 (LTS) |
-| 프레임워크 | Spring Boot | 3.3.x |
+| 언어 | Java | 25 |
+| 프레임워크 | Spring Boot | 4.x |
 | 빌드 | Gradle | 8.x (Kotlin DSL) |
 | ORM | Spring Data JPA + QueryDSL | 5.x |
 | AI | Spring AI (Ollama) | 1.0.x |
@@ -283,8 +283,8 @@ notio:
 ## 8. MVP 체크리스트
 
 ### 환경 세팅
-- [ ] Spring Boot 3.x 프로젝트 생성 (Gradle Kotlin DSL)
-- [ ] Java 21 설정 (`toolchain { languageVersion = JavaLanguageVersion.of(21) }`)
+- [ ] Spring Boot 4.x 프로젝트 생성 (Gradle Kotlin DSL)
+- [ ] Java 25 설정 (`toolchain { languageVersion = JavaLanguageVersion.of(25) }`)
 - [ ] 패키지 구조 생성 (`com.notio.*`)
 - [ ] `application.yml` / `application-local.yml` 분리
 - [ ] Flyway 마이그레이션 설정

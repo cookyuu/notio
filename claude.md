@@ -13,7 +13,7 @@
 
 ### 기술 스택
 - **Frontend**: Flutter 3.x (Riverpod, go_router, Drift)
-- **Backend**: Spring Boot 3.3 + Java 21 (모놀리스 → MSA)
+- **Backend**: Spring Boot 4.x + Java 25 (모놀리스 → MSA)
 - **AI**: Python 3.12 + FastAPI (LangChain, Ollama)
 - **Database**: PostgreSQL 16 + pgvector, Redis 7
 - **Message**: Apache Kafka 3.6
