@@ -112,9 +112,142 @@ ai/
 ### Spring Boot 연동
 - [ ] Spring Boot `ChatService` → AI Service REST 호출로 교체
 - [ ] OpenFeign 클라이언트 추가
+- [ ] Feature Flag 기반 점진적 전환 (`notio.ai-service.enabled`)
+- [ ] Fallback 구현 (AI Service 장애 시 Spring AI 사용)
+- [ ] Canary 배포 (10% → 100%)
 - [ ] 기존 Spring AI 의존성 제거 또는 공존
 
 ### 테스트 / 품질
 - [ ] pytest 단위 테스트
 - [ ] ruff lint + mypy 타입 체크
 - [ ] `ci-ai.yml` GitHub Actions 추가
+
+---
+
+## 5. LLM Provider 전략 패턴
+
+AI Service는 여러 LLM을 지원하도록 **전략 패턴**을 사용합니다.
+
+### Provider 인터페이스
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Generator
+
+class LlmProvider(ABC):
+    @abstractmethod
+    def chat(self, messages: List[Message]) -> str:
+        pass
+
+    @abstractmethod
+    def stream(self, messages: List[Message]) -> Generator[str, None, None]:
+        pass
+```
+
+### 구현체
+
+**OllamaProvider:**
+```python
+class OllamaProvider(LlmProvider):
+    def chat(self, messages):
+        # Ollama API 호출
+        response = ollama.chat(model="llama3.2:3b", messages=messages)
+        return response["message"]["content"]
+
+    def stream(self, messages):
+        for chunk in ollama.chat(model="llama3.2:3b", messages=messages, stream=True):
+            yield chunk["message"]["content"]
+```
+
+**ClaudeProvider (Fallback):**
+```python
+class ClaudeProvider(LlmProvider):
+    def chat(self, messages):
+        # Claude API 호출
+        response = anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            messages=messages
+        )
+        return response.content[0].text
+```
+
+### 환경변수 기반 선택
+
+```python
+# config.py
+provider_type = os.getenv("AI_MODEL_PROVIDER", "ollama")  # ollama | claude | openai
+fallback_enabled = os.getenv("AI_FALLBACK_ENABLED", "true").lower() == "true"
+
+def get_provider() -> LlmProvider:
+    if provider_type == "ollama":
+        return OllamaProvider()
+    elif provider_type == "claude":
+        return ClaudeProvider()
+    else:
+        raise ValueError(f"Unknown provider: {provider_type}")
+```
+
+---
+
+## 6. 마이그레이션 절차 (Phase 0 → Phase 1)
+
+### Step 1: AI Service 배포 (병렬 운영)
+- AI Service를 별도 컨테이너로 배포 (:8090)
+- Spring Boot는 아직 변경하지 않음
+- Smoke Test로 AI Service 단독 동작 확인
+
+### Step 2: Spring Boot OpenFeign 클라이언트 추가
+
+```java
+@FeignClient(name = "ai-service", url = "${notio.ai-service.url}")
+public interface AiServiceClient {
+    @PostMapping("/chat")
+    ChatResponse chat(@RequestBody ChatRequest request);
+
+    @GetMapping("/stream")
+    Flux<String> stream(@RequestParam String message);
+}
+```
+
+### Step 3: ChatService 로직 교체
+
+```java
+@Service
+public class ChatService {
+    private final AiServiceClient aiServiceClient;
+    private final SpringAiChatModel springAiChatModel;  // Fallback 유지
+
+    @Value("${notio.ai-service.enabled:false}")
+    private boolean aiServiceEnabled;
+
+    public ChatResponse chat(ChatRequest request) {
+        if (aiServiceEnabled) {
+            try {
+                return aiServiceClient.chat(request);
+            } catch (Exception e) {
+                log.warn("AI Service unavailable, fallback to Spring AI", e);
+                return springAiChatModel.call(request);  // Fallback
+            }
+        }
+        return springAiChatModel.call(request);
+    }
+}
+```
+
+### Step 4: Feature Flag 기반 점진적 전환
+- `notio.ai-service.enabled=false` → 기존 Spring AI 사용
+- Canary: 10% 트래픽 → AI Service
+- 모니터링 (Prometheus + Grafana):
+  - 응답 시간
+  - 에러율
+  - 임베딩 품질 (코사인 유사도)
+- 문제 없으면 100% 전환
+
+### Step 5: Spring AI 의존성 제거
+- Feature Flag `true`로 고정
+- Spring AI 관련 코드 제거
+- Gradle 의존성 제거
+
+### 롤백 계획
+- Feature Flag `false`로 즉시 전환
+- AI Service 장애 시 자동 Fallback

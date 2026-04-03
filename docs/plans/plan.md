@@ -80,3 +80,13 @@ notio/
 - **커밋**: `feat(notification): add webhook receiver` (Conventional Commits)
 - **PR 제목**: `[BE] feat: Slack webhook handler` / `[FE] feat: notification list screen`
 - **환경변수**: `NOTIO_` 접두사 (예: `NOTIO_JWT_SECRET`)
+
+---
+
+## 참고 문서
+
+### 종합 설계서
+- [notio_blueprint.md](../blueprint/notio_blueprint.md) — Phase 0~4 전체 아키텍처, 서비스별 스펙, 데이터 모델, API 설계, 인프라, 배포 전략, 테스트 전략, 마이그레이션 플레이북, 운영 준비, 기술 의사결정 기록 등 포함
+
+### 개발 가이드
+- [CLAUDE.md](../../CLAUDE.md) — Claude Code 개발 가이드, 커밋 메시지 형식

@@ -19,12 +19,30 @@ infra/
 
 ## 2. Docker Compose 서비스 목록
 
+### Phase 0 (MVP) — 모놀리스
+
 | 서비스 | 이미지 | 포트 | 의존 |
 |--------|--------|------|------|
 | `notio-backend` | `notio/backend:local` | 8080 | postgres, redis, ollama |
 | `postgres` | `pgvector/pgvector:pg16` | 5432 | — |
 | `redis` | `redis:7-alpine` | 6379 | — |
 | `ollama` | `ollama/ollama:latest` | 11434 | — |
+
+### Phase 2+ — MSA 분리 (Database per Service)
+
+Phase 2 이후 각 서비스는 독립 DB를 가집니다:
+
+| 서비스 | 이미지 | 포트 | 비고 |
+|--------|--------|------|------|
+| `notification-db` | `pgvector/pgvector:pg16` | 5433 | pgvector 확장 필수 |
+| `webhook-db` | `postgres:16` | 5434 | — |
+| `chat-db` | `postgres:16` | 5435 | — |
+| `todo-db` | `postgres:16` | 5436 | — |
+| `push-db` | `postgres:16` | 5437 | — |
+| `analytics-db` | `postgres:16` | 5438 | — |
+| `auth-db` | `postgres:16` | 5439 | Phase 4 |
+| `kafka` | `confluentinc/cp-kafka:7.6` | 9092 | Phase 2+ |
+| `zookeeper` | `confluentinc/cp-zookeeper:7.6` | 2181 | Kafka 의존 |
 
 ### 로컬 실행 명령
 
@@ -130,7 +148,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { java-version: '21', distribution: 'temurin' }
+        with: { java-version: '25', distribution: 'temurin' }
       - run: cd backend && ./gradlew test --info
       - run: cd backend && ./gradlew checkstyleMain spotbugsMain
 ```
@@ -180,3 +198,163 @@ jobs:
 - [ ] `.gitignore` — `.env`, `*.local`, `firebase-service-account.json` 제외
 - [ ] `.editorconfig` — indent_style, end_of_line, charset 통일
 - [ ] `README.md` — 로컬 실행 가이드 작성
+
+---
+
+## 7. Kubernetes 배포 (Phase 1+)
+
+### 서비스별 리소스
+
+| 서비스 | Replicas | CPU Req/Limit | Memory Req/Limit | HPA 조건 |
+|--------|----------|---------------|------------------|----------|
+| api-gateway | 2 | 200m / 500m | 256Mi / 512Mi | CPU > 70% |
+| notification-service | 2 | 200m / 500m | 256Mi / 512Mi | CPU > 70% |
+| webhook-service | 2 | 100m / 300m | 128Mi / 256Mi | — |
+| chat-service | 2 | 200m / 500m | 256Mi / 512Mi | 연결수 > 100 |
+| todo-service | 1 | 100m / 300m | 128Mi / 256Mi | — |
+| analytics-service | 1 | 100m / 500m | 256Mi / 512Mi | — |
+| auth-service | 2 | 200m / 500m | 256Mi / 512Mi | CPU > 70% |
+| push-service | 2 | 100m / 300m | 128Mi / 256Mi | Kafka Lag > 1000 |
+| ai-service | 1 | 500m / 2000m | 1Gi / 4Gi | — (Ollama RAM 제약) |
+| kafka | 3 | 500m / 1000m | 1Gi / 2Gi | — (StatefulSet) |
+
+### Deployment 예시 (notification-service)
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: ghcr.io/notio/notification:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: NOTIFICATION_DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: notification-db-url
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8081
+          initialDelaySeconds: 20
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 8081
+    targetPort: 8081
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+---
+
+## 8. 배포 전략
+
+### 개발 환경 (dev)
+- **Rolling Update**
+- main 머지 시 자동 배포
+- 다운타임 없음
+- 롤백: `kubectl rollout undo deployment/notification-service`
+
+### 프로덕션 (prod)
+- **Blue-Green**
+- 구버전(Blue) 유지 중 신버전(Green) 배포
+- 검증 후 Load Balancer 전환
+- 롤백: LB를 Blue로 즉시 전환
+
+### AI Service
+- **Canary (10% → 100%)**
+- 신 모델을 10% 트래픽으로 검증
+- 문제 없으면 100% 전환
+- 롤백: 10% → 0% 즉시
+
+---
+
+## 9. 관측성 (Observability)
+
+### 메트릭 (Prometheus + Grafana)
+- Spring Actuator `/metrics` 노출
+- 수집 항목:
+  - CPU · 메모리 · 디스크 사용률
+  - HTTP 요청 수 · 레이턴시 (P50, P95, P99)
+  - DB 커넥션 풀 상태
+  - Kafka Lag
+
+### 로그 (Loki + Promtail)
+- Logback JSON 포맷
+```json
+{
+  "timestamp": "2025-01-15T10:30:00Z",
+  "level": "INFO",
+  "logger": "com.notio.notification.NotificationService",
+  "message": "Notification saved",
+  "traceId": "abc123",
+  "spanId": "def456",
+  "service": "notification-service"
+}
+```
+
+### 분산 트레이싱 (Zipkin)
+- HTTP `traceparent` 헤더 자동 전파
+- Trace 구간:
+  - Flutter → API Gateway
+  - Gateway → 각 서비스
+  - Chat → AI Service
+  - 서비스 → Kafka
+
+### 알림 (Alertmanager → Slack)
+- CPU > 80% (5분 지속)
+- 메모리 > 90%
+- HTTP 5xx 에러율 > 5%
+- Kafka Lag > 1000

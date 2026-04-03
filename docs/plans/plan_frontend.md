@@ -250,6 +250,52 @@ static const srcGmail  = Color(0xFFF87171);
 static const srcInt    = Color(0xFF34D399);  // 내부 앱
 ```
 
+### Typography (app_text_styles.dart)
+
+```dart
+static const h1 = TextStyle(
+  fontSize: 28,
+  fontWeight: FontWeight.w700,
+  color: AppColors.text1,
+);
+
+static const h2 = TextStyle(
+  fontSize: 22,
+  fontWeight: FontWeight.w600,
+  color: AppColors.text1,
+);
+
+static const body1 = TextStyle(
+  fontSize: 16,
+  fontWeight: FontWeight.w400,
+  color: AppColors.text1,
+);
+
+static const body2 = TextStyle(
+  fontSize: 14,
+  fontWeight: FontWeight.w400,
+  color: AppColors.text2,
+);
+
+static const caption = TextStyle(
+  fontSize: 12,
+  fontWeight: FontWeight.w400,
+  color: AppColors.text3,
+);
+```
+
+### Spacing (app_spacing.dart)
+
+```dart
+static const s4 = 4.0;
+static const s8 = 8.0;
+static const s12 = 12.0;
+static const s16 = 16.0;
+static const s20 = 20.0;
+static const s24 = 24.0;
+static const s32 = 32.0;
+```
+
 ---
 
 ## 5. GlassCard 컴포넌트 규칙
@@ -269,9 +315,82 @@ GlassCard(
 - 테두리: `AppColors.border2` 0.5px
 - 액센트 라인 있을 때: 왼쪽 3px 바이올렛 라인
 
+### GlassCard 구현 예시
+
+```dart
+class GlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets padding;
+  final double borderRadius;
+  final Color? accentColor;  // 왼쪽 액센트 라인
+
+  const GlassCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(12),
+    this.borderRadius = 14,
+    this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.glass,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: AppColors.border2, width: 0.5),
+        // 왼쪽 액센트 라인 (선택적)
+      ),
+      child: child,
+    );
+  }
+}
+```
+
 ---
 
-## 6. 라우팅 구조 (go_router)
+## 6. SourceBadge 컴포넌트
+
+소스별 색상 뱃지는 `shared/widget/source_badge.dart`에서 구현합니다.
+
+```dart
+class SourceBadge extends StatelessWidget {
+  final NotificationSource source;
+
+  Color _getColor() {
+    switch (source) {
+      case NotificationSource.claude: return AppColors.srcClaude;
+      case NotificationSource.slack: return AppColors.srcSlack;
+      case NotificationSource.github: return AppColors.srcGithub;
+      case NotificationSource.gmail: return AppColors.srcGmail;
+      case NotificationSource.internal: return AppColors.srcInt;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: _getColor().withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        source.name.toUpperCase(),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: _getColor(),
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## 7. 라우팅 구조 (go_router)
 
 ```
 / (ShellRoute — MainShell)
@@ -286,7 +405,7 @@ GlassCard(
 
 ---
 
-## 7. 오프라인 캐시 전략 (Drift)
+## 8. 오프라인 캐시 전략 (Drift)
 
 | 데이터 | 캐시 정책 | TTL |
 |--------|-----------|-----|
@@ -296,7 +415,7 @@ GlassCard(
 
 ---
 
-## 8. SSE 스트리밍 구현 규칙
+## 9. SSE 스트리밍 구현 규칙
 
 - `dio` `ResponseType.stream` 사용
 - 청크 수신 시 `chatMessagesProvider`에 append
@@ -306,7 +425,7 @@ GlassCard(
 
 ---
 
-## 9. MVP 체크리스트
+## 10. MVP 체크리스트
 
 ### 환경 세팅
 - [ ] Flutter 프로젝트 생성 (`flutter create --org com.notio notio_app`)
