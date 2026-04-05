@@ -9,18 +9,19 @@
 | 분류 | 기술 | 버전 |
 |------|------|------|
 | 언어 | Java | 25 |
-| 프레임워크 | Spring Boot | 4.x |
-| 빌드 | Gradle | 8.x (Kotlin DSL) |
-| ORM | Spring Data JPA + QueryDSL | 5.x |
-| AI | Spring AI (Ollama) | 1.0.x |
+| 프레임워크 | Spring Boot | 4.0.0 |
+| 빌드 | Gradle | 9.0 (Kotlin DSL) |
+| ORM | Spring Data JPA (Hibernate) | 7.1.8 |
+| QueryDSL | (Phase 1) — 호환 버전 대기 중 | — |
+| AI | (Phase 1) Spring AI (Ollama) | 1.0.0-M6 |
 | 캐시/큐 | Spring Data Redis | 3.x |
-| 메시지 | (Phase 1) Kafka — MVP는 동기 처리 | — |
-| DB | PostgreSQL 16 + pgvector | 0.5.x |
-| 마이그레이션 | Flyway | 10.x |
-| 보안 | Spring Security + JWT (jjwt) | 0.12.x |
-| 푸시 | Firebase Admin SDK | 9.x |
-| 테스트 | JUnit 5 · Mockito · Testcontainers | — |
-| 문서 | SpringDoc OpenAPI (Swagger) | 2.x |
+| 메시지 | (Phase 2) Kafka — MVP는 동기 처리 | — |
+| DB | PostgreSQL 16 | ankane/pgvector:v0.5.1 |
+| 마이그레이션 | Flyway | 11.1.0 |
+| 보안 | Spring Security + JWT (jjwt) | 0.12.6 |
+| 푸시 | Firebase Admin SDK | 9.4.2 |
+| 테스트 | JUnit 5 · Mockito · Testcontainers | 1.20.4 |
+| 문서 | Swagger (Springfox) | 3.0.0 |
 
 ---
 

@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 16 with pgvector
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    container_name: notio-postgres
+    environment:
+      POSTGRES_DB: notio
+      POSTGRES_USER: notio
+      POSTGRES_PASSWORD: notio
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - notio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: notio-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - notio-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Ollama for LLM
+  #ollama:
+  #  image: ollama/ollama:latest
+  #  container_name: notio-ollama
+  #  ports:
+  #    - "11434:11434"
+  #  volumes:
+  #    - ollama_data:/root/.ollama
+  #  networks:
+  #    - notio-network
+  #  deploy:
+  #    resources:
+  #      reservations:
+  #        devices:
+  #          - driver: nvidia
+  #            count: all
+  #            capabilities: [gpu]
+
+volumes:
+  postgres_data:
+  redis_data:
+#  ollama_data:
+
+networks:
+  notio-network:
+    driver: bridge

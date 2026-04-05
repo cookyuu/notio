@@ -8,18 +8,25 @@
 
 | 분류 | 패키지 | 버전 |
 |------|--------|------|
-| 상태관리 | hooks_riverpod + flutter_hooks | ^2.5.x |
-| 코드 생성 | riverpod_generator + build_runner | ^2.4.x |
-| 네비게이션 | go_router | ^13.x |
-| 네트워크 | dio | ^5.4.x |
-| 로컬 DB | drift (SQLite) | ^2.18.x |
-| 푸시 알림 | firebase_core + firebase_messaging | ^2.27.x |
-| 로컬 알림 | flutter_local_notifications | ^17.x |
-| 리스트 제스처 | flutter_slidable | ^3.1.x |
-| 차트 | fl_chart | ^0.68.x |
-| 보안 스토리지 | flutter_secure_storage | ^9.x |
-| 시간 포맷 | timeago | ^3.6.x |
-| 국제화 | intl | ^0.19.x |
+| 언어 | Dart | 3.6.x |
+| 프레임워크 | Flutter | 3.x |
+| 상태관리 | hooks_riverpod + flutter_hooks | 2.5.3 / 0.20.5 |
+| 코드 생성 | riverpod_generator + build_runner | 2.6.2 / 2.4.13 |
+| 네비게이션 | go_router | 14.6.1 |
+| 네트워크 | dio + retrofit | 5.4.3 / 4.1.0 |
+| JSON | json_annotation + json_serializable | 4.9.0 / 6.8.0 |
+| 로컬 DB | drift + drift_dev | 2.18.0 |
+| SQLite | sqlite3_flutter_libs + path_provider | 0.5.24 / 2.1.4 |
+| 푸시 알림 | firebase_core + firebase_messaging | 2.27.2 / 14.7.20 |
+| 로컬 알림 | flutter_local_notifications | 17.2.3 |
+| 리스트 제스처 | flutter_slidable | 3.1.1 |
+| 차트 | fl_chart | 0.68.0 |
+| 보안 스토리지 | flutter_secure_storage | 9.2.2 |
+| 프리퍼런스 | shared_preferences | 2.3.3 |
+| 시간 포맷 | timeago | 3.6.1 |
+| 국제화 | intl | 0.19.0 |
+| 유틸리티 | freezed_annotation + freezed | 2.4.4 / 2.5.7 |
+| Lint | flutter_lints + custom_lint + riverpod_lint | 5.0.0 / 0.6.7 / 2.5.1 |
 
 ---
 

@@ -160,35 +160,38 @@ Phase 4 (완전한 MSA):
 
 | 레이어 | 서비스 | 언어/프레임워크 | 주요 라이브러리 |
 |--------|--------|-----------------|----------------|
-| **Client** | Flutter App | Dart 3.x / Flutter | Riverpod, go_router, Dio, Drift, FCM |
-| **Gateway** | API Gateway | Java 25 / Spring Cloud Gateway | Resilience4j, JWT, Micrometer |
-| **Core** | Notification Service | Java 25 / Spring Boot 4.x | JPA, QueryDSL, Kafka, pgvector |
-| **Core** | Webhook Service | Java 25 / Spring Boot 4.x | Kafka, HMAC 검증, Security |
-| **Core** | Chat Service | Java 25 / Spring Boot 4.x + WebFlux | OpenFeign, Redis, Kafka |
-| **Core** | Todo Service | Java 25 / Spring Boot 4.x | JPA, Kafka |
-| **AI** | AI Service | Python 3.12 / FastAPI | LangChain, Ollama, pgvector, Celery |
-| **Platform** | Auth Service | Java 25 / Spring Boot 4.x | Spring Security, JWT, BCrypt |
-| **Platform** | Push Service | Java 25 / Spring Boot 4.x | Firebase Admin, APNs, Kafka |
-| **Platform** | Analytics Service | Java 25 / Spring Boot 4.x | Kafka, OpenFeign, Scheduler |
-| **Infra** | Message Broker | — / Apache Kafka 3.6 | Zookeeper / KRaft |
-| **Infra** | Primary DB | — / PostgreSQL 16 | pgvector (Notification DB) |
-| **Infra** | Cache / Queue | — / Redis 7 | Pub/Sub, Sorted Set |
-| **Infra** | LLM Runtime | — / Ollama | llama3.2:3b, nomic-embed-text |
-| **Infra** | Container Orch. | — / Kubernetes | Helm, Ingress-NGINX, HPA |
-| **Obs.** | Metrics | — / Prometheus + Grafana | Spring Actuator, PromQL |
-| **Obs.** | Logging | — / Loki + Promtail | Logback JSON |
-| **Obs.** | Tracing | — / Zipkin | Micrometer Brave, OpenTelemetry |
+| **Client** | Flutter App | Dart 3.6 / Flutter 3.x | Riverpod 2.5.3, go_router 14.6.1, Dio 5.4.3, Drift 2.18.0, FCM 14.7.20 |
+| **Gateway** | API Gateway | Java 25 / Spring Cloud Gateway | Resilience4j, JWT, Micrometer (Phase 2+) |
+| **Core** | Notification Service | Java 25 / Spring Boot 4.0.0 | JPA 7.1.x, Kafka (Phase 2+) |
+| **Core** | Webhook Service | Java 25 / Spring Boot 4.0.0 | Kafka (Phase 2+), HMAC 검증, Security |
+| **Core** | Chat Service | Java 25 / Spring Boot 4.0.0 + WebFlux | OpenFeign, Redis, Kafka (Phase 2+) |
+| **Core** | Todo Service | Java 25 / Spring Boot 4.0.0 | JPA, Kafka (Phase 2+) |
+| **AI** | AI Service | Python 3.12 / FastAPI | LangChain, Ollama, Celery (Phase 1+) |
+| **Platform** | Auth Service | Java 25 / Spring Boot 4.0.0 | Spring Security, JWT 0.12.6, BCrypt (Phase 2+) |
+| **Platform** | Push Service | Java 25 / Spring Boot 4.0.0 | Firebase Admin 9.4.2, APNs (Phase 1+), Kafka (Phase 2+) |
+| **Platform** | Analytics Service | Java 25 / Spring Boot 4.0.0 | Kafka (Phase 2+), OpenFeign, Scheduler |
+| **Infra** | Message Broker | — / Apache Kafka 3.6 | Zookeeper / KRaft (Phase 2+) |
+| **Infra** | Primary DB | — / PostgreSQL 16 | ankane/pgvector:v0.5.1 |
+| **Infra** | Cache / Queue | — / Redis 7-alpine | Pub/Sub, Sorted Set |
+| **Infra** | LLM Runtime | — / Ollama latest | llama3.2:3b, nomic-embed-text |
+| **Infra** | Container Orch. | — / Kubernetes | Helm, Ingress-NGINX, HPA (Phase 2+) |
+| **Obs.** | Metrics | — / Prometheus + Grafana | Spring Actuator, PromQL (Phase 2+) |
+| **Obs.** | Logging | — / Loki + Promtail | Logback JSON (Phase 2+) |
+| **Obs.** | Tracing | — / Zipkin | Micrometer Brave, OpenTelemetry (Phase 2+) |
 
 ### 3.2 버전 정책
 
 | 기술 | 버전 | LTS 여부 | 이유 |
 |------|------|----------|------|
 | Java | 25 | ✅ | 최신 버전. 향상된 성능 및 최신 기능 지원 |
-| Spring Boot | 4.x | ✅ | 최신 Spring Framework 기반. 향상된 기능 지원 |
-| Python | 3.12 | ✅ | 최신 안정 버전. 성능 향상 |
-| PostgreSQL | 16 | ✅ | pgvector 0.5.x 호환 |
-| Flutter | 3.x stable | ✅ | Material 3, 안정적인 Riverpod 지원 |
-| Kafka | 3.6 | ✅ | KRaft 모드 지원 (Zookeeper 제거 가능) |
+| Gradle | 9.0 | ✅ | Java 25 지원, 최신 빌드 도구 |
+| Spring Boot | 4.0.0 | ✅ | 최신 Spring Framework 7.0.1 기반 |
+| Flyway | 11.1.0 | ✅ | PostgreSQL 16 호환 |
+| Python | 3.12 | ✅ | 최신 안정 버전. 성능 향상 (Phase 1+) |
+| PostgreSQL | 16 | ✅ | pgvector 0.5.1 호환 |
+| Dart | 3.6.x | ✅ | Flutter 3.x 지원 |
+| Flutter | 3.x stable | ✅ | Material 3, 안정적인 Riverpod 2.5.x 지원 |
+| Kafka | 3.6 | ✅ | KRaft 모드 지원 (Phase 2+) |
 
 ---
 

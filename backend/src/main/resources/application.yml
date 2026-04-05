@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: notio-backend
+
+  datasource:
+    url: jdbc:postgresql://${NOTIO_DB_HOST:localhost}:${NOTIO_DB_PORT:5432}/${NOTIO_DB_NAME:notio}
+    username: ${NOTIO_DB_USERNAME:notio}
+    password: ${NOTIO_DB_PASSWORD:notio}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+
+  data:
+    redis:
+      host: ${NOTIO_REDIS_HOST:localhost}
+      port: ${NOTIO_REDIS_PORT:6379}
+      password: ${NOTIO_REDIS_PASSWORD:}
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  ai:
+    ollama:
+      base-url: ${NOTIO_OLLAMA_URL:http://localhost:11434}
+      chat:
+        model: llama3.2:3b
+      embedding:
+        model: nomic-embed-text
+
+server:
+  port: ${NOTIO_SERVER_PORT:8080}
+  error:
+    include-message: always
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+logging:
+  level:
+    com.notio: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: INFO
+
+# JWT
+notio:
+  jwt:
+    secret: ${NOTIO_JWT_SECRET:your-256-bit-secret-key-change-this-in-production}
+    expiration: 86400000 # 24 hours

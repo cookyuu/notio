@@ -11,14 +11,6 @@
 - 📱 **실시간 푸시**: FCM/APNs를 통한 즉시 알림
 - 🌙 **세련된 UI**: 다크 모드 + 바이올렛 액센트의 글래스모피즘 디자인
 
-### 기술 스택
-- **Frontend**: Flutter 3.x (Riverpod, go_router, Drift)
-- **Backend**: Spring Boot 4.x + Java 25 (모놀리스 → MSA)
-- **AI**: Python 3.12 + FastAPI (LangChain, Ollama)
-- **Database**: PostgreSQL 16 + pgvector, Redis 7
-- **Message**: Apache Kafka 3.6
-- **Infra**: Docker Compose (로컬), Kubernetes (프로덕션)
-
 ### 아키텍처 진화
 | Phase | 기간 | 목표 |
 |-------|------|------|
@@ -39,34 +31,36 @@
 | 분류 | 기술 | 버전 |
 |------|------|------|
 | 언어 | Java | 25 |
-| 프레임워크 | Spring Boot | 4.x |
-| 빌드 | Gradle | 8.x (Kotlin DSL) |
-| ORM | Spring Data JPA + QueryDSL | 5.x |
-| AI | Spring AI (Ollama) | 1.0.x |
+| 프레임워크 | Spring Boot | 4.0.0 |
+| 빌드 | Gradle | 9.0 (Kotlin DSL) |
+| ORM | Spring Data JPA | 7.1.x (Hibernate) |
+| AI | Spring AI (Ollama) | 1.0.0-M6 (Phase 1+) |
 | 캐시/큐 | Spring Data Redis | 3.x |
-| DB | PostgreSQL 16 + pgvector | 0.5.x |
-| 마이그레이션 | Flyway | 10.x |
-| 보안 | Spring Security + JWT (jjwt) | 0.12.x |
-| 푸시 | Firebase Admin SDK | 9.x |
-| 테스트 | JUnit 5 · Mockito · Testcontainers | — |
-| 문서 | SpringDoc OpenAPI (Swagger) | 2.x |
+| DB | PostgreSQL 16 | — |
+| 마이그레이션 | Flyway | 11.1.0 |
+| 보안 | Spring Security + JWT (jjwt) | 0.12.6 |
+| 푸시 | Firebase Admin SDK | 9.4.2 |
+| 테스트 | JUnit 5 · Mockito · Testcontainers | 1.20.4 |
+| 문서 | Swagger (Springfox) | 3.0.0 |
 
 ### Frontend (Flutter)
 | 분류 | 패키지 | 버전 |
 |------|--------|------|
-| 언어 | Dart | 3.x |
+| 언어 | Dart | 3.6.x |
 | 프레임워크 | Flutter | 3.x |
-| 상태관리 | hooks_riverpod + flutter_hooks | ^2.5.x |
-| 코드 생성 | riverpod_generator + build_runner | ^2.4.x |
-| 네비게이션 | go_router | ^13.x |
-| 네트워크 | dio | ^5.4.x |
-| 로컬 DB | drift (SQLite) | ^2.18.x |
-| 푸시 알림 | firebase_core + firebase_messaging | ^2.27.x |
-| 로컬 알림 | flutter_local_notifications | ^17.x |
-| 리스트 제스처 | flutter_slidable | ^3.1.x |
-| 차트 | fl_chart | ^0.68.x |
-| 보안 스토리지 | flutter_secure_storage | ^9.x |
-| 시간 포맷 | timeago | ^3.6.x |
+| 상태관리 | hooks_riverpod + flutter_hooks | 2.5.3 / 0.20.5 |
+| 코드 생성 | riverpod_generator + build_runner | 2.6.2 / 2.4.13 |
+| 네비게이션 | go_router | 14.6.1 |
+| 네트워크 | dio + retrofit | 5.4.3 / 4.1.0 |
+| JSON | json_annotation + json_serializable | 4.9.0 / 6.8.0 |
+| 로컬 DB | drift (SQLite) + drift_dev | 2.18.0 |
+| 푸시 알림 | firebase_core + firebase_messaging | 2.27.2 / 14.7.20 |
+| 로컬 알림 | flutter_local_notifications | 17.2.3 |
+| 리스트 제스처 | flutter_slidable | 3.1.1 |
+| 차트 | fl_chart | 0.68.0 |
+| 보안 스토리지 | flutter_secure_storage | 9.2.2 |
+| 시간 포맷 | timeago | 3.6.1 |
+| Lint | flutter_lints + custom_lint + riverpod_lint | 5.0.0 / 0.6.7 / 2.5.1 |
 
 ### AI Service (Phase 1+)
 | 분류 | 기술 | 버전 |
@@ -81,14 +75,13 @@
 ### Infrastructure
 | 분류 | 기술 | 버전 |
 |------|------|------|
-| 로컬 환경 | Docker Compose | — |
-| 프로덕션 | Kubernetes | — |
+| 로컬 환경 | Docker Compose | 3.8 |
+| 프로덕션 | Kubernetes | — (Phase 2+) |
 | 메시지 큐 | Apache Kafka | 3.6 (Phase 2+) |
-| 캐시/브로커 | Redis | 7 |
-| DB | PostgreSQL | 16 |
-| 벡터 확장 | pgvector | 0.5.x |
-| LLM | Ollama (llama3.2:3b) | — |
-| 임베딩 | nomic-embed-text | — |
+| 캐시/브로커 | Redis | 7-alpine |
+| DB | PostgreSQL (ankane/pgvector) | 16 (v0.5.1) |
+| LLM | Ollama (llama3.2:3b) | latest |
+| 임베딩 | Ollama (nomic-embed-text) | latest |
 
 ---
 
@@ -218,63 +211,12 @@ main                    # 프로덕션 브랜치
 - [ ] 빌드: `flutter build apk --debug`
 - [ ] 린트: `flutter_lints` 규칙 통과
 
-### PR (Pull Request) 규칙
-
-**PR 제목**
-- `[BE] feat: Slack webhook handler`
-- `[FE] feat: notification list screen`
-- `[AI] feat: RAG retrieval endpoint`
-- `[INFRA] chore: add Kafka to docker-compose`
-
-**PR 본문**
-```markdown
-## 변경 사항
-- Slack webhook HMAC 검증 추가
-- NotificationService에 saveFromEvent 메서드 구현
-
-## 테스트
-- [ ] 단위 테스트 작성
+**Test**
 - [ ] 통합 테스트 작성
 - [ ] 수동 테스트 완료
 
 ## 관련 이슈
 Closes #42
-```
-
-### CI/CD 파이프라인
-
-**Backend CI** (`.github/workflows/ci-backend.yml`)
-- 트리거: `backend/**` 또는 `infra/docker-compose.yml` 변경 시
-- 실행:
-  1. PostgreSQL + Redis 서비스 시작
-  2. `./gradlew test`
-  3. `./gradlew checkstyleMain spotbugsMain`
-
-**Frontend CI** (`.github/workflows/ci-frontend.yml`)
-- 트리거: `frontend/**` 변경 시
-- 실행:
-  1. `flutter pub get`
-  2. `flutter analyze`
-  3. `flutter test`
-
-**머지 조건**
-- CI 통과 필수 (Branch Protection Rule)
-- 코드 리뷰 최소 1명 승인 (프로덕션)
-
-### 로컬 개발 환경 세팅
-
-```bash
-# 1. Docker Compose 실행
-docker-compose up -d postgres redis
-
-# 2. Ollama 모델 설치 + pgvector 확장
-./scripts/setup.sh
-
-# 3. Backend 실행
-cd backend && ./gradlew bootRun
-
-# 4. Frontend 실행
-cd frontend && flutter pub get && flutter run
 ```
 
 ---
@@ -330,23 +272,6 @@ cd frontend && flutter pub get && flutter run
 - **타이포그래피**: `AppTextStyles`에서만 정의
 - **간격**: `AppSpacing` 상수 사용 (s4, s8, s12, s16, s20, s24, s32)
 - **글래스모피즘**: `GlassCard` 위젯 재사용, 직접 `Container` 작성 금지
-
-### Phase 전환 주의사항
-
-- **Phase 0 → Phase 1 (AI 분리)**:
-  - Feature Flag (`notio.ai-service.enabled`) 기반 점진적 전환
-  - Fallback 구현 필수 (AI Service 장애 시 Spring AI 사용)
-  - Canary 배포: 10% → 100%
-
-- **Phase 1 → Phase 2 (MSA 분리)**:
-  - Database per Service: 각 서비스는 독립 DB 사용
-  - Kafka 도입: 서비스 간 비동기 통신
-  - API Gateway 추가: 라우팅 + 인증
-
-- **공통**:
-  - 롤백 계획 필수
-  - 기존 기능 100% 유지 (호환성)
-  - 성능 모니터링 (Prometheus + Grafana)
 
 ### Git 커밋 금지 항목
 
