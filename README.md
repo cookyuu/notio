@@ -1,6 +1,13 @@
 # Notio
 
-개발자를 위한 AI 기반 통합 알림 허브
+> 개발자를 위한 AI 기반 통합 알림 허브
+
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.0-6DB33F?logo=springboot)](https://spring.io/projects/spring-boot)
+[![Flutter](https://img.shields.io/badge/Flutter-3.27.3-02569B?logo=flutter)](https://flutter.dev)
+[![Java](https://img.shields.io/badge/Java-25-007396?logo=openjdk)](https://openjdk.org)
+[![Dart](https://img.shields.io/badge/Dart-3.6.1-0175C2?logo=dart)](https://dart.dev)
+
+**Backend Phase 0 완료** ✅ | **Frontend Phase 0 완료** ✅ | Phase 1 개발 중 🚧
 
 ## 개요
 
@@ -155,15 +162,59 @@ main                    # 프로덕션 브랜치
 
 **Type**: `feature`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`
 
-## 로드맵
+## 📅 로드맵 및 진행 상황
+
+### Frontend 개발 (5주 MVP)
+
+| Phase | 기간 | 목표 | 상태 |
+|-------|------|------|------|
+| **Phase 0** | 1주차 | 환경 세팅 및 기본 인프라 | ✅ 완료 |
+| **Phase 1** | 2주차 | 인증 및 알림 탭 | 🚧 진행 중 |
+| **Phase 2** | 3주차 | AI 채팅 탭 | 📋 예정 |
+| **Phase 3** | 4주차 | 분석 및 설정 탭 | 📋 예정 |
+| **Phase 4** | 5주차 | 푸시 알림 및 통합 | 📋 예정 |
+
+### Backend 개발 (5주 MVP)
+
+| Phase | 기간 | 목표 | 상태 |
+|-------|------|------|------|
+| **Phase 0** | 1주차 | 환경 세팅 및 기본 인프라 | ✅ 완료 |
+| **Phase 1** | 2주차 | 인증 및 알림 API | 📋 예정 |
+| **Phase 2** | 3주차 | AI 채팅 API | 📋 예정 |
+| **Phase 3** | 4주차 | 분석 및 설정 API | 📋 예정 |
+| **Phase 4** | 5주차 | 푸시 알림 및 통합 테스트 | 📋 예정 |
+
+### 장기 아키텍처 진화
 
 | Phase | 기간 | 목표 |
 |-------|------|------|
-| **Phase 0** | 5주 (MVP) | Spring Boot 모놀리스 완성 |
-| **Phase 1** | 3-6개월 | AI Service 분리 (Python) |
-| **Phase 2** | 6-9개월 | Notification/Webhook 분리 |
-| **Phase 3** | 9-12개월 | Chat/Todo 분리 |
-| **Phase 4** | 12개월+ | MSA 완성 |
+| **Phase 5** | 3-6개월 | AI Service 분리 (Python/FastAPI) |
+| **Phase 6** | 6-9개월 | Notification/Webhook Service 분리 |
+| **Phase 7** | 9-12개월 | Chat/Todo Service 분리 |
+| **Phase 8** | 12개월+ | MSA 완성 (Auth, Analytics, Gateway) |
+
+## ✅ Phase 0 완료 현황
+
+### Frontend ✅
+- Flutter 프로젝트 초기화
+- Feature-first 폴더 구조
+- 디자인 시스템 (AppColors, AppTextStyles, AppSpacing)
+- 공통 위젯 (GlassCard, SourceBadge)
+- 라우팅 설정 (go_router)
+- 로컬 DB (Drift)
+- 네트워크 클라이언트 (Dio + Interceptors)
+- **12개 테스트 통과**
+
+상세: [`frontend/PHASE0_COMPLETED.md`](frontend/PHASE0_COMPLETED.md)
+
+### Backend ✅
+- Spring Boot 4.0.0 프로젝트 초기화
+- PostgreSQL 16 + pgvector 연동
+- Redis 캐시 설정
+- Docker Compose 환경 구성
+- 기본 도메인 모델 설계
+
+상세: [`backend/PHASE0_COMPLETED.md`](backend/PHASE0_COMPLETED.md)
 
 ## 라이선스
 

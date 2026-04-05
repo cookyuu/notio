@@ -1,0 +1,526 @@
+# Frontend 개발 체크리스트
+
+> Flutter 3.x · Dart 3.6 · Riverpod · 단계별 개발 가이드
+
+---
+
+## Phase 0: 환경 세팅 및 기본 인프라 (1주차)
+
+### 프로젝트 초기화
+- [ ] Flutter 3.x 프로젝트 생성
+- [ ] Dart 3.6.x 설정
+- [ ] `.gitignore` 설정 (Flutter 표준 + 커스텀)
+- [ ] `.editorconfig` 설정
+
+### 의존성 설정
+- [ ] `pubspec.yaml` 의존성 추가
+  - [ ] `hooks_riverpod: 2.5.3`
+  - [ ] `flutter_hooks: 0.20.5`
+  - [ ] `riverpod_generator: 2.6.2`
+  - [ ] `build_runner: 2.4.13`
+  - [ ] `go_router: 14.6.1`
+  - [ ] `dio: 5.4.3`
+  - [ ] `retrofit: 4.1.0`
+  - [ ] `json_annotation: 4.9.0`
+  - [ ] `json_serializable: 6.8.0`
+  - [ ] `drift: 2.18.0`
+  - [ ] `drift_dev: 2.18.0`
+  - [ ] `firebase_core: 2.27.2`
+  - [ ] `firebase_messaging: 14.7.20`
+  - [ ] `flutter_local_notifications: 17.2.3`
+  - [ ] `flutter_slidable: 3.1.1`
+  - [ ] `fl_chart: 0.68.0`
+  - [ ] `flutter_secure_storage: 9.2.2`
+  - [ ] `timeago: 3.6.1`
+  - [ ] `flutter_lints: 5.0.0`
+  - [ ] `custom_lint: 0.6.7`
+  - [ ] `riverpod_lint: 2.5.1`
+- [ ] `flutter pub get` 실행 확인
+- [ ] `build_runner` 설정 및 실행 확인
+
+### 코드 품질 설정
+- [ ] `analysis_options.yaml` 설정
+  - [ ] `flutter_lints` 활성화
+  - [ ] `custom_lint` 규칙 추가
+  - [ ] `riverpod_lint` 규칙 추가
+  - [ ] 커스텀 린트 규칙 정의
+- [ ] `flutter analyze` 실행 확인 (경고 0개)
+
+### 프로젝트 구조 생성
+- [ ] Feature-first 폴더 구조 생성
+  ```
+  lib/
+  ├── core/
+  │   ├── constants/
+  │   ├── theme/
+  │   ├── utils/
+  │   ├── router/
+  │   └── di/
+  ├── features/
+  │   ├── auth/
+  │   ├── notifications/
+  │   ├── chat/
+  │   ├── analytics/
+  │   └── settings/
+  └── main.dart
+  ```
+
+### 디자인 시스템 토큰 정의
+- [ ] `AppColors` 정의 (`lib/core/theme/app_colors.dart`)
+  - [ ] 다크 모드 컬러 팔레트 (바이올렛 액센트)
+  - [ ] 시맨틱 컬러 (primary, secondary, error, success 등)
+- [ ] `AppTextStyles` 정의 (`lib/core/theme/app_text_styles.dart`)
+  - [ ] 타이포그래피 스케일 (headline, body, caption 등)
+- [ ] `AppSpacing` 정의 (`lib/core/constants/app_spacing.dart`)
+  - [ ] s4, s8, s12, s16, s20, s24, s32 상수
+
+### 공통 위젯 구현
+- [ ] `GlassCard` 위젯 구현 (글래스모피즘)
+  - [ ] `backdrop_filter` + `BoxDecoration` 조합
+  - [ ] 파라미터: `blur`, `opacity`, `border`, `child`
+  - [ ] 골든 테스트 작성
+- [ ] `SourceBadge` 위젯 구현
+  - [ ] 소스별 아이콘 + 배경색
+  - [ ] Enum: `NotificationSource` (claude, slack, github, gmail)
+  - [ ] 위젯 테스트 작성
+
+### 라우팅 설정
+- [ ] `AppRouter` 구성 (`go_router`)
+  - [ ] 라우트 정의: `/`, `/notifications`, `/chat`, `/analytics`, `/settings`
+  - [ ] 네비게이션 바 구조 (BottomNavigationBar)
+  - [ ] 딥 링크 설정 (푸시 알림 대응)
+
+### 로컬 DB 설정
+- [ ] Drift 초기 설정
+  - [ ] `AppDatabase` 클래스 생성
+  - [ ] 마이그레이션 전략 정의
+  - [ ] DAO 기본 구조 설정
+
+### 네트워크 클라이언트 설정
+- [ ] Dio 클라이언트 설정
+  - [ ] Base URL 설정 (환경변수)
+  - [ ] `AuthInterceptor` 구현
+    - [ ] JWT 토큰 자동 첨부
+    - [ ] 401 에러 시 로그아웃
+    - [ ] 5xx 에러 시 재시도 (Exponential Backoff)
+  - [ ] `LoggingInterceptor` 추가 (디버그 모드)
+
+### Phase 0 검증
+- [ ] `flutter analyze` 경고 0개
+- [ ] `flutter test` 모든 테스트 통과
+- [ ] `flutter build apk --debug` 성공
+- [ ] 앱 실행 및 기본 네비게이션 동작 확인
+
+---
+
+## Phase 1: 인증 및 알림 탭 (2주차)
+
+### 인증 기능
+- [ ] `AuthEntity` + Drift 테이블 정의
+- [ ] `LoginRequest` / `LoginResponse` DTO 정의
+- [ ] `AuthApiClient` (Retrofit) 구현
+  - [ ] `POST /api/v1/auth/login`
+  - [ ] `POST /api/v1/auth/refresh`
+  - [ ] `POST /api/v1/auth/logout`
+- [ ] `AuthRepository` + `AuthRepositoryImpl` 구현
+  - [ ] 토큰 저장 (`flutter_secure_storage`)
+  - [ ] 자동 로그인 체크
+- [ ] `AuthNotifier` (Riverpod AsyncNotifier) 구현
+- [ ] `LoginScreen` UI 구현 (간단한 폼)
+
+### 알림 데이터 레이어
+- [ ] `NotificationEntity` + Drift 테이블 정의
+  - [ ] 필드: id, title, body, source, priority, isRead, createdAt, embedding
+  - [ ] 인덱스: source, createdAt, isRead
+  - [ ] 최근 100개만 유지 (TTL)
+- [ ] `NotificationModel` DTO 정의 (JSON 직렬화)
+- [ ] `NotificationApiClient` (Retrofit) 구현
+  - [ ] `GET /api/v1/notifications` (페이지네이션)
+  - [ ] `GET /api/v1/notifications/{id}`
+  - [ ] `PATCH /api/v1/notifications/{id}/read`
+  - [ ] `PATCH /api/v1/notifications/read-all`
+  - [ ] `DELETE /api/v1/notifications/{id}`
+- [ ] `NotificationRepository` + `NotificationRepositoryImpl` 구현
+  - [ ] 로컬 Drift 캐시 + 원격 API 동기화
+  - [ ] `fetchNotifications(filter, page)`
+  - [ ] `markAsRead(id)`
+  - [ ] `markAllAsRead()`
+  - [ ] `deleteNotification(id)`
+  - [ ] 오프라인 시 로컬 우선 조회
+
+### 알림 비즈니스 로직
+- [ ] `NotificationsNotifier` (Riverpod AsyncNotifier) 구현
+  - [ ] 페이지네이션 상태 관리 (무한 스크롤)
+  - [ ] 필터 상태 (source, priority, dateRange)
+  - [ ] 미읽음 수 실시간 갱신
+  - [ ] 낙관적 업데이트 (읽음 처리, 삭제)
+
+### 알림 화면 UI
+- [ ] `NotificationsScreen` 구현
+  - [ ] 상단 필터 칩 (All, Claude, Slack, GitHub, Gmail)
+  - [ ] 무한 스크롤 리스트 (`ListView.builder` + `ScrollController`)
+  - [ ] Pull-to-refresh
+  - [ ] 미읽음 수 배지 (상단바)
+  - [ ] 전체 읽음 버튼 (AppBar)
+- [ ] `NotificationCard` 위젯 구현
+  - [ ] `GlassCard` 기반 디자인
+  - [ ] 소스 배지 (`SourceBadge`)
+  - [ ] 우선순위 인디케이터 (색상 바)
+  - [ ] 읽음/미읽음 시각적 구분
+  - [ ] 타임스탬프 (`timeago`)
+- [ ] 스와이프 동작 (`flutter_slidable`)
+  - [ ] 왼쪽 스와이프 → 읽음 처리 / 삭제
+  - [ ] 오른쪽 스와이프 → 할일 생성 (Phase 2에서 연동)
+- [ ] 상세 모달 (알림 클릭 시)
+  - [ ] 전체 내용 표시
+  - [ ] 읽음 처리 자동
+  - [ ] 관련 링크 렌더링
+- [ ] Empty State UI (알림 없을 때)
+- [ ] 로딩/에러 상태 UI (Shimmer Effect)
+
+### Phase 1 검증
+- [ ] 로그인 → 알림 목록 조회 플로우 테스트
+- [ ] 알림 클릭 → 상세 모달 → 읽음 처리 확인
+- [ ] 스와이프 동작 확인 (읽음, 삭제)
+- [ ] 필터링 동작 확인 (소스별 필터)
+- [ ] 무한 스크롤 동작 확인
+- [ ] 오프라인 → 로컬 캐시 조회 확인
+- [ ] `flutter test` 모든 테스트 통과
+
+---
+
+## Phase 2: AI 채팅 탭 (3주차)
+
+### 채팅 데이터 레이어
+- [ ] `ChatMessageEntity` + Drift 테이블 정의
+  - [ ] 필드: id, role (user/assistant), content, createdAt
+  - [ ] 최근 50개만 유지
+- [ ] `ChatRequest` / `ChatResponse` DTO 정의
+- [ ] `DailySummaryModel` DTO 정의
+- [ ] `ChatApiClient` (Retrofit) 구현
+  - [ ] `POST /api/v1/chat` — 단건 응답
+  - [ ] `GET /api/v1/chat/stream` — SSE 스트리밍
+  - [ ] `GET /api/v1/chat/daily-summary` — 오늘 요약
+  - [ ] `GET /api/v1/chat/history` — 채팅 이력 (페이지네이션)
+
+### 채팅 비즈니스 로직
+- [ ] `ChatRepository` + `ChatRepositoryImpl` 구현
+  - [ ] 로컬 Drift 캐시 (최근 50개)
+  - [ ] `sendMessage(content)` — 단건 전송
+  - [ ] `streamMessage(content)` — SSE 연결 및 점진적 수신
+  - [ ] `fetchDailySummary()` — 24시간 캐시
+  - [ ] `fetchHistory(page)` — 페이지네이션
+- [ ] `ChatNotifier` (Riverpod AsyncNotifier) 구현
+  - [ ] 채팅 메시지 목록 상태
+  - [ ] 스트리밍 상태 (typing indicator)
+  - [ ] 오늘 요약 캐시 (24시간 TTL)
+  - [ ] 메시지 전송 중 상태 관리
+
+### 채팅 화면 UI
+- [ ] `ChatScreen` 구현
+  - [ ] 상단 오늘 요약 카드
+    - [ ] 접기/펼치기 애니메이션
+    - [ ] 24시간 캐시 표시
+  - [ ] 채팅 메시지 리스트
+    - [ ] 역순 스크롤 (`reverse: true`)
+    - [ ] 사용자 메시지 (오른쪽 정렬, 바이올렛 배경)
+    - [ ] AI 메시지 (왼쪽 정렬, 글래스 배경)
+    - [ ] 타임스탬프 (`timeago`)
+  - [ ] 하단 입력창
+    - [ ] `TextField` + 전송 버튼
+    - [ ] 멀티라인 지원
+    - [ ] 전송 중 버튼 비활성화
+  - [ ] SSE 스트리밍 시 점진적 렌더링
+    - [ ] 타이핑 효과 (문자 단위 애니메이션)
+    - [ ] 스트리밍 중 인디케이터 (점 애니메이션)
+- [ ] Empty State UI (채팅 없을 때)
+  - [ ] 환영 메시지
+  - [ ] 예시 질문 칩
+- [ ] 로딩/에러 상태 UI
+
+### SSE 스트리밍 구현
+- [ ] SSE 연결 관리
+  - [ ] `EventSource` 래퍼 클래스
+  - [ ] 타임아웃 30초
+  - [ ] Exponential Backoff 재연결
+- [ ] 점진적 메시지 렌더링
+  - [ ] Stream 기반 상태 업데이트
+  - [ ] 문자 단위 애니메이션
+
+### Phase 2 검증
+- [ ] AI 채팅 메시지 전송 → 단건 응답 수신 확인
+- [ ] SSE 스트리밍 응답 확인 (타이핑 효과)
+- [ ] 오늘 요약 조회 → 캐싱 동작 확인
+- [ ] 채팅 이력 페이지네이션 확인
+- [ ] 오프라인 → 로컬 캐시 조회 확인
+- [ ] 타임아웃/재연결 동작 확인
+- [ ] `flutter test` 모든 테스트 통과
+
+---
+
+## Phase 3: 분석 및 설정 탭 (4주차)
+
+### 분석 데이터 레이어
+- [ ] `WeeklyAnalyticsModel` DTO 정의
+  - [ ] 필드: 주간 알림 수, 소스별 분포, 우선순위별 분포, 일별 트렌드, 인사이트
+- [ ] `AnalyticsApiClient` (Retrofit) 구현
+  - [ ] `GET /api/v1/analytics/weekly`
+- [ ] `AnalyticsRepository` + `AnalyticsRepositoryImpl` 구현
+  - [ ] `fetchWeeklySummary()`
+  - [ ] 캐싱 전략 (1시간 TTL)
+
+### 분석 비즈니스 로직
+- [ ] `AnalyticsNotifier` (Riverpod AsyncNotifier) 구현
+  - [ ] 주간 통계 상태
+  - [ ] 차트 데이터 변환 로직
+
+### 분석 화면 UI
+- [ ] `AnalyticsScreen` 구현
+  - [ ] 주간 알림 통계 카드
+    - [ ] 총 알림 수, 미읽음 수, 우선순위별 요약
+  - [ ] 소스별 분포 도넛 차트 (`fl_chart`)
+    - [ ] 인터랙티브 터치 효과
+    - [ ] 범례 표시
+  - [ ] 우선순위별 막대 차트 (`fl_chart`)
+  - [ ] 일별 트렌드 라인 차트 (`fl_chart`)
+    - [ ] 7일 데이터
+    - [ ] 그리드 라인
+  - [ ] 인사이트 텍스트 (LLM 생성)
+    - [ ] `GlassCard`로 감싸기
+    - [ ] 아이콘 + 텍스트
+- [ ] Empty State UI (데이터 없을 때)
+- [ ] 로딩/에러 상태 UI
+
+### 설정 데이터 레이어
+- [ ] `SettingsModel` 정의
+  - [ ] 필드: isDarkMode, isPushEnabled, defaultFilter
+- [ ] `SettingsRepository` + `SettingsRepositoryImpl` 구현
+  - [ ] `SharedPreferences` 기반 저장
+  - [ ] `loadSettings()`
+  - [ ] `saveSettings(settings)`
+
+### 설정 비즈니스 로직
+- [ ] `SettingsNotifier` (Riverpod Notifier) 구현
+  - [ ] `toggleDarkMode()`
+  - [ ] `togglePushNotification()`
+  - [ ] `setDefaultFilter(filter)`
+
+### 설정 화면 UI
+- [ ] `SettingsScreen` 구현
+  - [ ] 다크 모드 토글 (기본값: true)
+    - [ ] Switch 위젯
+    - [ ] 앱 전체 테마 즉시 적용
+  - [ ] 푸시 알림 설정 (On/Off)
+  - [ ] 알림 필터 기본값 설정
+    - [ ] 드롭다운 메뉴
+  - [ ] 로그아웃 버튼
+    - [ ] 확인 다이얼로그
+    - [ ] 토큰 삭제 + 로그인 화면 이동
+  - [ ] 버전 정보 표시
+    - [ ] `package_info_plus`로 버전 조회
+  - [ ] 섹션 구분 (ListTile 그룹)
+
+### 다크 모드 전환
+- [ ] `ThemeNotifier` 구현
+- [ ] `MaterialApp`에서 테마 동적 적용
+- [ ] 설정 변경 시 앱 전체 테마 갱신 확인
+
+### Phase 3 검증
+- [ ] 분석 탭 주간 통계 조회 확인
+- [ ] 차트 인터랙션 동작 확인 (터치, 줌 등)
+- [ ] 다크 모드 토글 → 앱 전체 테마 즉시 적용 확인
+- [ ] 푸시 알림 설정 변경 확인
+- [ ] 로그아웃 → 토큰 삭제 → 로그인 화면 이동 확인
+- [ ] `flutter test` 모든 테스트 통과
+
+---
+
+## Phase 4: 푸시 알림 및 통합 (5주차)
+
+### Firebase 설정
+- [ ] Firebase 프로젝트 생성
+- [ ] Android 설정
+  - [ ] `google-services.json` 추가
+  - [ ] `build.gradle` 설정
+  - [ ] `AndroidManifest.xml` 권한 추가
+- [ ] iOS 설정
+  - [ ] `GoogleService-Info.plist` 추가
+  - [ ] APNs 인증 키 업로드
+  - [ ] `Info.plist` 권한 추가
+  - [ ] Runner 타겟 설정
+
+### FCM 토큰 관리
+- [ ] `DeviceApiClient` (Retrofit) 구현
+  - [ ] `POST /api/v1/devices/register`
+  - [ ] `DELETE /api/v1/devices/unregister`
+- [ ] `FirebaseMessaging.instance.getToken()` — FCM 토큰 발급
+- [ ] 토큰 발급 시 백엔드 등록
+- [ ] 토큰 갱신 시 자동 재등록
+
+### 푸시 알림 처리
+- [ ] 포그라운드 알림 처리
+  - [ ] `flutter_local_notifications` 설정
+  - [ ] 알림 채널 생성 (Android)
+  - [ ] 알림 수신 시 로컬 알림 표시
+- [ ] 백그라운드 알림 처리
+  - [ ] `@pragma('vm:entry-point')` 핸들러 구현
+  - [ ] 백그라운드에서 데이터 동기화
+- [ ] 알림 클릭 처리
+  - [ ] 페이로드 파싱
+  - [ ] 해당 화면 라우팅 (딥 링크)
+  - [ ] 알림 상세 모달 자동 오픈
+- [ ] 알림 권한 요청 UI
+  - [ ] 최초 실행 시 권한 요청 다이얼로그
+  - [ ] 거부 시 설정 유도
+
+### 로컬 캐시 동기화
+- [ ] `NotificationEntity` 테이블 최적화
+  - [ ] 최근 100개만 유지
+  - [ ] 24시간 TTL 기반 자동 정리
+- [ ] `ChatMessageEntity` 테이블 최적화
+  - [ ] 최근 50개만 유지
+- [ ] 오프라인 모드
+  - [ ] 로컬 데이터 우선 조회
+  - [ ] 네트워크 에러 시 캐시 표시
+- [ ] 온라인 복구
+  - [ ] 자동 동기화 트리거
+  - [ ] 변경 사항 병합
+
+### 통합 테스트
+- [ ] 로그인 플로우
+  - [ ] 로그인 → FCM 토큰 등록 → 알림 목록 조회
+- [ ] 알림 플로우
+  - [ ] 알림 수신 → 읽음 처리 → 삭제
+  - [ ] 알림 클릭 → 상세 모달 → 읽음 처리
+- [ ] 채팅 플로우
+  - [ ] 메시지 전송 → SSE 스트리밍 응답 수신
+  - [ ] 오늘 요약 조회 → 캐싱 동작 확인
+- [ ] 푸시 알림 플로우
+  - [ ] 푸시 수신 → 클릭 → 해당 화면 이동
+  - [ ] 포그라운드/백그라운드 알림 수신
+- [ ] 오프라인/온라인 플로우
+  - [ ] 오프라인 → 로컬 캐시 조회
+  - [ ] 온라인 복구 → 자동 동기화
+- [ ] 설정 플로우
+  - [ ] 다크 모드 토글 → 전체 테마 적용
+  - [ ] 푸시 알림 Off → FCM 토큰 삭제
+  - [ ] 로그아웃 → 토큰 삭제 → 로그인 화면
+
+### 실기기 테스트
+- [ ] Android 실기기 테스트
+  - [ ] 푸시 알림 수신 확인 (포그라운드/백그라운드)
+  - [ ] 알림 클릭 → 라우팅 확인
+  - [ ] 오프라인 모드 확인
+- [ ] iOS 실기기 테스트
+  - [ ] 푸시 알림 수신 확인 (포그라운드/백그라운드)
+  - [ ] 알림 클릭 → 라우팅 확인
+  - [ ] 오프라인 모드 확인
+
+### Phase 4 검증
+- [ ] `flutter analyze` 경고 0개
+- [ ] `flutter test` 모든 테스트 통과
+- [ ] `flutter build apk --release` 성공
+- [ ] `flutter build ios --release` 성공 (macOS)
+- [ ] 모든 통합 테스트 시나리오 통과
+- [ ] 실기기 테스트 (Android + iOS) 통과
+
+---
+
+## Phase 5: 코드 품질 및 CI/CD (최종)
+
+### 테스트 커버리지
+- [ ] 단위 테스트 작성
+  - [ ] `NotificationCard` 위젯 테스트
+  - [ ] `GlassCard` 골든 테스트
+  - [ ] `SourceBadge` 위젯 테스트
+  - [ ] Notifier 로직 테스트
+  - [ ] Repository 테스트 (Mock)
+- [ ] 통합 테스트 작성
+  - [ ] 주요 플로우 E2E 테스트
+- [ ] 테스트 커버리지 측정
+  - [ ] `flutter test --coverage`
+  - [ ] 목표: 80% 이상
+
+### 코드 품질 점검
+- [ ] `flutter analyze` 모든 경고 해결
+- [ ] `flutter_lints` 규칙 100% 준수
+- [ ] `riverpod_lint` 규칙 준수
+- [ ] 코드 리뷰 체크리스트 작성
+  - [ ] 네이밍 규칙 준수
+  - [ ] 디자인 시스템 사용 (하드코딩 금지)
+  - [ ] 에러 처리 완전성
+
+### 성능 최적화
+- [ ] 앱 시작 시간 측정
+- [ ] 프레임 드롭 측정 (DevTools)
+- [ ] 이미지 최적화 (압축)
+- [ ] 불필요한 rebuild 제거 (`ConsumerWidget` vs `Consumer`)
+- [ ] 리스트 성능 최적화 (`ListView.builder`)
+
+### 빌드 최적화
+- [ ] ProGuard 설정 (Android)
+  - [ ] `proguard-rules.pro` 작성
+  - [ ] 난독화 테스트
+- [ ] App Bundle 크기 측정
+  - [ ] 목표: 20MB 이하 (Android)
+- [ ] `flutter build apk --release` 최종 확인
+- [ ] `flutter build ios --release` 최종 확인
+
+### CI/CD 설정
+- [ ] GitHub Actions 워크플로우 작성
+  - [ ] `.github/workflows/ci-frontend.yml`
+  - [ ] 트리거: `frontend/**` 변경 시만 실행
+  - [ ] 단계:
+    - [ ] Flutter 설치
+    - [ ] 의존성 설치 (`flutter pub get`)
+    - [ ] 코드 분석 (`flutter analyze`)
+    - [ ] 테스트 실행 (`flutter test`)
+    - [ ] 빌드 (`flutter build apk --debug`)
+- [ ] CI 실행 확인 (PR 생성 시)
+
+### 문서화
+- [ ] README 작성
+  - [ ] 프로젝트 개요
+  - [ ] 환경 세팅 가이드
+  - [ ] 빌드 및 실행 방법
+  - [ ] 폴더 구조 설명
+- [ ] API 문서 연동
+  - [ ] Swagger 엔드포인트 명시
+- [ ] 디자인 시스템 문서 작성
+  - [ ] `AppColors`, `AppTextStyles`, `AppSpacing` 사용법
+
+### 최종 점검
+- [ ] 모든 Phase 체크리스트 완료 확인
+- [ ] 실기기 최종 테스트 (Android + iOS)
+- [ ] 백엔드 통합 테스트 완료
+- [ ] 푸시 알림 End-to-End 테스트 완료
+- [ ] 오프라인 모드 완전 동작 확인
+- [ ] 성능 지표 목표 달성 (프레임 드롭 < 5%)
+- [ ] 보안 체크리스트 완료
+  - [ ] 토큰 안전하게 저장 (`flutter_secure_storage`)
+  - [ ] API 키 노출 방지 (환경변수)
+  - [ ] `.gitignore` 확인
+
+---
+
+## 완료 기준 (Definition of Done)
+
+각 Phase 완료 시:
+- [ ] 해당 Phase의 모든 체크리스트 항목 완료
+- [ ] `flutter analyze` 경고 0개
+- [ ] `flutter test` 모든 테스트 통과
+- [ ] 실기기 동작 확인 (주요 플로우)
+- [ ] 코드 리뷰 완료 (팀원 또는 셀프 리뷰)
+- [ ] Git 커밋 및 PR 생성
+- [ ] CI 통과
+
+MVP 완료 시 (Phase 5 종료):
+- [ ] 모든 Phase 완료 기준 충족
+- [ ] 백엔드와 통합 테스트 완료
+- [ ] 푸시 알림 End-to-End 동작 확인
+- [ ] 프로덕션 빌드 성공 (Android + iOS)
+- [ ] 앱 스토어 제출 준비 완료 (스크린샷, 설명 등)
+
+---
+
+**이제 Phase 0부터 차근차근 시작하세요!** 🚀
