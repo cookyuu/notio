@@ -53,15 +53,12 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
 
-  # Code Generation
-  riverpod_generator: ^2.6.2
-  build_runner: ^2.4.13
-  retrofit_generator: ^9.6.0
-  json_serializable: ^6.8.0
-  drift_dev: ^2.18.0
-  freezed: ^2.5.7
-  custom_lint: 0.7.3
-  riverpod_lint: ^2.6.0
+  # Code Generation - temporarily disabled due to analyzer_plugin compatibility issues
+  # Will use manual implementation instead
+  # riverpod_generator: ^2.6.2
+  # build_runner: ^2.4.13
+  # json_serializable: ^6.8.0
+  # drift_dev: ^2.18.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

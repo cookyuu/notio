@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:notio_app/core/router/app_router.dart';
 import 'package:notio_app/core/theme/app_theme.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 void main() {
+  // Initialize timeago Korean locale
+  timeago.setLocaleMessages('ko', timeago.KoMessages());
+
   runApp(
     const ProviderScope(
       child: NotioApp(),
