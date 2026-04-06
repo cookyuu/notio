@@ -83,4 +83,81 @@ void main() {
       expect(find.byType(GlassCard), findsOneWidget);
     });
   });
+
+  group('GlassCard Golden Tests', () {
+    testWidgets('golden - default parameters', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                height: 100,
+                child: GlassCard(
+                  child: Center(
+                    child: Text('Glass Card'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await expectLater(
+        find.byType(GlassCard),
+        matchesGoldenFile('goldens/glass_card_default.png'),
+      );
+    });
+
+    testWidgets('golden - with padding', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                height: 100,
+                child: GlassCard(
+                  padding: EdgeInsets.all(16),
+                  child: Text('Padded Glass Card'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await expectLater(
+        find.byType(GlassCard),
+        matchesGoldenFile('goldens/glass_card_padded.png'),
+      );
+    });
+
+    testWidgets('golden - without border', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                height: 100,
+                child: GlassCard(
+                  border: false,
+                  child: Center(
+                    child: Text('No Border'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await expectLater(
+        find.byType(GlassCard),
+        matchesGoldenFile('goldens/glass_card_no_border.png'),
+      );
+    });
+  });
 }
