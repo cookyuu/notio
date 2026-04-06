@@ -1,18 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:notio_app/core/router/routes.dart';
+import 'package:notio_app/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:notio_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:notio_app/features/notifications/presentation/notifications_screen.dart';
 import 'package:notio_app/features/chat/presentation/chat_screen.dart';
 import 'package:notio_app/features/analytics/presentation/analytics_screen.dart';
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
 
-/// App router configuration
-class AppRouter {
-  AppRouter._();
+/// App router provider
+final goRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authNotifierProvider);
 
-  static final GoRouter router = GoRouter(
-    initialLocation: Routes.notifications,
+  return GoRouter(
+    initialLocation: Routes.login,
+    redirect: (context, state) {
+      final isAuthenticated = authState.value?.isAuthenticated ?? false;
+      final isLoggingIn = state.matchedLocation == Routes.login;
+
+      // If not authenticated and not on login page, redirect to login
+      if (!isAuthenticated && !isLoggingIn) {
+        return Routes.login;
+      }
+
+      // If authenticated and on login page, redirect to notifications
+      if (isAuthenticated && isLoggingIn) {
+        return Routes.notifications;
+      }
+
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: Routes.login,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: LoginScreen(),
+        ),
+      ),
       ShellRoute(
         builder: (context, state, child) {
           return _MainScaffold(child: child);
@@ -46,7 +71,7 @@ class AppRouter {
       ),
     ],
   );
-}
+});
 
 class _MainScaffold extends StatelessWidget {
   const _MainScaffold({required this.child});
@@ -57,12 +82,14 @@ class _MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
-      bottomNavigationBar: _BottomNavBar(),
+      bottomNavigationBar: const _BottomNavBar(),
     );
   }
 }
 
 class _BottomNavBar extends StatelessWidget {
+  const _BottomNavBar();
+
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();

@@ -11,16 +11,18 @@ void main() {
   );
 }
 
-class NotioApp extends StatelessWidget {
+class NotioApp extends ConsumerWidget {
   const NotioApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(goRouterProvider);
+
     return MaterialApp.router(
       title: 'Notio',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      routerConfig: AppRouter.router,
+      routerConfig: router,
     );
   }
 }

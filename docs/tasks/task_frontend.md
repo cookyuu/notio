@@ -120,20 +120,26 @@
 
 ## Phase 1: 인증 및 알림 탭 (2주차)
 
-**Phase 1 상태**: 미구현 - auth 폴더 및 notifications 데이터 레이어 구현 필요
+**Phase 1 상태**: 인증 기능 구현 완료 (목업 데이터), 알림 탭은 미구현
 
 ### 인증 기능
-- [ ] `AuthEntity` + Drift 테이블 정의
-- [ ] `LoginRequest` / `LoginResponse` DTO 정의
-- [ ] `AuthApiClient` (Retrofit) 구현
-  - [ ] `POST /api/v1/auth/login`
-  - [ ] `POST /api/v1/auth/refresh`
-  - [ ] `POST /api/v1/auth/logout`
-- [ ] `AuthRepository` + `AuthRepositoryImpl` 구현
-  - [ ] 토큰 저장 (`flutter_secure_storage`)
-  - [ ] 자동 로그인 체크
-- [ ] `AuthNotifier` (Riverpod AsyncNotifier) 구현
-- [ ] `LoginScreen` UI 구현 (간단한 폼)
+- [x] `AuthEntity` + Drift 테이블 정의
+- [x] `LoginRequest` / `LoginResponse` DTO 정의
+- [x] `AuthApiClient` (Retrofit) 구현
+  - [x] `POST /api/v1/auth/login`
+  - [x] `POST /api/v1/auth/refresh`
+  - [x] `POST /api/v1/auth/logout`
+- [x] `AuthRepository` + `AuthRepositoryImpl` 구현
+  - [x] 토큰 저장 (`flutter_secure_storage`)
+  - [x] 자동 로그인 체크
+  - [x] 목업 데이터 사용 (백엔드 API 준비 전까지)
+- [x] `AuthNotifier` (Riverpod AsyncNotifier) 구현
+- [x] `LoginScreen` UI 구현 (간단한 폼)
+  - [x] 이메일/비밀번호 입력
+  - [x] 로딩 상태 표시
+  - [x] 에러 메시지 표시
+  - [x] 목업 로그인 안내 표시
+- [x] 라우터 인증 가드 구현 (go_router redirect)
 
 ### 알림 데이터 레이어
 - [ ] `NotificationEntity` + Drift 테이블 정의
