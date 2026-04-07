@@ -36,8 +36,8 @@ class ChatLocalDataSource {
     final companion = _toCompanion(message);
     await _database.insertChatMessage(companion);
 
-    // Clean old messages (keep only recent 50)
-    await _database.cleanOldChatMessages();
+    // Clean old and expired messages (TTL: 72h, max: 50)
+    await _database.cleanupChatMessages();
   }
 
   /// Clear all cached messages

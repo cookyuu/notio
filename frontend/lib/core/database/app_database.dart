@@ -12,13 +12,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(impl.connect());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
+        await _createIndexes();
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
@@ -26,7 +27,33 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(notificationTable);
           await m.createTable(chatMessageTable);
         }
+        if (from < 3) {
+          // Migration from version 2 to 3: Add indexes
+          await _createIndexes();
+        }
       },
+    );
+  }
+
+  /// Create indexes for performance optimization
+  Future<void> _createIndexes() async {
+    // Notification indexes
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_source ON notifications(source)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_source_created_at ON notifications(source, created_at DESC)',
+    );
+
+    // Chat message indexes
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at ASC)',
     );
   }
 
@@ -97,6 +124,25 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  /// Delete notifications older than 24 hours (TTL-based cleanup)
+  Future<int> cleanExpiredNotifications({int ttlHours = 24}) async {
+    final expirationDate = DateTime.now().subtract(Duration(hours: ttlHours));
+    final query = delete(notificationTable)
+      ..where((tbl) => tbl.createdAt.isSmallerThanValue(expirationDate));
+    return await query.go();
+  }
+
+  /// Comprehensive cleanup: Remove both old and expired notifications
+  Future<void> cleanupNotifications({
+    int maxCount = 100,
+    int ttlHours = 24,
+  }) async {
+    // First, remove expired notifications
+    await cleanExpiredNotifications(ttlHours: ttlHours);
+    // Then, limit to max count
+    await cleanOldNotifications();
+  }
+
   /// Get unread count
   Future<int> getUnreadCount() async {
     final query = selectOnly(notificationTable)
@@ -146,5 +192,24 @@ class AppDatabase extends _$AppDatabase {
       await (delete(chatMessageTable)..where((tbl) => tbl.id.isIn(toDelete)))
           .go();
     }
+  }
+
+  /// Delete chat messages older than specified hours (TTL-based cleanup)
+  Future<int> cleanExpiredChatMessages({int ttlHours = 72}) async {
+    final expirationDate = DateTime.now().subtract(Duration(hours: ttlHours));
+    final query = delete(chatMessageTable)
+      ..where((tbl) => tbl.createdAt.isSmallerThanValue(expirationDate));
+    return await query.go();
+  }
+
+  /// Comprehensive cleanup: Remove both old and expired chat messages
+  Future<void> cleanupChatMessages({
+    int maxCount = 50,
+    int ttlHours = 72,
+  }) async {
+    // First, remove expired messages
+    await cleanExpiredChatMessages(ttlHours: ttlHours);
+    // Then, limit to max count
+    await cleanOldChatMessages();
   }
 }

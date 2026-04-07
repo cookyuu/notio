@@ -27,8 +27,8 @@ class NotificationLocalDataSource {
     final companions = notifications.map(_toCompanion).toList();
     await _database.insertNotifications(companions);
 
-    // Clean old notifications (keep only recent 100)
-    await _database.cleanOldNotifications();
+    // Clean old and expired notifications (TTL: 24h, max: 100)
+    await _database.cleanupNotifications();
   }
 
   /// Mark a notification as read
