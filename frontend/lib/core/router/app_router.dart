@@ -5,7 +5,7 @@ import 'package:notio_app/core/router/routes.dart';
 import 'package:notio_app/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:notio_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:notio_app/features/notification/presentation/screens/notifications_screen.dart';
-import 'package:notio_app/features/chat/presentation/chat_screen.dart';
+import 'package:notio_app/features/chat/presentation/screens/chat_screen.dart';
 import 'package:notio_app/features/analytics/presentation/analytics_screen.dart';
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
 

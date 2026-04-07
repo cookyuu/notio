@@ -80,6 +80,31 @@ class AppTextStyles {
     letterSpacing: 0.25,
   );
 
+  // Title
+  static const TextStyle titleLarge = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    height: 1.3,
+    color: AppColors.textPrimary,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle titleMedium = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+    color: AppColors.textPrimary,
+    letterSpacing: 0.15,
+  );
+
+  static const TextStyle titleSmall = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+    color: AppColors.textPrimary,
+    letterSpacing: 0.1,
+  );
+
   // Label
   static const TextStyle labelLarge = TextStyle(
     fontSize: 14,
