@@ -1,19 +1,15 @@
-import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:drift/web.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:notio_app/core/database/tables/notification_table.dart';
 import 'package:notio_app/core/database/tables/chat_message_table.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'connection/connection.dart' as impl;
 
 part 'app_database.g.dart';
 
 /// Main database class for the app
 @DriftDatabase(tables: [NotificationTable, ChatMessageTable])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(impl.connect());
 
   @override
   int get schemaVersion => 2;
@@ -151,18 +147,4 @@ class AppDatabase extends _$AppDatabase {
           .go();
     }
   }
-}
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    if (kIsWeb) {
-      // Web: Use WebDatabase (IndexedDB)
-      return WebDatabase('notio_db');
-    } else {
-      // Native: Use NativeDatabase (SQLite)
-      final dbFolder = await getApplicationDocumentsDirectory();
-      final file = File(p.join(dbFolder.path, 'notio.db'));
-      return NativeDatabase(file);
-    }
-  });
 }

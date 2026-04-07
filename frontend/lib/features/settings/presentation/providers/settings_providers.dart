@@ -6,16 +6,14 @@ import 'package:notio_app/features/settings/presentation/providers/settings_noti
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Provider for SharedPreferences
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async {
-  return await SharedPreferences.getInstance();
+/// This will be overridden in main.dart with the actual instance
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError('sharedPreferencesProvider must be overridden');
 });
 
 /// Provider for settings repository
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider).value;
-  if (prefs == null) {
-    throw Exception('SharedPreferences not initialized');
-  }
+  final prefs = ref.watch(sharedPreferencesProvider);
   return SettingsRepositoryImpl(prefs: prefs);
 });
 

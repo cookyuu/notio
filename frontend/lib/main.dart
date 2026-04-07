@@ -3,15 +3,24 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:notio_app/core/router/app_router.dart';
 import 'package:notio_app/core/theme/app_theme.dart';
 import 'package:notio_app/features/settings/presentation/providers/settings_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   // Initialize timeago Korean locale
   timeago.setLocaleMessages('ko', timeago.KoMessages());
 
+  // Initialize SharedPreferences
+  final sharedPreferences = await SharedPreferences.getInstance();
+
   runApp(
-    const ProviderScope(
-      child: NotioApp(),
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      ],
+      child: const NotioApp(),
     ),
   );
 }
