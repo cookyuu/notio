@@ -111,4 +111,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
     await _localDataSource.cacheNotifications(models);
   }
+
+  @override
+  Future<void> clearCache() async {
+    await _localDataSource.clearCache();
+  }
 }

@@ -8,6 +8,7 @@ import 'package:notio_app/features/notification/presentation/screens/notificatio
 import 'package:notio_app/features/chat/presentation/screens/chat_screen.dart';
 import 'package:notio_app/features/analytics/presentation/analytics_screen.dart';
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
+import 'package:notio_app/features/developer/presentation/developer_menu_screen.dart';
 
 /// App router provider
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -36,6 +37,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.login,
         pageBuilder: (context, state) => const NoTransitionPage(
           child: LoginScreen(),
+        ),
+      ),
+      GoRoute(
+        path: Routes.developer,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: DeveloperMenuScreen(),
         ),
       ),
       ShellRoute(

@@ -1,49 +1,75 @@
-import 'package:notio_app/features/chat/domain/entities/chat_message_entity.dart';
+import 'package:drift/drift.dart';
+import 'package:notio_app/core/database/app_database.dart';
+import 'package:notio_app/features/chat/data/models/chat_message_model.dart';
 
-/// Local data source for chat messages (in-memory cache)
-/// TODO: Replace with Drift database in Phase 4
+/// Drift-based local data source for chat messages
 class ChatLocalDataSource {
-  // In-memory cache for chat messages (최근 50개만 유지)
-  final List<ChatMessageEntity> _messages = [];
-  static const int maxMessages = 50;
+  final AppDatabase _database;
 
-  /// Get cached messages
-  List<ChatMessageEntity> getCachedMessages() {
-    return List.unmodifiable(_messages);
+  ChatLocalDataSource(this._database);
+
+  /// Get all cached chat messages
+  Future<List<ChatMessageModel>> getCachedMessages({int limit = 50}) async {
+    final messages = await _database.getAllChatMessages(limit: limit);
+    return messages.map(_toModel).toList();
   }
 
   /// Cache messages (keeps only the most recent 50)
-  void cacheMessages(List<ChatMessageEntity> messages) {
-    _messages.clear();
+  Future<void> cacheMessages(List<ChatMessageModel> messages) async {
+    // Clear existing messages
+    await _database.deleteAllChatMessages();
 
     // Sort by createdAt descending (newest first)
-    final sortedMessages = List<ChatMessageEntity>.from(messages)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final sortedMessages = List<ChatMessageModel>.from(messages)
+      ..sort((a, b) => DateTime.parse(b.createdAt).compareTo(DateTime.parse(a.createdAt)));
 
-    // Keep only the most recent maxMessages
-    final messagesToCache = sortedMessages.take(maxMessages).toList();
+    // Keep only the most recent 50
+    final messagesToCache = sortedMessages.take(50).toList();
 
-    // Reverse to get chronological order (oldest first)
-    _messages.addAll(messagesToCache.reversed);
+    // Convert to companions and insert
+    final companions = messagesToCache.map(_toCompanion).toList();
+    await _database.insertChatMessages(companions);
   }
 
   /// Add a single message to cache
-  void addMessage(ChatMessageEntity message) {
-    _messages.add(message);
+  Future<void> addMessage(ChatMessageModel message) async {
+    final companion = _toCompanion(message);
+    await _database.insertChatMessage(companion);
 
-    // Remove oldest message if exceeds limit
-    if (_messages.length > maxMessages) {
-      _messages.removeAt(0);
-    }
+    // Clean old messages (keep only recent 50)
+    await _database.cleanOldChatMessages();
   }
 
   /// Clear all cached messages
-  void clearCache() {
-    _messages.clear();
+  Future<void> clearCache() async {
+    await _database.deleteAllChatMessages();
   }
 
   /// Get message count
-  int getMessageCount() {
-    return _messages.length;
+  Future<int> getMessageCount() async {
+    final messages = await _database.getAllChatMessages(limit: 1000);
+    return messages.length;
+  }
+
+  // ========== Conversion Methods ==========
+
+  /// Convert Drift data to ChatMessageModel
+  ChatMessageModel _toModel(ChatMessageTableData data) {
+    return ChatMessageModel(
+      id: data.id,
+      role: data.role,
+      content: data.content,
+      createdAt: data.createdAt.toIso8601String(),
+    );
+  }
+
+  /// Convert ChatMessageModel to Drift companion
+  ChatMessageTableCompanion _toCompanion(ChatMessageModel model) {
+    return ChatMessageTableCompanion(
+      id: Value(model.id),
+      role: Value(model.role),
+      content: Value(model.content),
+      createdAt: Value(DateTime.parse(model.createdAt)),
+    );
   }
 }

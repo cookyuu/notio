@@ -1,93 +1,104 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+import 'package:notio_app/core/database/app_database.dart';
 import 'package:notio_app/features/notification/data/model/notification_model.dart';
 
-/// Simple in-memory local data source for notifications
-/// TODO: Replace with Drift implementation once build_runner compatibility is resolved
+/// Drift-based local data source for notifications
 class NotificationLocalDataSource {
-  final Map<int, NotificationModel> _cache = {};
+  final AppDatabase _database;
+
+  NotificationLocalDataSource(this._database);
 
   /// Get all cached notifications, optionally filtered by source
   Future<List<NotificationModel>> getCachedNotifications({
     String? source,
   }) async {
-    var notifications = _cache.values.toList();
+    final notifications = await _database.getAllNotifications(
+      source: source,
+      limit: 100,
+    );
 
-    if (source != null) {
-      notifications = notifications.where((n) => n.source == source).toList();
-    }
-
-    notifications.sort((a, b) {
-      return DateTime.parse(b.createdAt).compareTo(DateTime.parse(a.createdAt));
-    });
-
-    return notifications;
+    return notifications.map(_toModel).toList();
   }
 
   /// Save notifications to cache
   Future<void> cacheNotifications(List<NotificationModel> notifications) async {
-    for (final notification in notifications) {
-      _cache[notification.id] = notification;
-    }
+    final companions = notifications.map(_toCompanion).toList();
+    await _database.insertNotifications(companions);
+
+    // Clean old notifications (keep only recent 100)
+    await _database.cleanOldNotifications();
   }
 
   /// Mark a notification as read
   Future<void> markAsRead(int notificationId) async {
-    final notification = _cache[notificationId];
-    if (notification != null) {
-      _cache[notificationId] = NotificationModel(
-        id: notification.id,
-        source: notification.source,
-        title: notification.title,
-        body: notification.body,
-        priority: notification.priority,
-        isRead: true,
-        createdAt: notification.createdAt,
-        externalId: notification.externalId,
-        externalUrl: notification.externalUrl,
-        metadata: notification.metadata,
-      );
-    }
+    await _database.markNotificationAsRead(notificationId);
   }
 
   /// Mark all notifications as read
   Future<void> markAllAsRead() async {
-    final updatedCache = <int, NotificationModel>{};
-
-    for (final entry in _cache.entries) {
-      updatedCache[entry.key] = NotificationModel(
-        id: entry.value.id,
-        source: entry.value.source,
-        title: entry.value.title,
-        body: entry.value.body,
-        priority: entry.value.priority,
-        isRead: true,
-        createdAt: entry.value.createdAt,
-        externalId: entry.value.externalId,
-        externalUrl: entry.value.externalUrl,
-        metadata: entry.value.metadata,
-      );
-    }
-
-    _cache.clear();
-    _cache.addAll(updatedCache);
+    await _database.markAllNotificationsAsRead();
   }
 
   /// Get notification by ID
   Future<NotificationModel?> getNotificationById(int id) async {
-    return _cache[id];
+    final notification = await _database.getNotificationById(id);
+    return notification != null ? _toModel(notification) : null;
   }
 
   /// Delete a notification
   Future<void> deleteNotification(int id) async {
-    _cache.remove(id);
+    await _database.deleteNotification(id);
   }
 
   /// Get unread count
   Future<int> getUnreadCount() async {
-    return _cache.values.where((n) => !n.isRead).length;
+    return await _database.getUnreadCount();
   }
 
   /// Clear all cached notifications
   Future<void> clearCache() async {
-    _cache.clear();
+    // Delete all by getting all IDs and deleting them
+    final all = await _database.getAllNotifications(limit: 1000);
+    for (final notification in all) {
+      await _database.deleteNotification(notification.id);
+    }
+  }
+
+  // ========== Conversion Methods ==========
+
+  /// Convert Drift data to NotificationModel
+  NotificationModel _toModel(NotificationTableData data) {
+    return NotificationModel(
+      id: data.id,
+      source: data.source,
+      title: data.title,
+      body: data.body,
+      priority: data.priority,
+      isRead: data.isRead,
+      createdAt: data.createdAt.toIso8601String(),
+      externalId: data.externalId,
+      externalUrl: data.externalUrl,
+      metadata: data.metadata != null
+          ? json.decode(data.metadata!) as Map<String, dynamic>
+          : null,
+    );
+  }
+
+  /// Convert NotificationModel to Drift companion
+  NotificationTableCompanion _toCompanion(NotificationModel model) {
+    return NotificationTableCompanion(
+      id: Value(model.id),
+      source: Value(model.source),
+      title: Value(model.title),
+      body: Value(model.body),
+      priority: Value(model.priority),
+      isRead: Value(model.isRead),
+      createdAt: Value(DateTime.parse(model.createdAt)),
+      externalId: Value(model.externalId),
+      externalUrl: Value(model.externalUrl),
+      metadata: Value(model.metadata != null ? json.encode(model.metadata) : null),
+    );
   }
 }

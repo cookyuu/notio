@@ -32,4 +32,7 @@ abstract class NotificationRepository {
 
   /// Save notifications to local cache
   Future<void> cacheNotifications(List<NotificationEntity> notifications);
+
+  /// Clear all cached notifications
+  Future<void> clearCache();
 }

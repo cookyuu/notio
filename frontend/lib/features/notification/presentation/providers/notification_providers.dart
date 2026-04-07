@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:notio_app/core/database/database_providers.dart';
 import 'package:notio_app/core/network/dio_client.dart';
 import 'package:notio_app/features/notification/data/datasource/notification_local_datasource.dart';
 import 'package:notio_app/features/notification/data/datasource/notification_remote_datasource.dart';
@@ -22,10 +23,11 @@ final notificationRemoteDataSourceProvider =
   return NotificationRemoteDataSource(dio);
 });
 
-/// Local DataSource Provider
+/// Local DataSource Provider (Drift-based)
 final notificationLocalDataSourceProvider =
     Provider<NotificationLocalDataSource>((ref) {
-  return NotificationLocalDataSource();
+  final database = ref.watch(appDatabaseProvider);
+  return NotificationLocalDataSource(database);
 });
 
 /// Repository Provider

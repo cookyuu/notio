@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/constants/notification_source.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
@@ -53,6 +54,11 @@ class SettingsScreen extends ConsumerWidget {
           // About Section
           _buildSectionHeader('정보'),
           _buildVersionInfo(),
+          const Divider(height: 32, color: AppColors.divider),
+
+          // Developer Section
+          _buildSectionHeader('개발자'),
+          _buildDeveloperMenuButton(context),
         ],
       ),
     );
@@ -312,11 +318,44 @@ class SettingsScreen extends ConsumerWidget {
           style: AppTextStyles.bodyLarge,
         ),
         subtitle: Text(
-          'v1.0.0 (Phase 3)',
+          'v1.0.0 (Phase 4A)',
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.textSecondary,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDeveloperMenuButton(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.s12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: ListTile(
+        leading: const Icon(
+          Icons.code,
+          color: AppColors.primary,
+        ),
+        title: const Text(
+          '개발자 메뉴',
+          style: AppTextStyles.bodyLarge,
+        ),
+        subtitle: Text(
+          '테스트 및 디버깅 도구',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: AppColors.textSecondary,
+        ),
+        onTap: () {
+          context.push('/developer');
+        },
       ),
     );
   }

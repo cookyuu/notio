@@ -160,6 +160,26 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     if (!state.hasMore || state.isLoading) return;
     await fetchNotifications();
   }
+
+  /// Add test notification (for developer menu)
+  void addTestNotification(NotificationEntity notification) {
+    final updatedNotifications = [notification, ...state.notifications];
+    state = state.copyWith(notifications: updatedNotifications);
+  }
+
+  /// Clear cache (for developer menu)
+  Future<void> clearCache() async {
+    try {
+      await _repository.clearCache();
+      state = state.copyWith(
+        notifications: [],
+        page: 0,
+        hasMore: true,
+      );
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
 }
 
 /// Notifications Provider

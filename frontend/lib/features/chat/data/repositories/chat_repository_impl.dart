@@ -1,5 +1,6 @@
 import 'package:notio_app/features/chat/data/datasources/chat_local_datasource.dart';
 import 'package:notio_app/features/chat/data/datasources/chat_remote_datasource.dart';
+import 'package:notio_app/features/chat/data/models/chat_message_model.dart';
 import 'package:notio_app/features/chat/data/models/chat_request.dart';
 import 'package:notio_app/features/chat/data/models/daily_summary_model.dart';
 import 'package:notio_app/features/chat/domain/entities/chat_message_entity.dart';
@@ -29,7 +30,8 @@ class ChatRepositoryImpl implements ChatRepository {
       );
 
       // Add user message to cache
-      _localDataSource.addMessage(userMessage);
+      final userModel = ChatMessageModel.fromEntity(userMessage);
+      await _localDataSource.addMessage(userModel);
 
       // Send to remote and get AI response
       final request = ChatRequest(content: content);
@@ -37,7 +39,7 @@ class ChatRepositoryImpl implements ChatRepository {
       final aiMessage = responseModel.toEntity();
 
       // Add AI response to cache
-      _localDataSource.addMessage(aiMessage);
+      await _localDataSource.addMessage(responseModel);
 
       return aiMessage;
     } catch (e) {
@@ -66,14 +68,15 @@ class ChatRepositoryImpl implements ChatRepository {
 
       // Cache the results on first page
       if (page == 0) {
-        _localDataSource.cacheMessages(entities);
+        await _localDataSource.cacheMessages(models);
       }
 
       return entities;
     } catch (e) {
       // On error, return from cache if available
       if (page == 0) {
-        return _localDataSource.getCachedMessages();
+        final cachedModels = await _localDataSource.getCachedMessages();
+        return cachedModels.map((model) => model.toEntity()).toList();
       }
       rethrow;
     }
@@ -87,17 +90,21 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   List<ChatMessageEntity> getCachedMessages() {
-    return _localDataSource.getCachedMessages();
+    // Note: This is now async, but interface expects sync
+    // We'll need to update this in the interface later
+    throw UnimplementedError('Use fetchHistory instead');
   }
 
   @override
   void cacheMessages(List<ChatMessageEntity> messages) {
-    _localDataSource.cacheMessages(messages);
+    final models = messages.map(ChatMessageModel.fromEntity).toList();
+    _localDataSource.cacheMessages(models);
   }
 
   @override
   void addMessageToCache(ChatMessageEntity message) {
-    _localDataSource.addMessage(message);
+    final model = ChatMessageModel.fromEntity(message);
+    _localDataSource.addMessage(model);
   }
 
   @override
