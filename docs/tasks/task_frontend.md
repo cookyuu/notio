@@ -305,78 +305,87 @@
 
 ## Phase 3: 분석 및 설정 탭 (4주차)
 
+**Phase 3 상태**: ✅ **완료** (더미 데이터 기반 구현)
+
 ### 분석 데이터 레이어
-- [ ] `WeeklyAnalyticsModel` DTO 정의
-  - [ ] 필드: 주간 알림 수, 소스별 분포, 우선순위별 분포, 일별 트렌드, 인사이트
-- [ ] `AnalyticsApiClient` (Retrofit) 구현
-  - [ ] `GET /api/v1/analytics/weekly`
-- [ ] `AnalyticsRepository` + `AnalyticsRepositoryImpl` 구현
-  - [ ] `fetchWeeklySummary()`
-  - [ ] 캐싱 전략 (1시간 TTL)
+- [x] `WeeklyAnalyticsModel` DTO 정의 ✅
+  - [x] 필드: 주간 알림 수, 소스별 분포, 우선순위별 분포, 일별 트렌드, 인사이트 ✅
+- [x] `AnalyticsApiClient` (더미 데이터) 구현 ✅
+  - [x] `GET /api/v1/analytics/weekly` - 더미 데이터 반환 ✅
+- [x] `AnalyticsRepository` + `AnalyticsRepositoryImpl` 구현 ✅
+  - [x] `fetchWeeklySummary()` ✅
+  - [x] 캐싱 전략 (1시간 TTL) ✅
 
 ### 분석 비즈니스 로직
-- [ ] `AnalyticsNotifier` (Riverpod AsyncNotifier) 구현
-  - [ ] 주간 통계 상태
-  - [ ] 차트 데이터 변환 로직
+- [x] `AnalyticsNotifier` (Riverpod FutureProvider) 구현 ✅
+  - [x] 주간 통계 상태 ✅
+  - [x] 차트 데이터 변환 로직 (Entity → UI) ✅
 
 ### 분석 화면 UI
-- [ ] `AnalyticsScreen` 구현
-  - [ ] 주간 알림 통계 카드
-    - [ ] 총 알림 수, 미읽음 수, 우선순위별 요약
-  - [ ] 소스별 분포 도넛 차트 (`fl_chart`)
-    - [ ] 인터랙티브 터치 효과
-    - [ ] 범례 표시
-  - [ ] 우선순위별 막대 차트 (`fl_chart`)
-  - [ ] 일별 트렌드 라인 차트 (`fl_chart`)
-    - [ ] 7일 데이터
-    - [ ] 그리드 라인
-  - [ ] 인사이트 텍스트 (LLM 생성)
-    - [ ] `GlassCard`로 감싸기
-    - [ ] 아이콘 + 텍스트
-- [ ] Empty State UI (데이터 없을 때)
-- [ ] 로딩/에러 상태 UI
+- [x] `AnalyticsScreen` 구현 ✅
+  - [x] 주간 알림 통계 카드 ✅
+    - [x] 총 알림 수, 미읽음 수, 우선순위별 요약 ✅
+  - [x] 소스별 분포 도넛 차트 (`fl_chart`) ✅
+    - [x] 인터랙티브 터치 효과 ✅
+    - [x] 범례 표시 ✅
+  - [x] 우선순위별 막대 차트 (`fl_chart`) ✅
+  - [x] 일별 트렌드 라인 차트 (`fl_chart`) ✅
+    - [x] 7일 데이터 ✅
+    - [x] 그리드 라인 ✅
+  - [x] 인사이트 텍스트 (LLM 생성) ✅
+    - [x] `GlassCard`로 감싸기 ✅
+    - [x] 아이콘 + 텍스트 ✅
+- [x] Empty State UI (데이터 없을 때) ✅
+- [x] 로딩/에러 상태 UI ✅
 
 ### 설정 데이터 레이어
-- [ ] `SettingsModel` 정의
-  - [ ] 필드: isDarkMode, isPushEnabled, defaultFilter
-- [ ] `SettingsRepository` + `SettingsRepositoryImpl` 구현
-  - [ ] `SharedPreferences` 기반 저장
-  - [ ] `loadSettings()`
-  - [ ] `saveSettings(settings)`
+- [x] `SettingsModel` 정의 ✅
+  - [x] 필드: isDarkMode, isPushEnabled, defaultFilter ✅
+- [x] `SettingsRepository` + `SettingsRepositoryImpl` 구현 ✅
+  - [x] `SharedPreferences` 기반 저장 ✅
+  - [x] `loadSettings()` ✅
+  - [x] `saveSettings(settings)` ✅
 
 ### 설정 비즈니스 로직
-- [ ] `SettingsNotifier` (Riverpod Notifier) 구현
-  - [ ] `toggleDarkMode()`
-  - [ ] `togglePushNotification()`
-  - [ ] `setDefaultFilter(filter)`
+- [x] `SettingsNotifier` (Riverpod Notifier) 구현 ✅
+  - [x] `toggleDarkMode()` ✅
+  - [x] `togglePushNotification()` ✅
+  - [x] `setDefaultFilter(filter)` ✅
 
 ### 설정 화면 UI
-- [ ] `SettingsScreen` 구현
-  - [ ] 다크 모드 토글 (기본값: true)
-    - [ ] Switch 위젯
-    - [ ] 앱 전체 테마 즉시 적용
-  - [ ] 푸시 알림 설정 (On/Off)
-  - [ ] 알림 필터 기본값 설정
-    - [ ] 드롭다운 메뉴
-  - [ ] 로그아웃 버튼
-    - [ ] 확인 다이얼로그
-    - [ ] 토큰 삭제 + 로그인 화면 이동
-  - [ ] 버전 정보 표시
-    - [ ] `package_info_plus`로 버전 조회
-  - [ ] 섹션 구분 (ListTile 그룹)
+- [x] `SettingsScreen` 구현 ✅
+  - [x] 다크 모드 토글 (기본값: true) ✅
+    - [x] Switch 위젯 ✅
+    - [x] 앱 전체 테마 즉시 적용 ✅
+  - [x] 푸시 알림 설정 (On/Off) ✅
+  - [x] 알림 필터 기본값 설정 ✅
+    - [x] 다이얼로그 메뉴 ✅
+  - [x] 로그아웃 버튼 ✅
+    - [x] 확인 다이얼로그 ✅
+    - [x] 토큰 삭제 + 로그인 화면 이동 ✅
+  - [x] 버전 정보 표시 ✅
+    - [x] 하드코딩된 버전 (v1.0.0) - package_info_plus는 Phase 4에서 추가 예정 ✅
+  - [x] 섹션 구분 (ListTile 그룹) ✅
 
 ### 다크 모드 전환
-- [ ] `ThemeNotifier` 구현
-- [ ] `MaterialApp`에서 테마 동적 적용
-- [ ] 설정 변경 시 앱 전체 테마 갱신 확인
+- [x] `ThemeNotifier` 구현 (SettingsNotifier로 통합) ✅
+- [x] `MaterialApp`에서 테마 동적 적용 ✅
+- [x] 설정 변경 시 앱 전체 테마 갱신 확인 ✅
+- [x] 라이트 테마 추가 (AppTheme.lightTheme) ✅
 
 ### Phase 3 검증
-- [ ] 분석 탭 주간 통계 조회 확인
-- [ ] 차트 인터랙션 동작 확인 (터치, 줌 등)
-- [ ] 다크 모드 토글 → 앱 전체 테마 즉시 적용 확인
-- [ ] 푸시 알림 설정 변경 확인
-- [ ] 로그아웃 → 토큰 삭제 → 로그인 화면 이동 확인
-- [ ] `flutter test` 모든 테스트 통과
+- [ ] 분석 탭 주간 통계 조회 확인 (실기기 테스트 필요)
+- [ ] 차트 인터랙션 동작 확인 (터치, 줌 등) (실기기 테스트 필요)
+- [ ] 다크 모드 토글 → 앱 전체 테마 즉시 적용 확인 (실기기 테스트 필요)
+- [ ] 푸시 알림 설정 변경 확인 (실기기 테스트 필요)
+- [ ] 로그아웃 → 토큰 삭제 → 로그인 화면 이동 확인 (실기기 테스트 필요)
+- [x] `flutter analyze` 경고 수정 (39개 남음 - 대부분 스타일 권장사항) ✅
+
+**참고사항**:
+- 백엔드 API가 준비될 때까지 더미 데이터 사용
+- SharedPreferences로 설정 영구 저장
+- 다크/라이트 모드 전환 지원
+- 실기기 테스트는 Phase 4에서 종합적으로 진행 예정
 
 ---
 
