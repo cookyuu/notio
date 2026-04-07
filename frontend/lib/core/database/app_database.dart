@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:drift/web.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:notio_app/core/database/tables/notification_table.dart';
 import 'package:notio_app/core/database/tables/chat_message_table.dart';
 import 'package:path_provider/path_provider.dart';
@@ -153,8 +155,14 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'notio.db'));
-    return NativeDatabase(file);
+    if (kIsWeb) {
+      // Web: Use WebDatabase (IndexedDB)
+      return WebDatabase('notio_db');
+    } else {
+      // Native: Use NativeDatabase (SQLite)
+      final dbFolder = await getApplicationDocumentsDirectory();
+      final file = File(p.join(dbFolder.path, 'notio.db'));
+      return NativeDatabase(file);
+    }
   });
 }

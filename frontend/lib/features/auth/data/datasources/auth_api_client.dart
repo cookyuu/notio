@@ -1,23 +1,33 @@
 import 'package:dio/dio.dart';
-import 'package:retrofit/retrofit.dart';
 import 'package:notio_app/features/auth/data/models/login_request.dart';
 import 'package:notio_app/features/auth/data/models/login_response.dart';
 import 'package:notio_app/features/auth/data/models/refresh_token_response.dart';
 
-part 'auth_api_client.g.dart';
+/// Manual implementation of AuthApiClient (without retrofit)
+class AuthApiClient {
+  final Dio _dio;
+  final String _baseUrl;
 
-@RestApi()
-abstract class AuthApiClient {
-  factory AuthApiClient(Dio dio, {String baseUrl}) = _AuthApiClient;
+  AuthApiClient(this._dio, {String? baseUrl})
+      : _baseUrl = baseUrl ?? 'http://localhost:8080';
 
-  @POST('/api/v1/auth/login')
-  Future<LoginResponse> login(@Body() LoginRequest request);
+  Future<LoginResponse> login(LoginRequest request) async {
+    final response = await _dio.post(
+      '$_baseUrl/api/v1/auth/login',
+      data: request.toJson(),
+    );
+    return LoginResponse.fromJson(response.data as Map<String, dynamic>);
+  }
 
-  @POST('/api/v1/auth/refresh')
-  Future<RefreshTokenResponse> refreshToken(
-    @Body() Map<String, dynamic> body,
-  );
+  Future<RefreshTokenResponse> refreshToken(Map<String, dynamic> body) async {
+    final response = await _dio.post(
+      '$_baseUrl/api/v1/auth/refresh',
+      data: body,
+    );
+    return RefreshTokenResponse.fromJson(response.data as Map<String, dynamic>);
+  }
 
-  @POST('/api/v1/auth/logout')
-  Future<void> logout();
+  Future<void> logout() async {
+    await _dio.post('$_baseUrl/api/v1/auth/logout');
+  }
 }
