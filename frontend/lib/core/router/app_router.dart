@@ -8,7 +8,7 @@ import 'package:notio_app/features/notification/presentation/screens/notificatio
 import 'package:notio_app/features/chat/presentation/screens/chat_screen.dart';
 import 'package:notio_app/features/analytics/presentation/analytics_screen.dart';
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
-import 'package:notio_app/features/developer/presentation/developer_menu_screen.dart';
+import 'package:notio_app/features/settings/presentation/screens/developer_menu_screen.dart';
 
 /// App router provider
 final goRouterProvider = Provider<GoRouter>((ref) {

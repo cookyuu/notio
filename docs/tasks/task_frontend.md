@@ -202,10 +202,12 @@
 - [x] 스와이프 동작 (`flutter_slidable`) ✅
   - [x] 오른쪽 스와이프 → 읽음 처리 / 삭제
   - [ ] 왼쪽 스와이프 → 할일 생성 (Phase 2에서 연동)
-- [ ] 상세 모달 (알림 클릭 시) - TODO 주석으로 표시
-  - [ ] 전체 내용 표시
-  - [ ] 읽음 처리 자동 (탭 시 markAsRead 구현됨)
-  - [ ] 관련 링크 렌더링
+- [x] 상세 모달 (알림 클릭 시) ✅
+  - [x] DraggableScrollableSheet 기반 모달
+  - [x] 전체 내용 표시 (제목, 본문, 우선순위, 메타데이터)
+  - [x] 읽음 처리 자동화 (모달 열릴 때)
+  - [x] 관련 링크 렌더링 (url_launcher)
+  - [x] 복사 버튼, 닫기 버튼
 - [x] Empty State UI (알림 없을 때) ✅
 - [x] 로딩/에러 상태 UI ✅
 
@@ -389,7 +391,89 @@
 
 ---
 
-## Phase 4: 푸시 알림 및 통합 (5주차)
+## Phase 4A: 로컬 알림 시스템 + Drift (목업)
+
+**Phase 4A 상태**: ✅ **완료** (Drift 기반 구축 + 로컬 알림 시스템 + 개발자 메뉴)
+
+### Drift 로컬 DB 완전 구현
+- [x] `NotificationTable` 스키마 정의 ✅
+  - [x] 필드: id, source, title, body, priority, isRead, createdAt, externalId, externalUrl, metadata
+- [x] `ChatMessageTable` 스키마 정의 ✅
+  - [x] 필드: id, role, content, createdAt
+- [x] AppDatabase 업데이트 (schemaVersion 3) ✅
+- [x] build_runner로 코드 생성 ✅
+- [x] 기본 쿼리 메서드 구현 ✅
+  - [x] getAllNotifications, getNotificationById
+  - [x] upsertNotification, insertNotifications
+  - [x] markAsRead, markAllAsRead, deleteNotification
+  - [x] cleanOldNotifications (최근 100개 유지)
+  - [x] getUnreadCount
+  - [x] getAllChatMessages, insertChatMessage
+  - [x] cleanOldChatMessages (최근 50개 유지)
+- [x] AppDatabase Provider 생성 ✅
+- [x] NotificationLocalDataSource를 Drift 기반으로 마이그레이션 ✅
+- [x] ChatLocalDataSource를 Drift 기반으로 마이그레이션 ✅
+
+### 로컬 알림 시스템
+- [x] flutter_local_notifications 초기 설정 ✅
+  - [x] Android 알림 채널 생성 (URGENT, DEFAULT, LOW)
+  - [x] iOS 권한 설정
+  - [x] 알림 권한 요청 메서드
+- [x] LocalNotificationService 구현 ✅
+  - [x] 초기화 및 알림 채널 생성
+  - [x] showNotification 메서드 (우선순위별, 소스별)
+  - [x] 알림 취소 메서드
+  - [x] 활성 알림 조회 (Android)
+- [x] 개발자 메뉴 화면 구현 ✅
+  - [x] "테스트 알림 보내기" 버튼 (4가지 시나리오)
+  - [x] 다양한 시나리오 시뮬레이션 (소스별, 우선순위별)
+  - [x] 알림 전체 취소 버튼
+  - [x] 권한 요청 버튼
+  - [x] 활성 알림 보기 버튼
+- [x] 설정 화면에 개발자 메뉴 버튼 추가 ✅
+- [x] AndroidManifest 권한 추가 (POST_NOTIFICATIONS, VIBRATE) ✅
+
+### 딥 링크 및 라우팅
+- [x] 알림 클릭 핸들러 구현 ✅
+  - [x] onNotificationTapped 콜백 설정
+  - [x] NotificationPayload 모델 정의
+  - [x] 알림 탭 시 /notifications로 라우팅
+- [x] 알림 상세 모달 UI ✅
+  - [x] DraggableScrollableSheet 기반 모달
+  - [x] 전체 내용 표시 (제목, 본문, 메타데이터)
+  - [x] 읽음 처리 자동화
+  - [x] 관련 링크 렌더링 (url_launcher)
+  - [x] 복사 버튼, 닫기 버튼
+  - [x] 우선순위 표시
+- [x] NotificationsScreen에서 모달 표시 연동 ✅
+
+### 오프라인/온라인 모드
+- [ ] 네트워크 상태 감지
+- [ ] 로컬 우선 조회 로직 강화
+- [ ] 온라인 복구 시 자동 동기화
+- [ ] 동기화 상태 UI 표시
+
+### Phase 4A 검증
+- [x] build_runner 실행 성공 ✅
+- [x] flutter analyze (48개 이슈 - 스타일 권장사항, 에러 0개) ✅
+- [x] flutter test 모든 테스트 통과 (21/21) ✅
+- [x] Drift 쿼리 메서드 구현 완료 ✅
+- [x] 로컬 알림 시스템 구현 완료 ✅
+- [x] 알림 상세 모달 구현 완료 ✅
+- [x] 개발자 메뉴 구현 완료 ✅
+- [ ] 실기기 테스트 (로컬 알림 발송, 딥 링크 라우팅)
+- [ ] 오프라인 모드 테스트
+
+**참고사항**:
+- Drift SQLite 기반 구조 완료
+- 로컬 알림 시스템 완전 구현
+- 개발자 메뉴에서 다양한 테스트 알림 발송 가능
+- 알림 상세 모달 자동 읽음 처리 구현
+- Firebase FCM은 Phase 4B에서 진행
+
+---
+
+## Phase 4B: Firebase FCM 연동 (추후)
 
 ### Firebase 설정
 - [ ] Firebase 프로젝트 생성

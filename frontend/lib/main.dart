@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:notio_app/core/router/app_router.dart';
+import 'package:notio_app/core/services/local_notification_service.dart';
 import 'package:notio_app/core/theme/app_theme.dart';
 import 'package:notio_app/features/settings/presentation/providers/settings_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,21 +16,65 @@ Future<void> main() async {
   // Initialize SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
 
+  // Initialize Local Notifications
+  final localNotificationService = LocalNotificationService();
+  await localNotificationService.initialize();
+
   runApp(
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+        localNotificationServiceProvider
+            .overrideWithValue(localNotificationService),
       ],
       child: const NotioApp(),
     ),
   );
 }
 
-class NotioApp extends ConsumerWidget {
+/// Provider for LocalNotificationService
+final localNotificationServiceProvider =
+    Provider<LocalNotificationService>((ref) {
+  throw UnimplementedError('localNotificationServiceProvider not overridden');
+});
+
+class NotioApp extends ConsumerStatefulWidget {
   const NotioApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotioApp> createState() => _NotioAppState();
+}
+
+class _NotioAppState extends ConsumerState<NotioApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Set up notification tap handler
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notificationService = ref.read(localNotificationServiceProvider);
+      notificationService.onNotificationTapped = _handleNotificationTap;
+    });
+  }
+
+  void _handleNotificationTap(String? payload) {
+    if (payload == null) return;
+
+    debugPrint('Notification tapped with payload: $payload');
+
+    // Get the router
+    final router = ref.read(goRouterProvider);
+
+    // For now, simply navigate to notifications screen
+    // In the future, parse payload and navigate to specific screen
+    router.go('/notifications');
+
+    // TODO: Implement notification detail modal
+    // TODO: Auto-mark notification as read
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(goRouterProvider);
     final isDarkMode = ref.watch(isDarkModeProvider);
 

@@ -6,6 +6,7 @@ import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
 import 'package:notio_app/features/notification/presentation/providers/notifications_notifier.dart';
 import 'package:notio_app/features/notification/presentation/widgets/notification_card.dart';
+import 'package:notio_app/features/notification/presentation/widgets/notification_detail_modal.dart';
 
 /// Notifications screen
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -142,14 +143,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                 return NotificationCard(
                                   notification: notification,
                                   onTap: () {
-                                    // Mark as read when tapped
-                                    if (!notification.isRead) {
-                                      ref
-                                          .read(notificationsProvider.notifier)
-                                          .markAsRead(notification.id);
-                                      ref.invalidate(unreadCountProvider);
-                                    }
-                                    // TODO: Show detail modal
+                                    // Show detail modal
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) => NotificationDetailModal(
+                                        notification: notification,
+                                      ),
+                                    );
                                   },
                                   onMarkAsRead: () {
                                     ref
