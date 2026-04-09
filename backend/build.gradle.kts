@@ -13,6 +13,10 @@ java {
     }
 }
 
+val java25Launcher = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(25)
+}
+
 configurations {
     compileOnly {
         extendsFrom(configurations.annotationProcessor.get())
@@ -72,4 +76,9 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    javaLauncher = java25Launcher
+}
+
+tasks.withType<JavaExec> {
+    javaLauncher = java25Launcher
 }
