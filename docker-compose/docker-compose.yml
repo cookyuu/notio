@@ -50,18 +50,11 @@ services:
   #    - ollama_data:/root/.ollama
   #  networks:
   #    - notio-network
-  #  deploy:
-  #    resources:
-  #      reservations:
-  #        devices:
-  #          - driver: nvidia
-  #            count: all
-  #            capabilities: [gpu]
 
 volumes:
   postgres_data:
   redis_data:
-#  ollama_data:
+  #ollama_data:
 
 networks:
   notio-network:

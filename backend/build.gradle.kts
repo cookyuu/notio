@@ -56,8 +56,7 @@ dependencies {
     implementation("com.google.firebase:firebase-admin:9.4.2")
 
     // API Documentation - Swagger
-    implementation("io.springfox:springfox-boot-starter:3.0.0")
-    implementation("io.springfox:springfox-swagger-ui:3.0.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
 
     // Lombok
     compileOnly("org.projectlombok:lombok")

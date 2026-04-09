@@ -1,6 +1,9 @@
 spring:
   application:
     name: notio-backend
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
 
   datasource:
     url: jdbc:postgresql://${NOTIO_DB_HOST:localhost}:${NOTIO_DB_PORT:5432}/${NOTIO_DB_NAME:notio}
@@ -62,3 +65,10 @@ notio:
   jwt:
     secret: ${NOTIO_JWT_SECRET:your-256-bit-secret-key-change-this-in-production}
     expiration: 86400000 # 24 hours
+  webhook:
+    claude:
+      bearer-token: ${NOTIO_WEBHOOK_CLAUDE_TOKEN:change-me}
+    slack:
+      signing-secret: ${NOTIO_WEBHOOK_SLACK_SECRET:change-me}
+    github:
+      webhook-secret: ${NOTIO_WEBHOOK_GITHUB_SECRET:change-me}
