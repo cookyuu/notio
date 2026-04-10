@@ -26,12 +26,12 @@ public class WebhookDispatcher {
     public NotificationEvent dispatch(final WebhookRequestContext context) {
         final WebhookHandler handler = handlers.get(context.source());
         if (handler == null) {
-            throw new NotioException(ErrorCode.INVALID_REQUEST, "Webhook handler를 찾을 수 없습니다.");
+            throw new NotioException(ErrorCode.UNSUPPORTED_SOURCE);
         }
 
         final WebhookVerifier verifier = verifiers.get(context.source());
         if (verifier == null || !verifier.verify(context)) {
-            throw new NotioException(ErrorCode.UNAUTHORIZED, "Webhook 검증에 실패했습니다.");
+            throw new NotioException(ErrorCode.WEBHOOK_VERIFICATION_FAILED);
         }
 
         return handler.handle(context);

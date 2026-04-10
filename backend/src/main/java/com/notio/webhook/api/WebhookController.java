@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.common.api.ApiResponse;
 import com.notio.notification.application.NotificationEvent;
-import com.notio.notification.application.NotificationIngestionService;
+import com.notio.notification.application.NotificationService;
+import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationSource;
 import com.notio.webhook.application.WebhookDispatcher;
 import com.notio.webhook.application.WebhookRequestContext;
+import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,16 +30,16 @@ public class WebhookController {
     };
 
     private final WebhookDispatcher webhookDispatcher;
-    private final NotificationIngestionService notificationIngestionService;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
     public WebhookController(
             final WebhookDispatcher webhookDispatcher,
-            final NotificationIngestionService notificationIngestionService,
+            final NotificationService notificationService,
             final ObjectMapper objectMapper
     ) {
         this.webhookDispatcher = webhookDispatcher;
-        this.notificationIngestionService = notificationIngestionService;
+        this.notificationService = notificationService;
         this.objectMapper = objectMapper;
     }
 
@@ -60,8 +62,10 @@ public class WebhookController {
                 payload
         );
         final NotificationEvent event = webhookDispatcher.dispatch(context);
-        final long notificationId = notificationIngestionService.saveFromEvent(event);
-        return ApiResponse.success(new WebhookReceiptResponse(notificationId, true));
+        final Notification notification = notificationService.saveFromEvent(event);
+        final Instant processedAt = Instant.now();
+
+        return ApiResponse.success(WebhookReceiptResponse.of(notification.getId(), processedAt));
     }
 
     private Map<String, Object> readPayload(final String rawBody) {

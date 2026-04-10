@@ -53,7 +53,10 @@
       "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr /C:\"\"developer\"\" /C:\"\"notification_local\"\" /C:\"\"chat_local\"\" /C:\"\"database\"\"\")",
       "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter run -d chrome --web-renderer html\")",
       "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter run -d chrome\")",
-      "Bash(cmd.exe /c \"flutter analyze 2>&1 | findstr /C:\"\"error\"\" /C:\"\"issues found\"\"\")"
+      "Bash(cmd.exe /c \"flutter analyze 2>&1 | findstr /C:\"\"error\"\" /C:\"\"issues found\"\"\")",
+      "Bash(cmd.exe /c \"gradlew.bat clean build -x test\")",
+      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\backend && gradlew.bat clean build -x test\")",
+      "Bash(cmd.exe /c \"java -version\")"
     ]
   }
 }

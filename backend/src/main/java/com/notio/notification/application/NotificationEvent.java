@@ -9,11 +9,11 @@ import java.util.Map;
 
 public record NotificationEvent(
         @NotNull NotificationSource source,
-        @NotBlank @Size(max = 500) String title,
-        @NotBlank @Size(max = 10000) String body,
+        @NotBlank @Size(max = 255) String title,
+        @NotBlank @Size(max = 2000) String body,
         @NotNull NotificationPriority priority,
         @Size(max = 255) String externalId,
-        @Size(max = 1000) String externalUrl,
+        @Size(max = 500) String externalUrl,
         Map<String, Object> metadata
 ) {
 }

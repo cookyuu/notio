@@ -34,33 +34,35 @@
 
 ### 알림 도메인
 
-- [ ] `Notification` 엔티티 정의
+- [x] `Notification` 엔티티 정의
 - [x] `NotificationSource` enum 정의 (`CLAUDE`, `SLACK`, `GITHUB`, `GMAIL`, `INTERNAL`)
-- [x] `NotificationPriority` enum 정의 (`HIGH`, `MEDIUM`, `LOW`)
-- [ ] `V1__create_notifications.sql` 작성
-- [ ] `NotificationRepository` 구현
-- [ ] QueryDSL 기반 알림 필터 구현
-- [ ] `NotificationService` 구현
-- [ ] `saveFromEvent(NotificationEvent)` 구현
-- [ ] `findAll(filter, pageable)` 구현
-- [ ] `markRead(id)` 구현
-- [ ] `markAllRead()` 구현
-- [ ] `delete(id)` 구현 (소프트 삭제)
-- [ ] `countUnread()` 구현 (Redis 캐시)
-- [ ] `NotificationController` REST API 구현
-- [ ] `GET /api/v1/notifications` 구현 (필터, 페이지네이션)
-- [ ] `GET /api/v1/notifications/{id}` 구현 (상세 + 읽음 처리)
-- [ ] `POST /api/v1/notifications/read-all` 구현
-- [ ] `DELETE /api/v1/notifications/{id}` 구현
+- [x] `NotificationPriority` enum 정의 (`URGENT`, `HIGH`, `MEDIUM`, `LOW`)
+- [x] `V2__fix_schema_for_api_spec.sql` 작성 (DB 스키마 수정)
+- [x] `NotificationRepository` 구현
+- [x] JPQL 기반 알림 필터 구현 (QueryDSL 대체)
+- [x] `NotificationService` 구현
+- [x] `saveFromEvent(NotificationEvent)` 구현
+- [x] `findAll(filter, pageable)` 구현
+- [x] `markRead(id)` 구현
+- [x] `markAllRead()` 구현
+- [x] `delete(id)` 구현 (소프트 삭제)
+- [x] `countUnread()` 구현 (Redis 캐시)
+- [x] `NotificationController` REST API 구현
+- [x] `GET /api/v1/notifications` 구현 (필터, 페이지네이션)
+- [x] `GET /api/v1/notifications/{id}` 구현 (상세 + 읽음 처리)
+- [x] `PATCH /api/v1/notifications/{id}/read` 구현 (개별 읽음 처리)
+- [x] `PATCH /api/v1/notifications/read-all` 구현 (전체 읽음 처리)
+- [x] `GET /api/v1/notifications/unread-count` 구현 (미읽음 수 조회)
+- [x] `DELETE /api/v1/notifications/{id}` 구현
 
 ### 푸시 발송
 
-- [ ] `Device` 엔티티 정의
-- [ ] `V3__create_devices.sql` 작성
-- [ ] Firebase Admin SDK 의존성 추가 및 설정
-- [ ] `PushService.sendPush(notificationId)` 구현
-- [ ] `POST /api/v1/devices/register` 구현 (FCM 토큰 등록)
-- [ ] 알림 저장 후 FCM 푸시 발송 연동 (동기)
+- [x] `Device` 엔티티 정의
+- [x] `V3__create_devices.sql` 작성 (V2에서 이미 처리됨)
+- [x] Firebase Admin SDK 의존성 추가 및 설정
+- [x] `PushService.sendPush(notificationId)` 구현
+- [x] `POST /api/v1/devices/register` 구현 (FCM 토큰 등록)
+- [x] 알림 저장 후 FCM 푸시 발송 연동 (동기)
 - [ ] Android 실기기 푸시 수신 확인
 
 ### AI 채팅

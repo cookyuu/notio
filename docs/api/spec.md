@@ -1,6 +1,6 @@
 # Notio API 명세서
 
-> **버전**: v1.1
+> **버전**: v1.2
 > **Base URL**: `http://localhost:8080` (로컬 개발)
 > **API 버전**: `/api/v1`
 > **최종 수정**: 2026-04-10
@@ -1045,7 +1045,7 @@ data: {"done": true, "message_id": 124}
 |------|------|------|----------|------|
 | `device_id` | string | * | max: 255 | 기기 고유 ID (UUID 권장) |
 | `fcm_token` | string | * | max: 500 | Firebase Cloud Messaging 토큰 |
-| `platform` | string | * | enum: ANDROID, IOS | 플랫폼 타입 |
+| `platform` | string | * | enum: ANDROID, IOS, WEB | 플랫폼 타입 |
 | `app_version` | string | * | max: 50 | 앱 버전 (예: 1.0.0) |
 | `os_version` | string | * | max: 50 | OS 버전 (예: 14) |
 
@@ -1068,7 +1068,9 @@ data: {"done": true, "message_id": 124}
 |------|------|----------|----------|------|
 | `id` | int | N | - | 디바이스 레코드 ID |
 | `device_id` | string | N | max: 255 | 기기 고유 ID |
-| `platform` | string | N | enum: ANDROID, IOS | 플랫폼 타입 |
+| `platform` | string | N | enum: ANDROID, IOS, WEB | 플랫폼 타입 |
+| `app_version` | string | N | max: 50 | 앱 버전 |
+| `os_version` | string | N | max: 50 | OS 버전 |
 | `is_active` | boolean | N | - | 활성화 여부 (초기값: true) |
 | `created_at` | string | N | ISO 8601 format | 생성 시각 |
 | `updated_at` | string | N | ISO 8601 format | 수정 시각 |
@@ -1081,6 +1083,8 @@ data: {"done": true, "message_id": 124}
     "id": 5,
     "device_id": "android-device-123",
     "platform": "ANDROID",
+    "app_version": "1.0.0",
+    "os_version": "14",
     "is_active": true,
     "created_at": "2026-04-10T10:00:00Z",
     "updated_at": "2026-04-10T10:00:00Z"
@@ -1091,6 +1095,32 @@ data: {"done": true, "message_id": 124}
 
 **Error Cases:**
 - `400 INVALID_REQUEST`: 잘못된 요청 (필수 필드 누락 또는 잘못된 platform 값)
+
+### 7.2 디바이스 비활성화
+
+**Endpoint:** `PATCH /api/v1/devices/{deviceId}/deactivate`
+
+**설명:** 디바이스를 비활성화하여 푸시 알림 수신을 중지합니다. 삭제하지 않고 비활성화 상태로 변경합니다.
+
+**Path Parameters:**
+
+| 파라미터 | 타입 | 필수 | 제약사항 | 설명 |
+|---------|------|------|----------|------|
+| `deviceId` | string | * | max: 255 | 디바이스 ID |
+
+**Request Body:** 없음
+
+**Response 200 OK:**
+```json
+{
+  "success": true,
+  "data": null,
+  "error": null
+}
+```
+
+**Error Cases:**
+- `404 DEVICE_NOT_FOUND`: 디바이스를 찾을 수 없음
 
 ---
 
@@ -1275,7 +1305,7 @@ data: {"done": true, "message_id": 124}
   id: number;                // 디바이스 레코드 ID
   device_id: string;         // max: 255
   fcm_token: string;         // max: 500 (Response에는 포함되지 않음 - 보안)
-  platform: "ANDROID" | "IOS";
+  platform: "ANDROID" | "IOS" | "WEB";
   app_version: string;       // max: 50
   os_version: string;        // max: 50
   is_active: boolean;        // 활성화 여부
@@ -1420,7 +1450,7 @@ NOTIO_RAG_TOP_K=5
 - NotificationPriority: `URGENT`, `HIGH`, `MEDIUM`, `LOW`
 - TodoStatus: `PENDING`, `IN_PROGRESS`, `DONE`
 - MessageRole: `USER`, `ASSISTANT`
-- Platform: `ANDROID`, `IOS`
+- Platform: `ANDROID`, `IOS`, `WEB`
 
 ### D. 버전 히스토리
 
@@ -1428,6 +1458,7 @@ NOTIO_RAG_TOP_K=5
 |------|------|----------|
 | 1.0 | 2026-04-10 | 초기 API 명세서 작성 (Phase 0 MVP 기준) |
 | 1.1 | 2026-04-10 | Request/Response 필드 상세 명세 추가 (필수/선택, 타입, 제약사항) |
+| 1.2 | 2026-04-10 | Push API 7.1 Response에 app_version, os_version 필드 추가, Platform enum에 WEB 추가, 7.2 디바이스 비활성화 API 추가 |
 
 ---
 
