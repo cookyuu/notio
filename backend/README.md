@@ -5,13 +5,12 @@ Spring Boot 4.x + Java 25 기반 백엔드 애플리케이션
 ## 기술 스택
 
 - **언어**: Java 25
-- **프레임워크**: Spring Boot 4.x
-- **빌드**: Gradle 8.x (Kotlin DSL)
-- **ORM**: Spring Data JPA + QueryDSL
-- **AI**: Spring AI (Ollama)
-- **데이터베이스**: PostgreSQL 16 + pgvector
+- **프레임워크**: Spring Boot 4.0
+- **빌드**: Gradle 9.0 (Kotlin DSL)
+- **ORM**: Spring Data JPA
+- **데이터베이스**: PostgreSQL 16
 - **캐시**: Redis 7
-- **마이그레이션**: Flyway 10.x
+- **마이그레이션**: Flyway
 - **보안**: Spring Security + JWT
 - **테스트**: JUnit 5, Mockito, Testcontainers
 - **문서**: SpringDoc OpenAPI (Swagger)
@@ -106,9 +105,11 @@ http://localhost:8080/swagger-ui.html
 | `NOTIO_DB_PASSWORD` | DB 비밀번호 | `notio` |
 | `NOTIO_REDIS_HOST` | Redis 호스트 | `localhost` |
 | `NOTIO_REDIS_PORT` | Redis 포트 | `6379` |
-| `NOTIO_OLLAMA_URL` | Ollama URL | `http://localhost:11434` |
 | `NOTIO_JWT_SECRET` | JWT 시크릿 | - |
 | `NOTIO_SERVER_PORT` | 서버 포트 | `8080` |
+| `NOTIO_WEBHOOK_CLAUDE_TOKEN` | Claude Webhook 토큰 | `change-me` |
+| `NOTIO_WEBHOOK_SLACK_SECRET` | Slack Webhook 시크릿 | `change-me` |
+| `NOTIO_WEBHOOK_GITHUB_SECRET` | GitHub Webhook 시크릿 | `change-me` |
 
 ## 개발 규칙
 

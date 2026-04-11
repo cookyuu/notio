@@ -25,8 +25,6 @@ configurations {
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://repo.spring.io/milestone") }
-    maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
@@ -37,19 +35,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
-    // Spring AI
-//    implementation("org.springframework.ai:spring-ai-ollama-spring-boot-starter:1.0.0-M6")
-
     // Database
     runtimeOnly("org.postgresql:postgresql")
-    implementation("org.flywaydb:flyway-core:11.1.0")
-    implementation("org.flywaydb:flyway-database-postgresql:11.1.0")
-
-    // QueryDSL (temporarily disabled due to compatibility issues with Spring Boot 4.0.0)
-//    implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
-//    annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
-//    annotationProcessor("jakarta.annotation:jakarta.annotation-api")
-//    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
