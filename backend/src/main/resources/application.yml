@@ -64,3 +64,6 @@ notio:
       signing-secret: ${NOTIO_WEBHOOK_SLACK_SECRET:change-me}
     github:
       webhook-secret: ${NOTIO_WEBHOOK_GITHUB_SECRET:change-me}
+  firebase:
+    enabled: ${NOTIO_FIREBASE_ENABLED:false}
+    service-account-path: ${NOTIO_FIREBASE_SERVICE_ACCOUNT_PATH:}
