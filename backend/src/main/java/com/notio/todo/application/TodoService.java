@@ -42,8 +42,11 @@ public class TodoService {
         return todoRepository.save(todo);
     }
 
-    public List<Todo> findAll() {
-        return todoRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc();
+    public List<Todo> findAll(final TodoStatus status) {
+        if (status == null) {
+            return todoRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc();
+        }
+        return todoRepository.findAllByStatusAndDeletedAtIsNullOrderByCreatedAtDesc(status);
     }
 
     public Todo update(final long id, final UpdateTodoRequest request) {

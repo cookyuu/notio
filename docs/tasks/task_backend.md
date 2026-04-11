@@ -78,19 +78,19 @@
 
 ### 할일
 
-- [ ] `Todo` 엔티티 정의
-- [ ] `V2__create_todos.sql` 작성
-- [ ] `TodoStatus` enum 정의 (`PENDING`, `IN_PROGRESS`, `DONE`)
-- [ ] `TodoService.createFromNotification(request)` 구현 (LLM 제목 자동 생성)
-- [ ] `TodoController` 구현
-- [ ] `POST /api/v1/todos` 구현
-- [ ] `GET /api/v1/todos` 구현
-- [ ] `PATCH /api/v1/todos/{id}` 구현
+- [x] `Todo` 엔티티 정의
+- [x] `V2__create_todos.sql` 작성 (V1__init_schema.sql에 포함)
+- [x] `TodoStatus` enum 정의 (`PENDING`, `IN_PROGRESS`, `DONE`)
+- [x] `TodoService.createFromNotification(request)` 구현 (LLM 제목 자동 생성)
+- [x] `TodoController` 구현
+- [x] `POST /api/v1/todos` 구현
+- [x] `GET /api/v1/todos` 구현 (status 필터링 지원)
+- [x] `PATCH /api/v1/todos/{id}` 구현
 
 ### 분석
 
-- [ ] `AnalyticsService.getWeeklySummary()` 구현
-- [ ] `GET /api/v1/analytics/weekly` 구현
+- [x] `AnalyticsService.getWeeklySummary()` 구현
+- [x] `GET /api/v1/analytics/weekly` 구현
 
 ### 테스트 및 품질
 
