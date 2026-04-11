@@ -35,8 +35,8 @@ public class ChatController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@RequestParam(name = "message") final String message) {
-        return chatService.streamChat(new ChatRequest(message));
+    public SseEmitter stream(@RequestParam(name = "content") final String content) {
+        return chatService.streamChat(new ChatRequest(content));
     }
 
     @GetMapping("/daily-summary")

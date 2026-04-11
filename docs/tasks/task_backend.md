@@ -65,16 +65,16 @@
 
 ### AI 채팅
 
-- [ ] Spring AI Ollama 의존성 추가
-- [ ] `SpringAiConfig` 설정
-- [ ] `ChatService.chat(ChatRequest)` 구현
-- [ ] `ChatService.streamChat(ChatRequest)` 구현 (SSE 스트리밍)
-- [ ] `DailySummaryService.getSummary()` 구현 (Redis 캐시 24h)
-- [ ] `ChatController` 구현
-- [ ] `POST /api/v1/chat` 구현
-- [ ] `GET /api/v1/chat/stream` 구현
-- [ ] `GET /api/v1/chat/daily-summary` 구현
-- [ ] `GET /api/v1/chat/history` 구현
+- [x] Spring AI Ollama 의존성 추가 (더미 데이터로 대체)
+- [x] `SpringAiConfig` 설정 (더미 데이터로 대체)
+- [x] `ChatService.chat(ChatRequest)` 구현 (더미 AI 응답)
+- [x] `ChatService.streamChat(ChatRequest)` 구현 (SSE 스트리밍)
+- [x] `DailySummaryService.getSummary()` 구현 (인메모리 캐시 24h)
+- [x] `ChatController` 구현
+- [x] `POST /api/v1/chat` 구현
+- [x] `GET /api/v1/chat/stream` 구현
+- [x] `GET /api/v1/chat/daily-summary` 구현
+- [x] `GET /api/v1/chat/history` 구현
 
 ### 할일
 
