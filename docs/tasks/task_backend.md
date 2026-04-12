@@ -36,10 +36,10 @@
 
 - [x] `Notification` 엔티티 정의
 - [x] `NotificationSource` enum 정의 (`CLAUDE`, `SLACK`, `GITHUB`, `GMAIL`, `INTERNAL`)
-- [x] `NotificationPriority` enum 정의 (`HIGH`, `MEDIUM`, `LOW`)
-- [x] `V1__create_notifications.sql` 작성
+- [x] `NotificationPriority` enum 정의 (`URGENT`, `HIGH`, `MEDIUM`, `LOW`)
+- [x] `V2__fix_schema_for_api_spec.sql` 작성 (DB 스키마 수정)
 - [x] `NotificationRepository` 구현
-- [x] QueryDSL 기반 알림 필터 구현
+- [x] JPQL 기반 알림 필터 구현 (QueryDSL 대체)
 - [x] `NotificationService` 구현
 - [x] `saveFromEvent(NotificationEvent)` 구현
 - [x] `findAll(filter, pageable)` 구현
@@ -50,13 +50,15 @@
 - [x] `NotificationController` REST API 구현
 - [x] `GET /api/v1/notifications` 구현 (필터, 페이지네이션)
 - [x] `GET /api/v1/notifications/{id}` 구현 (상세 + 읽음 처리)
-- [x] `POST /api/v1/notifications/read-all` 구현
+- [x] `PATCH /api/v1/notifications/{id}/read` 구현 (개별 읽음 처리)
+- [x] `PATCH /api/v1/notifications/read-all` 구현 (전체 읽음 처리)
+- [x] `GET /api/v1/notifications/unread-count` 구현 (미읽음 수 조회)
 - [x] `DELETE /api/v1/notifications/{id}` 구현
 
 ### 푸시 발송
 
 - [x] `Device` 엔티티 정의
-- [x] `V3__create_devices.sql` 작성
+- [x] `V3__create_devices.sql` 작성 (V2에서 이미 처리됨)
 - [x] Firebase Admin SDK 의존성 추가 및 설정
 - [x] `PushService.sendPush(notificationId)` 구현
 - [x] `POST /api/v1/devices/register` 구현 (FCM 토큰 등록)
@@ -65,32 +67,32 @@
 
 ### AI 채팅
 
-- [x] Spring AI Ollama 의존성 추가 (더미 데이터로 대체)
-- [x] `SpringAiConfig` 설정 (더미 데이터로 대체)
-- [x] `ChatService.chat(ChatRequest)` 구현 (더미 AI 응답)
-- [x] `ChatService.streamChat(ChatRequest)` 구현 (SSE 스트리밍)
-- [x] `DailySummaryService.getSummary()` 구현 (인메모리 캐시 24h)
-- [x] `ChatController` 구현
-- [x] `POST /api/v1/chat` 구현
-- [x] `GET /api/v1/chat/stream` 구현
-- [x] `GET /api/v1/chat/daily-summary` 구현
-- [x] `GET /api/v1/chat/history` 구현
+- [ ] Spring AI Ollama 의존성 추가
+- [ ] `SpringAiConfig` 설정
+- [ ] `ChatService.chat(ChatRequest)` 구현
+- [ ] `ChatService.streamChat(ChatRequest)` 구현 (SSE 스트리밍)
+- [ ] `DailySummaryService.getSummary()` 구현 (Redis 캐시 24h)
+- [ ] `ChatController` 구현
+- [ ] `POST /api/v1/chat` 구현
+- [ ] `GET /api/v1/chat/stream` 구현
+- [ ] `GET /api/v1/chat/daily-summary` 구현
+- [ ] `GET /api/v1/chat/history` 구현
 
 ### 할일
 
-- [x] `Todo` 엔티티 정의
-- [x] `V2__create_todos.sql` 작성 (V1__init_schema.sql에 포함)
-- [x] `TodoStatus` enum 정의 (`PENDING`, `IN_PROGRESS`, `DONE`)
-- [x] `TodoService.createFromNotification(request)` 구현 (LLM 제목 자동 생성)
-- [x] `TodoController` 구현
-- [x] `POST /api/v1/todos` 구현
-- [x] `GET /api/v1/todos` 구현 (status 필터링 지원)
-- [x] `PATCH /api/v1/todos/{id}` 구현
+- [ ] `Todo` 엔티티 정의
+- [ ] `V2__create_todos.sql` 작성
+- [ ] `TodoStatus` enum 정의 (`PENDING`, `IN_PROGRESS`, `DONE`)
+- [ ] `TodoService.createFromNotification(request)` 구현 (LLM 제목 자동 생성)
+- [ ] `TodoController` 구현
+- [ ] `POST /api/v1/todos` 구현
+- [ ] `GET /api/v1/todos` 구현
+- [ ] `PATCH /api/v1/todos/{id}` 구현
 
 ### 분석
 
-- [x] `AnalyticsService.getWeeklySummary()` 구현
-- [x] `GET /api/v1/analytics/weekly` 구현
+- [ ] `AnalyticsService.getWeeklySummary()` 구현
+- [ ] `GET /api/v1/analytics/weekly` 구현
 
 ### 테스트 및 품질
 

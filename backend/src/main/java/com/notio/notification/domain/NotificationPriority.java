@@ -1,10 +1,10 @@
 package com.notio.notification.domain;
 
 public enum NotificationPriority {
-    LOW,
-    MEDIUM,
+    URGENT,
     HIGH,
-    URGENT;
+    MEDIUM,
+    LOW;
 
     public static NotificationPriority from(final String value) {
         if (value == null || value.isBlank()) {

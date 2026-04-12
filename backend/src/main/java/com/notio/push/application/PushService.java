@@ -1,104 +1,198 @@
 package com.notio.push.application;
 
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
-import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.*;
+import com.notio.common.error.ErrorCode;
+import com.notio.common.error.NotioException;
+import com.notio.device.domain.Device;
+import com.notio.device.infrastructure.DeviceRepository;
+import com.notio.notification.domain.Notification;
 import com.notio.notification.infrastructure.NotificationRepository;
-import com.notio.push.api.RegisterDeviceRequest;
-import com.notio.push.domain.Device;
-import com.notio.push.infrastructure.DeviceRepository;
-import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PushService {
 
-    private static final Logger logger = LoggerFactory.getLogger(PushService.class);
-
-    private final DeviceRepository deviceRepository;
     private final NotificationRepository notificationRepository;
+    private final DeviceRepository deviceRepository;
 
-    @Value("${notio.firebase.enabled:false}")
-    private boolean firebaseEnabled;
-
-    public PushService(
-            final DeviceRepository deviceRepository,
-            final NotificationRepository notificationRepository
-    ) {
-        this.deviceRepository = deviceRepository;
-        this.notificationRepository = notificationRepository;
-    }
-
-    public Device register(final RegisterDeviceRequest request) {
-        return deviceRepository.findByToken(request.token())
-                .map(device -> {
-                    device.update(request.platform(), request.deviceName());
-                    return device;
-                })
-                .orElseGet(() -> deviceRepository.save(
-                        new Device(request.platform(), request.token(), request.deviceName())
-                ));
-    }
-
-    public void sendPush(final long notificationId) {
-        if (!firebaseEnabled) {
-            logger.debug("Firebase is disabled. Skipping push for notification {}", notificationId);
-            return;
-        }
-
+    /**
+     * 알림 ID로 푸시 발송
+     */
+    public void sendPush(Long notificationId) {
+        // Firebase가 초기화되지 않은 경우 경고 로그만 출력
         if (FirebaseApp.getApps().isEmpty()) {
-            logger.warn("Firebase is not initialized. Skipping push for notification {}", notificationId);
+            log.warn("Firebase not initialized. Skipping push notification for notificationId={}", notificationId);
             return;
         }
 
-        final com.notio.notification.domain.Notification notificationEntity = notificationRepository.findById(notificationId)
-                .orElse(null);
+        Notification notification = notificationRepository.findByIdAndNotDeleted(notificationId)
+            .orElseThrow(() -> new NotioException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
-        if (notificationEntity == null) {
-            logger.warn("Notification {} not found. Skipping push.", notificationId);
+        // Phase 0: 모든 활성 디바이스에 푸시 발송 (단일 사용자)
+        List<Device> activeDevices = deviceRepository.findAllActive();
+
+        if (activeDevices.isEmpty()) {
+            log.info("No active devices found. Skipping push notification for notificationId={}", notificationId);
             return;
         }
 
-        final List<Device> devices = deviceRepository.findAll();
-        if (devices.isEmpty()) {
-            logger.info("No devices registered. Skipping push for notification {}", notificationId);
+        sendPushToDevices(notification, activeDevices);
+    }
+
+    /**
+     * 여러 디바이스에 푸시 발송
+     */
+    private void sendPushToDevices(Notification notification, List<Device> devices) {
+        List<String> fcmTokens = devices.stream()
+            .map(Device::getFcmToken)
+            .collect(Collectors.toList());
+
+        Message message = buildMessage(notification, fcmTokens.get(0));
+
+        // 단일 토큰 발송
+        if (fcmTokens.size() == 1) {
+            sendSingleMessage(message, notification.getId());
             return;
         }
 
-        final com.google.firebase.messaging.Notification notification = com.google.firebase.messaging.Notification.builder()
-                .setTitle(notificationEntity.getTitle())
-                .setBody(truncateBody(notificationEntity.getBody()))
-                .build();
+        // 멀티캐스트 발송
+        MulticastMessage multicastMessage = buildMulticastMessage(notification, fcmTokens);
+        sendMulticastMessage(multicastMessage, notification.getId(), fcmTokens.size());
+    }
 
-        for (Device device : devices) {
-            try {
-                final Message message = Message.builder()
-                        .setToken(device.getToken())
-                        .setNotification(notification)
-                        .putData("notification_id", String.valueOf(notificationId))
-                        .putData("source", notificationEntity.getSource().name())
-                        .putData("priority", notificationEntity.getPriority().name())
-                        .build();
+    /**
+     * FCM 메시지 빌드
+     */
+    private Message buildMessage(Notification notification, String fcmToken) {
+        return Message.builder()
+            .setToken(fcmToken)
+            .setNotification(
+                com.google.firebase.messaging.Notification.builder()
+                    .setTitle(notification.getTitle())
+                    .setBody(notification.getBody())
+                    .build()
+            )
+            .putData("notificationId", notification.getId().toString())
+            .putData("source", notification.getSource().name())
+            .putData("priority", notification.getPriority().name())
+            .setAndroidConfig(
+                AndroidConfig.builder()
+                    .setPriority(mapPriority(notification.getPriority()))
+                    .setNotification(
+                        AndroidNotification.builder()
+                            .setSound("default")
+                            .setClickAction("FLUTTER_NOTIFICATION_CLICK")
+                            .build()
+                    )
+                    .build()
+            )
+            .setApnsConfig(
+                ApnsConfig.builder()
+                    .setAps(
+                        Aps.builder()
+                            .setSound("default")
+                            .setBadge(1)
+                            .build()
+                    )
+                    .build()
+            )
+            .build();
+    }
 
-                final String response = FirebaseMessaging.getInstance().send(message);
-                logger.info("Successfully sent push to device {} for notification {}: {}",
-                        device.getId(), notificationId, response);
-            } catch (FirebaseMessagingException exception) {
-                logger.error("Failed to send push to device {} for notification {}: {}",
-                        device.getId(), notificationId, exception.getMessage());
-            }
+    /**
+     * 멀티캐스트 메시지 빌드
+     */
+    private MulticastMessage buildMulticastMessage(Notification notification, List<String> fcmTokens) {
+        return MulticastMessage.builder()
+            .addAllTokens(fcmTokens)
+            .setNotification(
+                com.google.firebase.messaging.Notification.builder()
+                    .setTitle(notification.getTitle())
+                    .setBody(notification.getBody())
+                    .build()
+            )
+            .putData("notificationId", notification.getId().toString())
+            .putData("source", notification.getSource().name())
+            .putData("priority", notification.getPriority().name())
+            .setAndroidConfig(
+                AndroidConfig.builder()
+                    .setPriority(mapPriority(notification.getPriority()))
+                    .setNotification(
+                        AndroidNotification.builder()
+                            .setSound("default")
+                            .setClickAction("FLUTTER_NOTIFICATION_CLICK")
+                            .build()
+                    )
+                    .build()
+            )
+            .setApnsConfig(
+                ApnsConfig.builder()
+                    .setAps(
+                        Aps.builder()
+                            .setSound("default")
+                            .setBadge(1)
+                            .build()
+                    )
+                    .build()
+            )
+            .build();
+    }
+
+    /**
+     * 단일 메시지 발송
+     */
+    private void sendSingleMessage(Message message, Long notificationId) {
+        try {
+            String response = FirebaseMessaging.getInstance().send(message);
+            log.info("Push notification sent successfully: notificationId={}, response={}",
+                notificationId, response);
+        } catch (FirebaseMessagingException e) {
+            log.error("Failed to send push notification: notificationId={}, error={}",
+                notificationId, e.getMessage(), e);
+            // Phase 0에서는 푸시 실패해도 예외를 던지지 않음
         }
     }
 
-    private String truncateBody(final String body) {
-        if (body == null) {
-            return "";
+    /**
+     * 멀티캐스트 메시지 발송
+     */
+    private void sendMulticastMessage(MulticastMessage message, Long notificationId, int deviceCount) {
+        try {
+            BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
+            log.info("Push notification sent to {} devices: notificationId={}, successCount={}, failureCount={}",
+                deviceCount, notificationId, response.getSuccessCount(), response.getFailureCount());
+
+            if (response.getFailureCount() > 0) {
+                response.getResponses().forEach(sendResponse -> {
+                    if (!sendResponse.isSuccessful()) {
+                        log.warn("Failed to send push to device: error={}",
+                            sendResponse.getException().getMessage());
+                    }
+                });
+            }
+        } catch (FirebaseMessagingException e) {
+            log.error("Failed to send multicast push notification: notificationId={}, error={}",
+                notificationId, e.getMessage(), e);
         }
-        return body.length() > 200 ? body.substring(0, 197) + "..." : body;
+    }
+
+    /**
+     * Notio 우선순위를 FCM 우선순위로 매핑
+     */
+    private AndroidConfig.Priority mapPriority(com.notio.notification.domain.NotificationPriority priority) {
+        return switch (priority) {
+            case URGENT, HIGH -> AndroidConfig.Priority.HIGH;
+            case MEDIUM, LOW -> AndroidConfig.Priority.NORMAL;
+        };
     }
 }
-

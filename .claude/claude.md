@@ -22,6 +22,9 @@
 
 ### 설계 문서
 상세 설계는 `/docs/blueprint/notio_blueprint.md` 참조
+### API 명세서
+
+API 명세서는 /docs/api/spec.md 참조
 
 ---
 

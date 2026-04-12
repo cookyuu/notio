@@ -1,154 +1,85 @@
 package com.notio.notification.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.Instant;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications", indexes = {
+    @Index(name = "idx_notifications_source", columnList = "source"),
+    @Index(name = "idx_notifications_is_read", columnList = "is_read"),
+    @Index(name = "idx_notifications_created_at", columnList = "created_at"),
+    @Index(name = "idx_notifications_external_id", columnList = "external_id")
+})
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private NotificationSource source;
 
-    @Column(nullable = false, length = 500)
+    @Column(nullable = false, length = 255)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 2000)
     private String body;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private NotificationPriority priority;
+    @Column(nullable = false, length = 50)
+    @Builder.Default
+    private NotificationPriority priority = NotificationPriority.MEDIUM;
 
-    @Column(nullable = false)
-    private boolean isRead;
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private boolean read = false;
 
-    @Column(length = 255)
+    @Column(name = "external_id", length = 255)
     private String externalId;
 
-    @Column(length = 1000)
+    @Column(name = "external_url", length = 500)
     private String externalUrl;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(nullable = false, columnDefinition = "jsonb")
-    private Map<String, Object> metadata = new LinkedHashMap<>();
+    @Column(columnDefinition = "jsonb")
+    private String metadata;
 
-    @Column(nullable = false)
-    private OffsetDateTime createdAt;
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 
-    @Column(nullable = false)
-    private OffsetDateTime updatedAt;
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
-    @Column
-    private OffsetDateTime deletedAt;
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
-    protected Notification() {
+    // 비즈니스 메서드
+    public void markAsRead() {
+        this.read = true;
     }
 
-    public Notification(
-            final NotificationSource source,
-            final String title,
-            final String body,
-            final NotificationPriority priority,
-            final String externalId,
-            final String externalUrl,
-            final Map<String, Object> metadata
-    ) {
-        this.source = source;
-        this.title = title;
-        this.body = body;
-        this.priority = priority;
-        this.externalId = externalId;
-        this.externalUrl = externalUrl;
-        this.metadata = metadata == null ? new LinkedHashMap<>() : new LinkedHashMap<>(metadata);
-        this.isRead = false;
+    public void softDelete() {
+        this.deletedAt = Instant.now();
     }
 
-    @PrePersist
-    void onCreate() {
-        final OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        createdAt = now;
-        updatedAt = now;
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
-    }
-
-    public void markRead() {
-        isRead = true;
-    }
-
-    public void markDeleted() {
-        deletedAt = OffsetDateTime.now(ZoneOffset.UTC);
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public NotificationSource getSource() {
-        return source;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    public NotificationPriority getPriority() {
-        return priority;
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 
     public boolean isRead() {
-        return isRead;
-    }
-
-    public String getExternalId() {
-        return externalId;
-    }
-
-    public String getExternalUrl() {
-        return externalUrl;
-    }
-
-    public Map<String, Object> getMetadata() {
-        return Map.copyOf(metadata);
-    }
-
-    public OffsetDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public OffsetDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public OffsetDateTime getDeletedAt() {
-        return deletedAt;
+        return read;
     }
 }
-

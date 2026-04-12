@@ -1,37 +1,52 @@
 package com.notio.notification.api;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.notio.notification.application.NotificationService;
 import com.notio.notification.domain.Notification;
-import com.notio.notification.domain.NotificationPriority;
-import com.notio.notification.domain.NotificationSource;
-import java.time.OffsetDateTime;
+import lombok.Builder;
+
 import java.util.Map;
 
+@Builder
 public record NotificationResponse(
-        long id,
-        NotificationSource source,
-        String title,
-        String body,
-        NotificationPriority priority,
-        boolean isRead,
-        OffsetDateTime createdAt,
-        String externalId,
-        String externalUrl,
-        Map<String, Object> metadata
-) {
+    Long id,
+    String source,
+    String title,
+    String body,
+    String priority,
 
-    public static NotificationResponse from(final Notification notification) {
-        return new NotificationResponse(
-                notification.getId(),
-                notification.getSource(),
-                notification.getTitle(),
-                notification.getBody(),
-                notification.getPriority(),
-                notification.isRead(),
-                notification.getCreatedAt(),
-                notification.getExternalId(),
-                notification.getExternalUrl(),
-                notification.getMetadata()
-        );
+    @JsonProperty("is_read")
+    boolean isRead,
+
+    @JsonProperty("created_at")
+    String createdAt,
+
+    @JsonProperty("updated_at")
+    String updatedAt,
+
+    @JsonProperty("external_id")
+    String externalId,
+
+    @JsonProperty("external_url")
+    String externalUrl,
+
+    Object metadata
+) {
+    public static NotificationResponse from(Notification notification, NotificationService service) {
+        Map<String, Object> metadata = service.parseMetadataFromJson(notification.getMetadata());
+
+        return NotificationResponse.builder()
+            .id(notification.getId())
+            .source(notification.getSource().name())
+            .title(notification.getTitle())
+            .body(notification.getBody())
+            .priority(notification.getPriority().name())
+            .isRead(notification.isRead())
+            .createdAt(notification.getCreatedAt().toString())
+            .updatedAt(notification.getUpdatedAt().toString())
+            .externalId(notification.getExternalId())
+            .externalUrl(notification.getExternalUrl())
+            .metadata(metadata)
+            .build();
     }
 }
-
