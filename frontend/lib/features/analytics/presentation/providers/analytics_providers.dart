@@ -1,12 +1,24 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:notio_app/core/network/dio_client.dart';
 import 'package:notio_app/features/analytics/data/datasource/analytics_remote_datasource.dart';
 import 'package:notio_app/features/analytics/data/repository/analytics_repository_impl.dart';
 import 'package:notio_app/features/analytics/domain/entity/weekly_analytics_entity.dart';
 import 'package:notio_app/features/analytics/domain/repository/analytics_repository.dart';
+import 'package:notio_app/shared/constant/api_constants.dart';
+
+/// Dio Provider
+final dioProvider = Provider<Dio>((ref) {
+  return DioClient.create(
+    baseUrl: ApiConstants.baseUrl,
+    enableLogging: true,
+  );
+});
 
 /// Provider for analytics remote data source
 final analyticsRemoteDataSourceProvider = Provider<AnalyticsRemoteDataSource>((ref) {
-  return AnalyticsRemoteDataSource();
+  final dio = ref.watch(dioProvider);
+  return AnalyticsRemoteDataSource(dio);
 });
 
 /// Provider for analytics repository
