@@ -21,8 +21,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(ApiResponse.error(new ApiError(
                         errorCode.getCode(),
-                        exception.getMessage(),
-                        exception.getDetails()
+                        exception.getMessage()
                 )));
     }
 
@@ -58,8 +57,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(ApiResponse.error(new ApiError(
                         errorCode.getCode(),
-                        errorCode.getMessage(),
-                        details
+                        errorCode.getMessage()
                 )));
     }
 }

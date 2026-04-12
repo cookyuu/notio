@@ -28,7 +28,8 @@ public class DailySummaryService {
     @Cacheable(value = "dailySummary", key = "#root.methodName + '-' + T(java.time.LocalDate).now()")
     public DailySummaryResponse getSummary() {
         final List<Notification> notifications = notificationService.findAll(
-                new NotificationFilterRequest(null, null, null, null),
+                null, // source
+                null, // isRead
                 PageRequest.of(0, 200, Sort.by(Sort.Direction.DESC, "createdAt"))
         ).getContent();
 
@@ -36,7 +37,7 @@ public class DailySummaryService {
         final OffsetDateTime startOfDay = today.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
 
         final List<Notification> todaysNotifications = notifications.stream()
-                .filter(notification -> notification.getCreatedAt().isAfter(startOfDay))
+                .filter(notification -> notification.getCreatedAt().atZone(ZoneOffset.UTC).toOffsetDateTime().isAfter(startOfDay))
                 .toList();
 
         final List<String> topics = extractTopics(todaysNotifications);

@@ -25,12 +25,13 @@ public class AnalyticsService {
 
     public WeeklyAnalyticsResponse getWeeklySummary() {
         final List<Notification> notifications = notificationService.findAll(
-                new NotificationFilterRequest(null, null, null, null),
+                null, // source
+                null, // isRead
                 PageRequest.of(0, 500, Sort.by(Sort.Direction.DESC, "createdAt"))
         ).getContent();
         final LocalDate threshold = LocalDate.now(ZoneOffset.UTC).minusDays(6);
         final List<Notification> weeklyNotifications = notifications.stream()
-                .filter(notification -> !notification.getCreatedAt().toLocalDate().isBefore(threshold))
+                .filter(notification -> !notification.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate().isBefore(threshold))
                 .toList();
         final Map<String, Long> sourceDistribution = weeklyNotifications.stream()
                 .collect(Collectors.groupingBy(
@@ -46,7 +47,7 @@ public class AnalyticsService {
                 ));
         final Map<String, Long> dailyTrend = weeklyNotifications.stream()
                 .collect(Collectors.groupingBy(
-                        notification -> notification.getCreatedAt().toLocalDate().toString(),
+                        notification -> notification.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate().toString(),
                         LinkedHashMap::new,
                         Collectors.counting()
                 ));

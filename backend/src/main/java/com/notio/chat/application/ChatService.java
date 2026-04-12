@@ -7,6 +7,7 @@ import com.notio.notification.application.NotificationService;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -76,7 +77,8 @@ public class ChatService {
 
     private String generateDummyAiResponse(final String userMessage) {
         final List<Notification> notifications = notificationService.findAll(
-                new NotificationFilterRequest(null, null, null, null),
+                null, // source
+                null, // isRead
                 PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"))
         ).getContent();
 
@@ -127,9 +129,10 @@ public class ChatService {
                                 notification.getSource().name(), notification.getTitle())));
             }
         } else if (userMessage.contains("오늘") || userMessage.contains("today")) {
+            final LocalDate today = LocalDate.now(ZoneOffset.UTC);
             final long todayCount = notifications.stream()
-                    .filter(notification -> notification.getCreatedAt().toLocalDate()
-                            .equals(OffsetDateTime.now(ZoneOffset.UTC).toLocalDate()))
+                    .filter(notification -> notification.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate()
+                            .equals(today))
                     .count();
 
             response.append(String.format("오늘 수집된 알림은 총 %d건입니다.\n\n", todayCount));
@@ -137,8 +140,8 @@ public class ChatService {
             if (todayCount > 0) {
                 response.append("주요 내용:\n");
                 notifications.stream()
-                        .filter(notification -> notification.getCreatedAt().toLocalDate()
-                                .equals(OffsetDateTime.now(ZoneOffset.UTC).toLocalDate()))
+                        .filter(notification -> notification.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate()
+                                .equals(today))
                         .limit(3)
                         .forEach(notification ->
                                 response.append(String.format("- %s\n", notification.getTitle())));

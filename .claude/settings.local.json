@@ -56,7 +56,10 @@
       "Bash(cmd.exe /c \"flutter analyze 2>&1 | findstr /C:\"\"error\"\" /C:\"\"issues found\"\"\")",
       "Bash(cmd.exe /c \"gradlew.bat clean build -x test\")",
       "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\backend && gradlew.bat clean build -x test\")",
-      "Bash(cmd.exe /c \"java -version\")"
+      "Bash(cmd.exe /c \"java -version\")",
+      "Bash(git rm:*)",
+      "Bash(git diff:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
