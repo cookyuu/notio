@@ -10,13 +10,25 @@ import 'package:notio_app/features/analytics/presentation/analytics_screen.dart'
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
 import 'package:notio_app/features/settings/presentation/screens/developer_menu_screen.dart';
 
+class RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() {
+    notifyListeners();
+  }
+}
+
 /// App router provider
 final goRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authNotifierProvider);
+  final refreshNotifier = RouterRefreshNotifier();
+  ref.onDispose(refreshNotifier.dispose);
+  ref.listen(authNotifierProvider, (_, __) {
+    refreshNotifier.refresh();
+  });
 
   return GoRouter(
     initialLocation: Routes.login,
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
+      final authState = ref.read(authNotifierProvider);
       final isAuthenticated = authState.value?.isAuthenticated ?? false;
       final isLoggingIn = state.matchedLocation == Routes.login;
 

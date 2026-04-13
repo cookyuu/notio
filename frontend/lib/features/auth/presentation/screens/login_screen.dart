@@ -24,8 +24,11 @@ class LoginScreen extends HookConsumerWidget {
     ref.listen<AsyncValue<AuthState>>(authNotifierProvider, (previous, next) {
       next.whenData((state) {
         if (state.isAuthenticated) {
-          // Navigate to notifications screen on successful login
-          context.go(Routes.notifications);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              context.go(Routes.notifications);
+            }
+          });
         }
         if (state.error != null) {
           // Show error message

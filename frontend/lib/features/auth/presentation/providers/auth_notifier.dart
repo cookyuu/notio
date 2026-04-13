@@ -34,7 +34,7 @@ class AuthState {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class AuthNotifier extends _$AuthNotifier {
   late final AuthRepository _repository;
 
