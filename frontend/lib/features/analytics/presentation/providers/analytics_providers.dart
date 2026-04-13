@@ -41,6 +41,9 @@ final weeklyAnalyticsProvider = FutureProvider<WeeklyAnalyticsEntity>((ref) asyn
 /// This invalidates the cache and refetches data
 final refreshAnalyticsProvider = Provider<void Function()>((ref) {
   return () {
+    // Recreate the repository first so its in-memory cache is dropped.
+    ref.invalidate(analyticsRepositoryProvider);
+
     // Invalidate the future provider to trigger a refetch
     ref.invalidate(weeklyAnalyticsProvider);
   };
