@@ -30,16 +30,16 @@ public class NotificationController {
     @GetMapping
     public ApiResponse<Page<NotificationResponse>> getNotifications(
         @Parameter(description = "알림 소스 필터")
-        @RequestParam(required = false) NotificationSource source,
+        @RequestParam(name = "source", required = false) NotificationSource source,
 
         @Parameter(description = "읽음 상태 필터")
         @RequestParam(name = "is_read", required = false) Boolean isRead,
 
         @Parameter(description = "페이지 번호 (0부터 시작)")
-        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(name = "page", defaultValue = "0") int page,
 
         @Parameter(description = "페이지 크기")
-        @RequestParam(defaultValue = "20") int size
+        @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Notification> notifications = notificationService.findAll(source, isRead, pageable);
@@ -53,7 +53,7 @@ public class NotificationController {
     @GetMapping("/{id}")
     public ApiResponse<NotificationResponse> getNotification(
         @Parameter(description = "알림 ID", required = true)
-        @PathVariable Long id
+        @PathVariable("id") Long id
     ) {
         Notification notification = notificationService.markRead(id);  // 조회 시 자동 읽음 처리
         NotificationResponse response = NotificationResponse.from(notification, notificationService);
@@ -65,7 +65,7 @@ public class NotificationController {
     @PatchMapping("/{id}/read")
     public ApiResponse<MarkReadResponse> markAsRead(
         @Parameter(description = "알림 ID", required = true)
-        @PathVariable Long id
+        @PathVariable("id") Long id
     ) {
         Notification notification = notificationService.markRead(id);
         MarkReadResponse response = new MarkReadResponse(notification.getId(), notification.isRead());
@@ -95,7 +95,7 @@ public class NotificationController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteNotification(
         @Parameter(description = "알림 ID", required = true)
-        @PathVariable Long id
+        @PathVariable("id") Long id
     ) {
         notificationService.delete(id);
         return ApiResponse.success(null);

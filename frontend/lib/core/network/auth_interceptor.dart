@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:notio_app/features/auth/domain/auth_token_policy.dart';
 
 /// Interceptor for adding JWT token to requests
 class AuthInterceptor extends Interceptor {
@@ -14,7 +15,9 @@ class AuthInterceptor extends Interceptor {
     // Get token from secure storage
     final token = await _storage.read(key: _tokenKey);
 
-    if (token != null) {
+    if (AuthTokenPolicy.isMockToken(token)) {
+      await _storage.delete(key: _tokenKey);
+    } else if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
 

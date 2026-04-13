@@ -2,6 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:notio_app/features/auth/data/datasources/auth_api_client.dart';
 import 'package:notio_app/features/auth/data/models/login_request.dart';
 import 'package:notio_app/features/auth/data/models/login_response.dart';
+import 'package:notio_app/features/auth/domain/auth_token_policy.dart';
 import 'package:notio_app/features/auth/domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -37,6 +38,10 @@ class AuthRepositoryImpl implements AuthRepository {
       if (refreshToken == null) {
         throw Exception('No refresh token found');
       }
+      if (AuthTokenPolicy.isMockToken(refreshToken)) {
+        await _clearStoredAuth();
+        throw Exception('Stored mock refresh token is not valid');
+      }
 
       final response = await _apiClient.refreshToken({
         'refreshToken': refreshToken,
@@ -59,16 +64,10 @@ class AuthRepositoryImpl implements AuthRepository {
       await _apiClient.logout();
 
       // Clear all stored data
-      await _storage.delete(key: _accessTokenKey);
-      await _storage.delete(key: _refreshTokenKey);
-      await _storage.delete(key: _userEmailKey);
-      await _storage.delete(key: _expiresAtKey);
+      await _clearStoredAuth();
     } catch (e) {
       // Always clear local storage even if API call fails
-      await _storage.delete(key: _accessTokenKey);
-      await _storage.delete(key: _refreshTokenKey);
-      await _storage.delete(key: _userEmailKey);
-      await _storage.delete(key: _expiresAtKey);
+      await _clearStoredAuth();
       rethrow;
     }
   }
@@ -77,6 +76,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<bool> isLoggedIn() async {
     final accessToken = await getAccessToken();
     if (accessToken == null) return false;
+    if (AuthTokenPolicy.isMockToken(accessToken)) {
+      await _clearStoredAuth();
+      return false;
+    }
 
     // Check if token is expired
     final expiresAtStr = await _storage.read(key: _expiresAtKey);
@@ -117,5 +120,12 @@ class AuthRepositoryImpl implements AuthRepository {
     await _storage.write(key: _userEmailKey, value: response.email);
     await _storage.write(
         key: _expiresAtKey, value: response.expiresAt.toIso8601String());
+  }
+
+  Future<void> _clearStoredAuth() async {
+    await _storage.delete(key: _accessTokenKey);
+    await _storage.delete(key: _refreshTokenKey);
+    await _storage.delete(key: _userEmailKey);
+    await _storage.delete(key: _expiresAtKey);
   }
 }

@@ -245,7 +245,7 @@ class LoginScreen extends HookConsumerWidget {
 
                         const SizedBox(height: AppSpacing.s16),
 
-                        // Mock credentials hint
+                        // Backend auth hint
                         Container(
                           padding: const EdgeInsets.all(AppSpacing.s12),
                           decoration: BoxDecoration(

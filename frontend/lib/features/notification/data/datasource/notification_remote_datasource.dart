@@ -14,30 +14,71 @@ class NotificationRemoteDataSource {
     int size = 20,
   }) async {
     try {
-      final response = await _dio.get(
-        '/api/v1/notifications',
-        queryParameters: {
-          if (source != null) 'source': source,
-          'page': page,
-          'size': size,
-        },
+      final response = await _requestNotifications(
+        source: source,
+        page: page,
+        size: size,
       );
-
-      if (response.data['success'] == true) {
-        final data = response.data['data'];
-        final items = switch (data) {
-          List<dynamic>() => data,
-          Map<String, dynamic>() =>
-            (data['content'] as List<dynamic>?) ?? const [],
-          _ => const <dynamic>[],
-        };
-        return items.map((json) => NotificationModel.fromJson(json)).toList();
-      } else {
-        throw Exception(response.data['error']['message']);
-      }
+      return _parseNotifications(response.data);
     } on DioException catch (e) {
+      if (_shouldRetryWithoutSource(e, source)) {
+        final fallbackResponse = await _requestNotifications(
+          page: page,
+          size: size,
+        );
+        return _parseNotifications(fallbackResponse.data)
+            .where((notification) => notification.source == source)
+            .toList();
+      }
       throw Exception('네트워크 오류: ${e.message}');
     }
+  }
+
+  Future<Response<dynamic>> _requestNotifications({
+    required int page,
+    required int size,
+    String? source,
+  }) {
+    return _dio.get(
+      '/api/v1/notifications',
+      queryParameters: {
+        if (source != null) 'source': source,
+        'page': page,
+        'size': size,
+      },
+    );
+  }
+
+  List<NotificationModel> _parseNotifications(dynamic responseData) {
+    if (responseData['success'] != true) {
+      throw Exception(responseData['error']['message']);
+    }
+
+    final data = responseData['data'];
+    final items = switch (data) {
+      List<dynamic>() => data,
+      Map<String, dynamic>() => (data['content'] as List<dynamic>?) ?? const [],
+      _ => const <dynamic>[],
+    };
+    return items.map((json) => NotificationModel.fromJson(json)).toList();
+  }
+
+  bool _shouldRetryWithoutSource(DioException exception, String? source) {
+    if (source == null || exception.response?.statusCode != 400) {
+      return false;
+    }
+
+    final responseData = exception.response?.data;
+    if (responseData is! Map<String, dynamic>) {
+      return false;
+    }
+
+    final error = responseData['error'];
+    if (error is! Map<String, dynamic>) {
+      return false;
+    }
+
+    return error['code'] == 'INVALID_REQUEST';
   }
 
   /// Get unread notification count from API
