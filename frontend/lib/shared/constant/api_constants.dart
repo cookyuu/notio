@@ -3,10 +3,18 @@ class ApiConstants {
   ApiConstants._();
 
   // Base URL - should be configured via environment variables in production
-  static const baseUrl = 'http://localhost:8080';
+  static const baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:8080',
+  );
 
   // API version
   static const apiVersion = '/api/v1';
+
+  // Auth endpoints
+  static const authLogin = '$apiVersion/auth/login';
+  static const authRefresh = '$apiVersion/auth/refresh';
+  static const authLogout = '$apiVersion/auth/logout';
 
   // Notification endpoints
   static const notifications = '$apiVersion/notifications';

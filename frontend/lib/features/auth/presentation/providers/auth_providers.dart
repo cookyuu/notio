@@ -3,6 +3,7 @@ import 'package:notio_app/core/network/dio_client.dart';
 import 'package:notio_app/features/auth/data/datasources/auth_api_client.dart';
 import 'package:notio_app/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:notio_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:notio_app/shared/constant/api_constants.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'auth_providers.g.dart';
@@ -17,10 +18,7 @@ FlutterSecureStorage secureStorage(SecureStorageRef ref) {
 @riverpod
 AuthApiClient authApiClient(AuthApiClientRef ref) {
   final dio = DioClient.create(
-    baseUrl: const String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'http://localhost:8080',
-    ),
+    baseUrl: ApiConstants.baseUrl,
   );
   return AuthApiClient(dio);
 }
