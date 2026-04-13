@@ -1,7 +1,7 @@
 package com.notio.notification.domain;
 
-import com.notio.common.error.ErrorCode;
-import com.notio.common.error.NotioException;
+import com.notio.common.exception.ErrorCode;
+import com.notio.common.exception.NotioException;
 
 public enum NotificationSource {
     CLAUDE,
