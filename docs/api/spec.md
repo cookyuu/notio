@@ -1,9 +1,9 @@
 # Notio API 명세서
 
-> **버전**: v1.2
+> **버전**: v1.3
 > **Base URL**: `http://localhost:8080` (로컬 개발)
 > **API 버전**: `/api/v1`
-> **최종 수정**: 2026-04-10
+> **최종 수정**: 2026-04-13
 
 ---
 
@@ -150,13 +150,144 @@ USER, ASSISTANT
 
 ### 2.1 개요
 
-Phase 0 (MVP)에서는 인증이 구현되지 않았습니다.
-Phase 2+ 에서 JWT 기반 인증이 추가될 예정입니다.
+인증 API는 JWT 기반 토큰 인증을 기준으로 정의합니다.
+Frontend는 아래 `login`, `refresh`, `logout` 엔드포인트를 사용합니다.
 
-**Phase 2+ 인증 헤더 (예정):**
+**인증 헤더:**
 ```
 Authorization: Bearer {JWT_TOKEN}
 ```
+
+**참고:**
+- 2026-04-13 기준 backend에는 인증 API 구현이 아직 없습니다.
+- 본 섹션은 frontend와 backend 간 계약 명세입니다.
+- 회원가입 API는 현재 정의되어 있지 않습니다.
+
+### 2.2 로그인
+
+**Endpoint:** `POST /api/v1/auth/login`
+
+**설명:** 이메일과 비밀번호로 로그인하고 access/refresh token을 발급합니다.
+
+**Request Body - 필드 명세:**
+
+| 필드 | 타입 | 필수 | 제약사항 | 설명 |
+|------|------|------|----------|------|
+| `email` | string | * | email format, max: 255 | 로그인 이메일 |
+| `password` | string | * | min: 8, max: 100 | 비밀번호 |
+
+**Request Example:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response 200 OK - 필드 명세:**
+
+`data` 객체:
+
+| 필드 | 타입 | Nullable | 제약사항 | 설명 |
+|------|------|----------|----------|------|
+| `user_id` | string | N | max: 100 | 사용자 식별자 |
+| `email` | string | N | email format | 사용자 이메일 |
+| `access_token` | string | N | JWT | API 인증용 액세스 토큰 |
+| `refresh_token` | string | N | opaque/JWT | 토큰 재발급용 리프레시 토큰 |
+| `expires_in` | int | N | seconds, min: 1 | 액세스 토큰 만료 시간(초) |
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": "user-123",
+    "email": "user@example.com",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "refresh-token-value",
+    "expires_in": 3600
+  },
+  "error": null
+}
+```
+
+**Error Cases:**
+- `400 INVALID_REQUEST`: 요청 필드 누락 또는 형식 오류
+- `401 UNAUTHORIZED`: 이메일 또는 비밀번호 불일치
+
+### 2.3 토큰 재발급
+
+**Endpoint:** `POST /api/v1/auth/refresh`
+
+**설명:** refresh token으로 access token과 refresh token을 재발급합니다.
+
+**Request Body - 필드 명세:**
+
+| 필드 | 타입 | 필수 | 제약사항 | 설명 |
+|------|------|------|----------|------|
+| `refresh_token` | string | * | min: 1 | 유효한 리프레시 토큰 |
+
+**Request Example:**
+```json
+{
+  "refresh_token": "refresh-token-value"
+}
+```
+
+**Response 200 OK - 필드 명세:**
+
+`data` 객체:
+
+| 필드 | 타입 | Nullable | 제약사항 | 설명 |
+|------|------|----------|----------|------|
+| `access_token` | string | N | JWT | 재발급된 액세스 토큰 |
+| `refresh_token` | string | N | opaque/JWT | 재발급된 리프레시 토큰 |
+| `expires_in` | int | N | seconds, min: 1 | 액세스 토큰 만료 시간(초) |
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new-token",
+    "refresh_token": "new-refresh-token-value",
+    "expires_in": 3600
+  },
+  "error": null
+}
+```
+
+**Error Cases:**
+- `400 INVALID_REQUEST`: refresh token 누락
+- `401 UNAUTHORIZED`: refresh token 만료 또는 무효
+
+### 2.4 로그아웃
+
+**Endpoint:** `POST /api/v1/auth/logout`
+
+**설명:** 현재 사용자의 세션을 종료하고 refresh token을 무효화합니다.
+
+**Headers:**
+
+| 헤더 | 필수 | 설명 |
+|------|------|------|
+| `Authorization` | * | `Bearer {ACCESS_TOKEN}` |
+
+**Request Body:** 없음
+
+**Response 200 OK Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "로그아웃되었습니다."
+  },
+  "error": null
+}
+```
+
+**Error Cases:**
+- `401 UNAUTHORIZED`: 액세스 토큰이 없거나 유효하지 않음
 
 ---
 
