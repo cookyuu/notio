@@ -30,8 +30,12 @@ class NotificationRepositoryImpl implements NotificationRepository {
         size: size,
       );
 
-      // Cache the results
-      await _localDataSource.cacheNotifications(models);
+      try {
+        // Remote data should still be shown even if cache sync fails.
+        await _localDataSource.cacheNotifications(models);
+      } catch (_) {
+        // Ignore cache write failures and prefer the fresh server response.
+      }
 
       // Convert to entities
       return models.map((model) => model.toEntity()).toList();

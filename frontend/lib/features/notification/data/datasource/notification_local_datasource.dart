@@ -24,6 +24,11 @@ class NotificationLocalDataSource {
 
   /// Save notifications to cache
   Future<void> cacheNotifications(List<NotificationModel> notifications) async {
+    if (notifications.isEmpty) {
+      await _database.cleanupNotifications();
+      return;
+    }
+
     final companions = notifications.map(_toCompanion).toList();
     await _database.insertNotifications(companions);
 

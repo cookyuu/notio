@@ -25,9 +25,12 @@ class NotificationRemoteDataSource {
 
       if (response.data['success'] == true) {
         final data = response.data['data'];
-        final items = data is List<dynamic>
-            ? data
-            : (data['content'] as List<dynamic>? ?? const []);
+        final items = switch (data) {
+          List<dynamic>() => data,
+          Map<String, dynamic>() =>
+            (data['content'] as List<dynamic>?) ?? const [],
+          _ => const <dynamic>[],
+        };
         return items.map((json) => NotificationModel.fromJson(json)).toList();
       } else {
         throw Exception(response.data['error']['message']);
