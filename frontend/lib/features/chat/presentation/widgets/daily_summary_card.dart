@@ -8,14 +8,14 @@ import 'package:notio_app/shared/widgets/glass_card.dart';
 
 /// Daily summary card widget (collapsible)
 class DailySummaryCard extends ConsumerWidget {
-  const DailySummaryCard({
-    super.key,
-    required this.isExpanded,
-    required this.onToggle,
-  });
-
   final bool isExpanded;
   final VoidCallback onToggle;
+
+  const DailySummaryCard({
+    required this.isExpanded,
+    required this.onToggle,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

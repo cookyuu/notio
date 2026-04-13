@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:notio_app/core/database/tables/notification_table.dart';
 import 'package:notio_app/core/database/tables/chat_message_table.dart';
 import 'connection/connection.dart' as impl;

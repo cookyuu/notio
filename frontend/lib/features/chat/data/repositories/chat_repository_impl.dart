@@ -89,10 +89,9 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  List<ChatMessageEntity> getCachedMessages() {
-    // Note: This is now async, but interface expects sync
-    // We'll need to update this in the interface later
-    throw UnimplementedError('Use fetchHistory instead');
+  Future<List<ChatMessageEntity>> getCachedMessages() async {
+    final cachedModels = await _localDataSource.getCachedMessages();
+    return cachedModels.map((model) => model.toEntity()).toList();
   }
 
   @override

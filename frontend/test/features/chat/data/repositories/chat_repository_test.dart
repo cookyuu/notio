@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dio/dio.dart';
 import 'package:notio_app/features/chat/data/datasources/chat_remote_datasource.dart';
-import 'package:notio_app/features/chat/domain/entities/message_role.dart';
 
 // TODO: Update tests after Drift migration (Phase 4A)
 // ChatLocalDataSource now requires AppDatabase parameter

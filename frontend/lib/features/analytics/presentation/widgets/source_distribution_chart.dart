@@ -11,8 +11,8 @@ class SourceDistributionChart extends StatefulWidget {
   final Map<NotificationSource, int> distribution;
 
   const SourceDistributionChart({
-    super.key,
     required this.distribution,
+    super.key,
   });
 
   @override

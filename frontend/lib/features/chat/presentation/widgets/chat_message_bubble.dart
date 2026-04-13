@@ -9,12 +9,12 @@ import 'package:timeago/timeago.dart' as timeago;
 
 /// Chat message bubble widget
 class ChatMessageBubble extends StatelessWidget {
-  const ChatMessageBubble({
-    super.key,
-    required this.message,
-  });
-
   final ChatMessageEntity message;
+
+  const ChatMessageBubble({
+    required this.message,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

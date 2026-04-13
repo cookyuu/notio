@@ -11,8 +11,8 @@ class PriorityDistributionChart extends StatelessWidget {
   final Map<NotificationPriority, int> distribution;
 
   const PriorityDistributionChart({
-    super.key,
     required this.distribution,
+    super.key,
   });
 
   @override
@@ -114,7 +114,7 @@ class PriorityDistributionChart extends StatelessWidget {
                     show: true,
                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (value) {
-                      return FlLine(
+                      return const FlLine(
                         color: AppColors.divider,
                         strokeWidth: 1,
                       );

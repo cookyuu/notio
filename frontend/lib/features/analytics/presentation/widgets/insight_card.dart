@@ -9,8 +9,8 @@ class InsightCard extends StatelessWidget {
   final String insight;
 
   const InsightCard({
-    super.key,
     required this.insight,
+    super.key,
   });
 
   @override
@@ -25,7 +25,7 @@ class InsightCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(AppSpacing.s8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
+                color: AppColors.primary.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(AppSpacing.s8),
               ),
               child: const Icon(

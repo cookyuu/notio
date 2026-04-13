@@ -91,6 +91,12 @@ class NotificationRepositoryImpl implements NotificationRepository {
   @override
   Future<void> deleteNotification(int id) async {
     await _localDataSource.deleteNotification(id);
+
+    try {
+      await _remoteDataSource.deleteNotification(id);
+    } catch (e) {
+      // Remote delete failed, but local cache is already updated
+    }
   }
 
   @override

@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// Interceptor for adding JWT token to requests
 class AuthInterceptor extends Interceptor {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  static const String _tokenKey = 'auth_token';
+  static const String _tokenKey = 'auth_access_token';
 
   @override
   Future<void> onRequest(

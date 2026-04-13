@@ -19,7 +19,7 @@ abstract class ChatRepository {
   Future<DailySummaryModel> getDailySummary();
 
   /// Get cached messages from local storage
-  List<ChatMessageEntity> getCachedMessages();
+  Future<List<ChatMessageEntity>> getCachedMessages();
 
   /// Cache messages to local storage
   void cacheMessages(List<ChatMessageEntity> messages);

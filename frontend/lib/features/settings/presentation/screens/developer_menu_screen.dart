@@ -24,7 +24,7 @@ class DeveloperMenuScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(AppSpacing.s16),
         children: [
           // Local Notifications Section
-          _SectionHeader(title: 'Local Notifications'),
+          const _SectionHeader(title: 'Local Notifications'),
           const SizedBox(height: AppSpacing.s12),
 
           _TestNotificationCard(
@@ -92,7 +92,7 @@ class DeveloperMenuScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.s24),
 
           // Other Actions Section
-          _SectionHeader(title: 'Actions'),
+          const _SectionHeader(title: 'Actions'),
           const SizedBox(height: AppSpacing.s12),
 
           _ActionCard(
@@ -145,17 +145,14 @@ class DeveloperMenuScreen extends ConsumerWidget {
             icon: Icons.list,
             color: AppColors.info,
             onTap: () async {
-              final activeNotifications =
-                  await notificationService.getActiveNotifications();
+              await notificationService.getActiveNotifications();
               if (context.mounted) {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text('Active Notifications'),
-                    content: Text(
-                      activeNotifications.isEmpty
-                          ? 'No active notifications'
-                          : 'Active: ${activeNotifications.length}',
+                    content: const Text(
+                      'Active notifications are shown in the system tray.',
                     ),
                     actions: [
                       TextButton(
@@ -240,7 +237,7 @@ class _TestNotificationCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.s12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(

@@ -9,12 +9,12 @@ import 'package:notio_app/features/chat/data/repositories/chat_repository_impl.d
 import 'package:notio_app/features/chat/domain/repositories/chat_repository.dart';
 import 'package:notio_app/features/chat/presentation/providers/chat_notifier.dart';
 import 'package:notio_app/features/chat/presentation/providers/chat_state.dart';
+import 'package:notio_app/shared/constant/api_constants.dart';
 
 /// Dio provider (reuse from core)
 final dioProvider = Provider<Dio>((ref) {
-  // TODO: Replace with proper base URL from environment
   return DioClient.create(
-    baseUrl: 'http://localhost:8080',
+    baseUrl: ApiConstants.baseUrl,
     enableLogging: true,
   );
 });

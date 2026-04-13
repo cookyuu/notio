@@ -11,10 +11,10 @@ class WeeklyStatsCard extends StatelessWidget {
   final double readPercentage;
 
   const WeeklyStatsCard({
-    super.key,
     required this.totalNotifications,
     required this.unreadNotifications,
     required this.readPercentage,
+    super.key,
   });
 
   @override

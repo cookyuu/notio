@@ -79,7 +79,7 @@ class LoginScreen extends HookConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
+                        const Text(
                           'Sign In',
                           style: AppTextStyles.headlineLarge,
                           textAlign: TextAlign.center,
@@ -246,24 +246,24 @@ class LoginScreen extends HookConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(AppSpacing.s12),
                           decoration: BoxDecoration(
-                            color: AppColors.info.withOpacity(0.1),
+                            color: AppColors.info.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: AppColors.info.withOpacity(0.3),
+                              color: AppColors.info.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Column(
                             children: [
                               Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.info_outline,
                                     size: 16,
                                     color: AppColors.info,
                                   ),
                                   const SizedBox(width: AppSpacing.s8),
                                   Text(
-                                    'Mock Login (Backend not ready)',
+                                    'API Login Enabled',
                                     style: AppTextStyles.labelSmall.copyWith(
                                       color: AppColors.info,
                                       fontWeight: FontWeight.bold,
@@ -273,7 +273,7 @@ class LoginScreen extends HookConsumerWidget {
                               ),
                               const SizedBox(height: AppSpacing.s4),
                               Text(
-                                'Use any email with password: password123',
+                                'Sign in with a valid backend account.',
                                 style: AppTextStyles.labelSmall.copyWith(
                                   color: AppColors.textSecondary,
                                 ),

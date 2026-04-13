@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:notio_app/core/constants/notification_source.dart';
 import 'package:notio_app/features/notification/data/datasource/notification_remote_datasource.dart';
 
 // TODO: Update tests after Drift migration (Phase 4A)

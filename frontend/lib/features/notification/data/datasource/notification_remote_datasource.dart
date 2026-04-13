@@ -24,8 +24,11 @@ class NotificationRemoteDataSource {
       );
 
       if (response.data['success'] == true) {
-        final List<dynamic> data = response.data['data'];
-        return data.map((json) => NotificationModel.fromJson(json)).toList();
+        final data = response.data['data'];
+        final items = data is List<dynamic>
+            ? data
+            : (data['content'] as List<dynamic>? ?? const []);
+        return items.map((json) => NotificationModel.fromJson(json)).toList();
       } else {
         throw Exception(response.data['error']['message']);
       }
@@ -67,7 +70,20 @@ class NotificationRemoteDataSource {
   /// Mark all notifications as read
   Future<void> markAllAsRead() async {
     try {
-      final response = await _dio.post('/api/v1/notifications/read-all');
+      final response = await _dio.patch('/api/v1/notifications/read-all');
+
+      if (response.data['success'] != true) {
+        throw Exception(response.data['error']['message']);
+      }
+    } on DioException catch (e) {
+      throw Exception('네트워크 오류: ${e.message}');
+    }
+  }
+
+  /// Delete notification from API
+  Future<void> deleteNotification(int notificationId) async {
+    try {
+      final response = await _dio.delete('/api/v1/notifications/$notificationId');
 
       if (response.data['success'] != true) {
         throw Exception(response.data['error']['message']);

@@ -17,8 +17,8 @@ class NotificationDetailModal extends ConsumerWidget {
   final NotificationEntity notification;
 
   const NotificationDetailModal({
-    super.key,
     required this.notification,
+    super.key,
   });
 
   @override
@@ -52,7 +52,7 @@ class NotificationDetailModal extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withOpacity(0.3),
+                  color: AppColors.textSecondary.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

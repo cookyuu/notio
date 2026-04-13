@@ -18,7 +18,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       state = state.copyWith(isLoading: true, error: null);
 
       // Try to load from cache first
-      final cachedMessages = _repository.getCachedMessages();
+      final cachedMessages = await _repository.getCachedMessages();
       if (cachedMessages.isNotEmpty) {
         state = state.copyWith(
           messages: cachedMessages,

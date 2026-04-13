@@ -9,9 +9,9 @@ class ChatInputField extends StatefulWidget {
   final bool enabled;
 
   const ChatInputField({
-    super.key,
-    this.enabled = true,
     required this.onSend,
+    this.enabled = true,
+    super.key,
   });
 
   @override

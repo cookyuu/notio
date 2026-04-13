@@ -6,12 +6,12 @@ import 'package:notio_app/shared/widgets/glass_card.dart';
 
 /// Streaming message bubble (for SSE responses)
 class StreamingMessageBubble extends StatelessWidget {
-  const StreamingMessageBubble({
-    super.key,
-    required this.content,
-  });
-
   final String content;
+
+  const StreamingMessageBubble({
+    required this.content,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

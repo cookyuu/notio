@@ -57,7 +57,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
         error: null,
       );
 
-      final page = refresh ? 0 : state.page;
+      final page = refresh ? 0 : state.page + 1;
       final notifications = await _repository.fetchNotifications(
         source: state.selectedSource,
         page: page,
@@ -75,7 +75,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
         state = state.copyWith(
           notifications: [...state.notifications, ...notifications],
           isLoading: false,
-          page: page + 1,
+          page: page,
           hasMore: notifications.length >= 20,
         );
       }

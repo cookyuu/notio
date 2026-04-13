@@ -10,8 +10,8 @@ class DailyTrendChart extends StatelessWidget {
   final Map<DateTime, int> dailyTrend;
 
   const DailyTrendChart({
-    super.key,
     required this.dailyTrend,
+    super.key,
   });
 
   @override
@@ -51,7 +51,7 @@ class DailyTrendChart extends StatelessWidget {
                     show: true,
                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (value) {
-                      return FlLine(
+                      return const FlLine(
                         color: AppColors.divider,
                         strokeWidth: 1,
                       );
@@ -136,7 +136,7 @@ class DailyTrendChart extends StatelessWidget {
                       ),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: AppColors.primary.withOpacity(0.2),
+                        color: AppColors.primary.withValues(alpha: 0.2),
                       ),
                     ),
                   ],
