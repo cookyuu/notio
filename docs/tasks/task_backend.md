@@ -20,6 +20,21 @@
 - [x] `ApiResponse<T>` 공통 응답 래퍼 구현
 - [x] `GlobalExceptionHandler` + `ErrorCode` 구현
 
+### 인증
+
+- [x] `User` 엔티티 및 `UserRepository` 정의
+- [x] 비밀번호 해시 처리용 `PasswordEncoder` 설정
+- [x] JWT 발급/검증 유틸 또는 서비스 구현
+- [x] `AuthService` 구현 (`login`, `refresh`, `logout`)
+- [x] `AuthController` 구현
+- [x] `POST /api/v1/auth/login` 구현
+- [x] `POST /api/v1/auth/refresh` 구현
+- [x] `POST /api/v1/auth/logout` 구현
+- [x] `SecurityConfig`에 인증/인가 정책 반영 (`/api/v1/auth/**` 예외 처리 포함)
+- [x] 인증 실패 시 `401 UNAUTHORIZED` 응답 검증
+- [x] Refresh token 저장/만료/무효화 정책 정의
+- [ ] 회원가입 API 필요 여부 확정 및 명세 반영
+
 ### Webhook 수신
 
 - [x] `WebhookHandler` 인터페이스 정의
