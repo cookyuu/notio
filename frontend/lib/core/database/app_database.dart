@@ -170,6 +170,10 @@ class AppDatabase extends _$AppDatabase {
   /// Insert multiple chat messages
   Future<void> insertChatMessages(
       List<ChatMessageTableCompanion> messages) async {
+    if (messages.isEmpty) {
+      return;
+    }
+
     await batch((batch) {
       batch.insertAll(chatMessageTable, messages);
     });

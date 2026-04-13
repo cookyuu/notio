@@ -19,6 +19,11 @@ class ChatLocalDataSource {
     // Clear existing messages
     await _database.deleteAllChatMessages();
 
+    if (messages.isEmpty) {
+      await _database.cleanupChatMessages();
+      return;
+    }
+
     // Sort by createdAt descending (newest first)
     final sortedMessages = List<ChatMessageModel>.from(messages)
       ..sort((a, b) => DateTime.parse(b.createdAt).compareTo(DateTime.parse(a.createdAt)));
@@ -29,6 +34,7 @@ class ChatLocalDataSource {
     // Convert to companions and insert
     final companions = messagesToCache.map(_toCompanion).toList();
     await _database.insertChatMessages(companions);
+    await _database.cleanupChatMessages();
   }
 
   /// Add a single message to cache

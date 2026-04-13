@@ -68,7 +68,11 @@ class ChatRepositoryImpl implements ChatRepository {
 
       // Cache the results on first page
       if (page == 0) {
-        await _localDataSource.cacheMessages(models);
+        try {
+          await _localDataSource.cacheMessages(models);
+        } catch (_) {
+          // Ignore cache write failures and prefer the fresh server response.
+        }
       }
 
       return entities;
