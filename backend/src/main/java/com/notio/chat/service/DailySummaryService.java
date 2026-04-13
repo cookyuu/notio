@@ -43,7 +43,7 @@ public class DailySummaryService {
         final List<String> topics = extractTopics(todaysNotifications);
         final String summary = generateSummary(todaysNotifications);
 
-        return new DailySummaryResponse(summary, today, todaysNotifications.size(), topics);
+        return new DailySummaryResponse(summary, today.toString(), todaysNotifications.size(), topics);
     }
 
     private List<String> extractTopics(final List<Notification> notifications) {

@@ -5,7 +5,7 @@ import java.util.List;
 
 public record DailySummaryResponse(
         String summary,
-        LocalDate date,
+        String date,
         int totalMessages,
         List<String> topics
 ) {
