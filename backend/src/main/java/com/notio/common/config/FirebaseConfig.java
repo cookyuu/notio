@@ -16,7 +16,7 @@ public class FirebaseConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(FirebaseConfig.class);
 
-    @Value("${notio.firebase.service-account-path:}")
+    @Value("${notio.firebase.service-account-path:firebase-service-account.json}")
     private String serviceAccountPath;
 
     @Value("${notio.firebase.enabled:false}")
