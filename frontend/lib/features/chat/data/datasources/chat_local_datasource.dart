@@ -4,23 +4,35 @@ import 'package:notio_app/features/chat/data/models/chat_message_model.dart';
 
 /// Drift-based local data source for chat messages
 class ChatLocalDataSource {
-  final AppDatabase _database;
+  final AppDatabase? _database;
 
   ChatLocalDataSource(this._database);
 
+  ChatLocalDataSource.disabled() : _database = null;
+
   /// Get all cached chat messages
   Future<List<ChatMessageModel>> getCachedMessages({int limit = 50}) async {
-    final messages = await _database.getAllChatMessages(limit: limit);
+    final database = _database;
+    if (database == null) {
+      return const [];
+    }
+
+    final messages = await database.getAllChatMessages(limit: limit);
     return messages.map(_toModel).toList();
   }
 
   /// Cache messages (keeps only the most recent 50)
   Future<void> cacheMessages(List<ChatMessageModel> messages) async {
+    final database = _database;
+    if (database == null) {
+      return;
+    }
+
     // Clear existing messages
-    await _database.deleteAllChatMessages();
+    await database.deleteAllChatMessages();
 
     if (messages.isEmpty) {
-      await _database.cleanupChatMessages();
+      await database.cleanupChatMessages();
       return;
     }
 
@@ -33,27 +45,42 @@ class ChatLocalDataSource {
 
     // Convert to companions and insert
     final companions = messagesToCache.map(_toCompanion).toList();
-    await _database.insertChatMessages(companions);
-    await _database.cleanupChatMessages();
+    await database.insertChatMessages(companions);
+    await database.cleanupChatMessages();
   }
 
   /// Add a single message to cache
   Future<void> addMessage(ChatMessageModel message) async {
+    final database = _database;
+    if (database == null) {
+      return;
+    }
+
     final companion = _toCompanion(message);
-    await _database.insertChatMessage(companion);
+    await database.insertChatMessage(companion);
 
     // Clean old and expired messages (TTL: 72h, max: 50)
-    await _database.cleanupChatMessages();
+    await database.cleanupChatMessages();
   }
 
   /// Clear all cached messages
   Future<void> clearCache() async {
-    await _database.deleteAllChatMessages();
+    final database = _database;
+    if (database == null) {
+      return;
+    }
+
+    await database.deleteAllChatMessages();
   }
 
   /// Get message count
   Future<int> getMessageCount() async {
-    final messages = await _database.getAllChatMessages(limit: 1000);
+    final database = _database;
+    if (database == null) {
+      return 0;
+    }
+
+    final messages = await database.getAllChatMessages(limit: 1000);
     return messages.length;
   }
 

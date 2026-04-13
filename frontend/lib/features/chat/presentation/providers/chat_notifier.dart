@@ -17,14 +17,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      // Try to load from cache first
-      final cachedMessages = await _repository.getCachedMessages();
-      if (cachedMessages.isNotEmpty) {
-        state = state.copyWith(
-          messages: cachedMessages,
-          isLoading: false,
-        );
-        return;
+      try {
+        // Try to load from cache first
+        final cachedMessages = await _repository.getCachedMessages();
+        if (cachedMessages.isNotEmpty) {
+          state = state.copyWith(
+            messages: cachedMessages,
+            isLoading: false,
+          );
+          return;
+        }
+      } catch (_) {
+        // Ignore cache read failures and continue with remote history.
       }
 
       // If cache is empty, fetch from remote

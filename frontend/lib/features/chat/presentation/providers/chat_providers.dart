@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notio_app/core/database/database_providers.dart';
 import 'package:notio_app/core/network/dio_client.dart';
@@ -21,6 +22,10 @@ final dioProvider = Provider<Dio>((ref) {
 
 /// Chat local data source provider (Drift-based)
 final chatLocalDataSourceProvider = Provider<ChatLocalDataSource>((ref) {
+  if (kIsWeb) {
+    return ChatLocalDataSource.disabled();
+  }
+
   final database = ref.watch(appDatabaseProvider);
   return ChatLocalDataSource(database);
 });
