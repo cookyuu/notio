@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:notio_app/core/network/connectivity_service.dart';
+import 'package:notio_app/core/network/sync_service.dart';
 import 'package:notio_app/core/router/app_router.dart';
 import 'package:notio_app/core/services/local_notification_service.dart';
 import 'package:notio_app/core/theme/app_theme.dart';
@@ -54,6 +56,12 @@ class _NotioAppState extends ConsumerState<NotioApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final notificationService = ref.read(localNotificationServiceProvider);
       notificationService.onNotificationTapped = _handleNotificationTap;
+
+      // Initialize connectivity service (auto-starts network monitoring)
+      ref.read(connectivityServiceProvider);
+
+      // Initialize sync service (auto-listens to network changes)
+      ref.read(syncServiceProvider);
     });
   }
 

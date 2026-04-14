@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/constants/notification_source.dart';
+import 'package:notio_app/core/network/network_status_provider.dart';
+import 'package:notio_app/core/network/sync_service.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
 import 'package:notio_app/features/notification/presentation/providers/notifications_notifier.dart';
@@ -54,6 +56,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(notificationsProvider);
     final unreadCountAsync = ref.watch(unreadCountProvider);
+    final networkStatus = ref.watch(networkStatusProvider);
+    final syncState = ref.watch(syncServiceProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -95,6 +99,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           ],
         ),
         actions: [
+          // Network status indicator
+          _buildNetworkStatusIndicator(networkStatus, syncState),
+          const SizedBox(width: AppSpacing.s8),
           IconButton(
             icon: const Icon(Icons.done_all),
             onPressed: state.notifications.isNotEmpty
@@ -109,6 +116,66 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       ),
       body: Column(
         children: [
+          // Offline mode banner
+          if (networkStatus == NetworkStatus.offline)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s16,
+                vertical: AppSpacing.s12,
+              ),
+              color: AppColors.warning.withValues(alpha: 0.15),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.cloud_off,
+                    size: 16,
+                    color: AppColors.warning,
+                  ),
+                  const SizedBox(width: AppSpacing.s8),
+                  Expanded(
+                    child: Text(
+                      '오프라인 모드 - 로컬에 저장된 데이터를 표시하고 있습니다',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Sync success banner
+          if (syncState.status == SyncStatus.success &&
+              syncState.lastSyncTime != null &&
+              DateTime.now().difference(syncState.lastSyncTime!).inSeconds < 5)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s16,
+                vertical: AppSpacing.s12,
+              ),
+              color: AppColors.success.withValues(alpha: 0.15),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    size: 16,
+                    color: AppColors.success,
+                  ),
+                  const SizedBox(width: AppSpacing.s8),
+                  Expanded(
+                    child: Text(
+                      '데이터 동기화 완료',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Filter chips
           _buildFilterChips(),
           const SizedBox(height: AppSpacing.s8),
@@ -171,6 +238,48 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNetworkStatusIndicator(
+    NetworkStatus networkStatus,
+    SyncState syncState,
+  ) {
+    // Show syncing indicator
+    if (syncState.status == SyncStatus.syncing) {
+      return const Padding(
+        padding: EdgeInsets.all(AppSpacing.s12),
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      );
+    }
+
+    // Show network status icon
+    return Tooltip(
+      message: networkStatus == NetworkStatus.online
+          ? '온라인'
+          : networkStatus == NetworkStatus.offline
+              ? '오프라인 (로컬 데이터 사용 중)'
+              : '네트워크 상태 확인 중',
+      child: Icon(
+        networkStatus == NetworkStatus.online
+            ? Icons.cloud_done
+            : networkStatus == NetworkStatus.offline
+                ? Icons.cloud_off
+                : Icons.cloud_queue,
+        color: networkStatus == NetworkStatus.online
+            ? AppColors.success
+            : networkStatus == NetworkStatus.offline
+                ? AppColors.warning
+                : AppColors.textTertiary,
+        size: 20,
       ),
     );
   }
