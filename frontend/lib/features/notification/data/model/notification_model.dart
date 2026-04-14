@@ -39,7 +39,7 @@ class NotificationModel {
       createdAt: json['created_at'] as String,
       externalId: json['external_id'] as String?,
       externalUrl: json['external_url'] as String?,
-      metadata: json['metadata'] as Map<String, dynamic>?,
+      metadata: (json['metadata'] as Map?)?.cast<String, dynamic>(),
     );
   }
 

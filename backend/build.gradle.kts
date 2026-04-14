@@ -68,6 +68,10 @@ tasks.withType<Test> {
     javaLauncher = java25Launcher
 }
 
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("-parameters")
+}
+
 tasks.withType<JavaExec> {
     javaLauncher = java25Launcher
 }
