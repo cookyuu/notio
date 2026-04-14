@@ -84,37 +84,37 @@
 
 - [ ] Spring AI Ollama 의존성 추가
 - [ ] `SpringAiConfig` 설정
-- [ ] `ChatService.chat(ChatRequest)` 구현
-- [ ] `ChatService.streamChat(ChatRequest)` 구현 (SSE 스트리밍)
-- [ ] `DailySummaryService.getSummary()` 구현 (Redis 캐시 24h)
-- [ ] `ChatController` 구현
-- [ ] `POST /api/v1/chat` 구현
-- [ ] `GET /api/v1/chat/stream` 구현
-- [ ] `GET /api/v1/chat/daily-summary` 구현
-- [ ] `GET /api/v1/chat/history` 구현
+- [x] `ChatService.chat(ChatRequest)` 구현 (더미 구현)
+- [x] `ChatService.streamChat(ChatRequest)` 구현 (SSE 스트리밍, 더미 구현)
+- [x] `DailySummaryService.getSummary()` 구현 (Redis 캐시 24h)
+- [x] `ChatController` 구현
+- [x] `POST /api/v1/chat` 구현
+- [x] `GET /api/v1/chat/stream` 구현
+- [x] `GET /api/v1/chat/daily-summary` 구현
+- [x] `GET /api/v1/chat/history` 구현
 
 ### 할일
 
-- [ ] `Todo` 엔티티 정의
-- [ ] `V2__create_todos.sql` 작성
-- [ ] `TodoStatus` enum 정의 (`PENDING`, `IN_PROGRESS`, `DONE`)
-- [ ] `TodoService.createFromNotification(request)` 구현 (LLM 제목 자동 생성)
-- [ ] `TodoController` 구현
-- [ ] `POST /api/v1/todos` 구현
-- [ ] `GET /api/v1/todos` 구현
-- [ ] `PATCH /api/v1/todos/{id}` 구현
+- [x] `Todo` 엔티티 정의
+- [x] `V1__init_schema.sql`에서 todos 테이블 생성 완료
+- [x] `TodoStatus` enum 정의 (`PENDING`, `IN_PROGRESS`, `DONE`)
+- [x] `TodoService.createFromNotification(request)` 구현 (LLM 제목 자동 생성은 더미)
+- [x] `TodoController` 구현
+- [x] `POST /api/v1/todos` 구현
+- [x] `GET /api/v1/todos` 구현
+- [x] `PATCH /api/v1/todos/{id}` 구현
 
 ### 분석
 
-- [ ] `AnalyticsService.getWeeklySummary()` 구현
-- [ ] `GET /api/v1/analytics/weekly` 구현
+- [x] `AnalyticsService.getWeeklySummary()` 구현
+- [x] `GET /api/v1/analytics/weekly` 구현
 
 ### 테스트 및 품질
 
-- [ ] `NotificationServiceTest` 단위 테스트
-- [ ] `WebhookDispatcherTest` 단위 테스트
-- [ ] `NotificationControllerTest` 슬라이스 테스트
-- [ ] `WebhookControllerTest` 작성 (서명 검증 시나리오)
+- [x] `NotificationServiceTest` 단위 테스트
+- [x] `WebhookDispatcherTest` 단위 테스트
+- [x] `NotificationControllerTest` 슬라이스 테스트
+- [x] `WebhookControllerTest` 작성 (서명 검증 시나리오)
 - [ ] Testcontainers PostgreSQL + Redis 통합 테스트 환경 구성
 - [ ] Checkstyle 설정 (`google_checks.xml` 기반)
 - [ ] SpotBugs 설정
