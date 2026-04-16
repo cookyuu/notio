@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:notio_app/core/network/dio_client.dart';
 import 'package:notio_app/shared/constant/api_constants.dart';
@@ -9,10 +10,6 @@ import '../../domain/entity/connection_entity.dart';
 import '../../domain/entity/connection_provider.dart';
 import '../../domain/entity/connection_auth_type.dart';
 import '../../domain/entity/connection_status.dart';
-import '../../data/model/connection_create_response.dart';
-import '../../data/model/connection_test_response.dart';
-import '../../data/model/connection_refresh_response.dart';
-import '../../data/model/connection_rotate_key_response.dart';
 
 part 'connection_providers.g.dart';
 
@@ -383,9 +380,7 @@ class ConnectionActionsNotifier extends StateNotifier<ConnectionActionState> {
 
       state = state.copyWith(
         isTesting: false,
-        successMessage: response.success
-            ? response.message ?? 'Connection test successful'
-            : null,
+        successMessage: response.success ? response.message : null,
         errorMessage: !response.success ? response.message : null,
       );
     } catch (e) {
@@ -402,17 +397,14 @@ class ConnectionActionsNotifier extends StateNotifier<ConnectionActionState> {
 
     try {
       final repository = ref.read(connectionRepositoryProvider);
-      final response = await repository.refreshConnection(id);
+      await repository.refreshConnection(id);
 
       // Refresh connections list to reflect updated status
       await ref.read(connectionsProvider.notifier).refresh();
 
       state = state.copyWith(
         isRefreshing: false,
-        successMessage: response.success
-            ? response.message ?? 'Token refreshed successfully'
-            : null,
-        errorMessage: !response.success ? response.message : null,
+        successMessage: 'Token refreshed successfully',
       );
     } catch (e) {
       state = state.copyWith(
@@ -431,19 +423,14 @@ class ConnectionActionsNotifier extends StateNotifier<ConnectionActionState> {
       final response = await repository.rotateKey(id);
 
       // Show one-time API key
-      if (response.apiKey != null) {
-        ref.read(oneTimeApiKeyProvider.notifier).showApiKey(response.apiKey!);
-      }
+      ref.read(oneTimeApiKeyProvider.notifier).showApiKey(response.apiKey);
 
       // Refresh connections list to reflect updated key preview
       await ref.read(connectionsProvider.notifier).refresh();
 
       state = state.copyWith(
         isRotating: false,
-        successMessage: response.success
-            ? response.message ?? 'API key rotated successfully'
-            : null,
-        errorMessage: !response.success ? response.message : null,
+        successMessage: 'API key rotated successfully',
       );
     } catch (e) {
       state = state.copyWith(

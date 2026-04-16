@@ -46,6 +46,11 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(height: 32, color: AppColors.divider),
 
+          // Connections Section
+          _buildSectionHeader('연동'),
+          _buildConnectionsManagementButton(context),
+          const Divider(height: 32, color: AppColors.divider),
+
           // Account Section
           _buildSectionHeader('계정'),
           _buildLogoutButton(context, ref),
@@ -242,6 +247,39 @@ class SettingsScreen extends ConsumerWidget {
           ? const Icon(Icons.check, color: AppColors.primary)
           : null,
       onTap: onTap,
+    );
+  }
+
+  Widget _buildConnectionsManagementButton(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.s12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: ListTile(
+        leading: const Icon(
+          Icons.hub_outlined,
+          color: AppColors.primary,
+        ),
+        title: const Text(
+          '연동 관리',
+          style: AppTextStyles.bodyLarge,
+        ),
+        subtitle: Text(
+          'Claude, Slack, Gmail 등 외부 서비스 연동',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: AppColors.textSecondary,
+        ),
+        onTap: () {
+          context.push('/settings/connections');
+        },
+      ),
     );
   }
 

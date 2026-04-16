@@ -9,6 +9,8 @@ import 'package:notio_app/features/chat/presentation/screens/chat_screen.dart';
 import 'package:notio_app/features/analytics/presentation/analytics_screen.dart';
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
 import 'package:notio_app/features/settings/presentation/screens/developer_menu_screen.dart';
+import 'package:notio_app/features/connections/presentation/screens/connections_screen.dart';
+import 'package:notio_app/features/connections/presentation/screens/connection_detail_screen.dart';
 
 class RouterRefreshNotifier extends ChangeNotifier {
   void refresh() {
@@ -56,6 +58,23 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => const NoTransitionPage(
           child: DeveloperMenuScreen(),
         ),
+      ),
+      GoRoute(
+        path: Routes.connections,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ConnectionsScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: ':id',
+            pageBuilder: (context, state) {
+              final id = int.parse(state.pathParameters['id']!);
+              return NoTransitionPage(
+                child: ConnectionDetailScreen(connectionId: id),
+              );
+            },
+          ),
+        ],
       ),
       ShellRoute(
         builder: (context, state, child) {

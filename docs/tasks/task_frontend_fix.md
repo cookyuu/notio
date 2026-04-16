@@ -151,79 +151,79 @@
 
 ### Routing
 
-- [ ] `SettingsScreen`에 `연동 관리` 진입점 추가
-- [ ] `/settings/connections` route 추가
-- [ ] connection 상세 route 추가 여부 결정 및 구현
+- [x] `SettingsScreen`에 `연동 관리` 진입점 추가
+- [x] `/settings/connections` route 추가
+- [x] connection 상세 route 추가 여부 결정 및 구현
 - [ ] OAuth callback 이후 설정 화면 복귀 flow 점검
 
 ### ConnectionsScreen
 
-- [ ] 전체 connection list 표시
-- [ ] provider icon 표시
-- [ ] display name 표시
-- [ ] account label 표시
-- [ ] status 표시
-- [ ] auth type 표시
-- [ ] last used 표시
-- [ ] created at 표시
-- [ ] All filter 구현
-- [ ] Active filter 구현
-- [ ] Needs Action filter 구현
-- [ ] API Key filter 구현
-- [ ] OAuth filter 구현
-- [ ] pull-to-refresh 구현
-- [ ] empty state 구현
-- [ ] loading state 구현
-- [ ] error state 구현
+- [x] 전체 connection list 표시
+- [x] provider icon 표시
+- [x] display name 표시
+- [x] account label 표시
+- [x] status 표시
+- [x] auth type 표시
+- [x] last used 표시
+- [x] created at 표시
+- [x] All filter 구현
+- [x] Active filter 구현
+- [x] Needs Action filter 구현
+- [x] API Key filter 구현
+- [x] OAuth filter 구현
+- [x] pull-to-refresh 구현
+- [x] empty state 구현
+- [x] loading state 구현
+- [x] error state 구현
 
 ### CreateConnectionSheet
 
-- [ ] provider 선택 UI 구현
-- [ ] provider별 지원 auth type 표시
-- [ ] API Key 방식이면 display name 입력
-- [ ] OAuth 방식이면 display name 입력
-- [ ] Claude API Key connection 생성 flow 구현
-- [ ] Slack OAuth 시작 flow 구현
-- [ ] Gmail OAuth 시작 flow 구현
-- [ ] provider unsupported 상태 처리
-- [ ] auth type unsupported 상태 처리
+- [x] provider 선택 UI 구현
+- [x] provider별 지원 auth type 표시
+- [x] API Key 방식이면 display name 입력
+- [x] OAuth 방식이면 display name 입력
+- [x] Claude API Key connection 생성 flow 구현
+- [x] Slack OAuth 시작 flow 구현
+- [x] Gmail OAuth 시작 flow 구현
+- [x] provider unsupported 상태 처리
+- [x] auth type unsupported 상태 처리
 
 ### OneTimeApiKeyDialog
 
-- [ ] 원문 API Key 1회 표시
-- [ ] copy 버튼 구현
-- [ ] Claude Code shell snippet 표시
-- [ ] `NOTIO_WEBHOOK_API_KEY=<api_key>` 형식 표시
-- [ ] 닫기 확인 동작 구현
-- [ ] 닫은 뒤 재조회 불가 문구 표시
-- [ ] 원문 key가 로그에 출력되지 않도록 점검
+- [x] 원문 API Key 1회 표시
+- [x] copy 버튼 구현
+- [x] Claude Code shell snippet 표시
+- [x] `NOTIO_WEBHOOK_API_KEY=<api_key>` 형식 표시
+- [x] 닫기 확인 동작 구현
+- [x] 닫은 뒤 재조회 불가 문구 표시
+- [x] 원문 key가 로그에 출력되지 않도록 점검
 
 ### ConnectionDetailScreen
 
-- [ ] connection 기본 정보 표시
-- [ ] key preview 표시
-- [ ] account label 표시
-- [ ] capabilities 표시
-- [ ] test 버튼 표시
-- [ ] refresh 버튼 표시
-- [ ] rotate key 버튼 표시
-- [ ] disconnect 버튼 표시
+- [x] connection 기본 정보 표시
+- [x] key preview 표시
+- [x] account label 표시
+- [x] capabilities 표시
+- [x] test 버튼 표시
+- [x] refresh 버튼 표시
+- [x] rotate key 버튼 표시
+- [x] disconnect 버튼 표시
 - [ ] 최근 event 일부 표시
-- [ ] rotate key 확인 dialog 구현
-- [ ] disconnect 확인 dialog 구현
+- [x] rotate key 확인 dialog 구현
+- [x] disconnect 확인 dialog 구현
 
 ### Shared Widgets
 
-- [ ] `ConnectionCard` 구현
-- [ ] `ConnectionStatusBadge` 구현
-- [ ] provider icon helper 구현
-- [ ] auth type label helper 구현
-- [ ] capability chip 구현
-- [ ] `GlassCard` 재사용
-- [ ] 색상은 `AppColors`만 사용
-- [ ] 타이포그래피는 `AppTextStyles`만 사용
-- [ ] 간격은 `AppSpacing`만 사용
-- [ ] 텍스트 overflow와 모바일 레이아웃 점검
+- [x] `ConnectionCard` 구현
+- [x] `ConnectionStatusBadge` 구현
+- [x] provider icon helper 구현
+- [x] auth type label helper 구현
+- [x] capability chip 구현
+- [x] `GlassCard` 재사용
+- [x] 색상은 `AppColors`만 사용
+- [x] 타이포그래피는 `AppTextStyles`만 사용
+- [x] 간격은 `AppSpacing`만 사용
+- [x] 텍스트 overflow와 모바일 레이아웃 점검
 
 ---
 
