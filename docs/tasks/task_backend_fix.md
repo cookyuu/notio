@@ -7,13 +7,13 @@
 
 ## Phase 0. 인증 도메인 재구성
 
-- [ ] `users` 구조를 `primary_email`, `display_name`, `status`, `deleted_at` 중심으로 정리한다.
-- [ ] `auth_identities` 테이블을 추가하고 `provider`, `provider_user_id`, `email`, `password_hash`, `email_verified`를 설계한다.
-- [ ] `password_reset_tokens` 테이블을 추가하고 `token_hash`, `expires_at`, `used_at` 정책을 반영한다.
-- [ ] `auth_provider_states` 테이블을 추가하고 `provider`, `state`, `platform`, `redirect_uri`, `pkce_verifier`, `expires_at`를 저장할 수 있게 한다.
-- [ ] `auth_identities`에 LOCAL 이메일 unique, OAuth provider/provider_user_id unique 제약을 설정한다.
-- [ ] 관련 FK, 인덱스, 소프트 삭제 컬럼 정책을 Flyway 마이그레이션으로 반영한다.
-- [ ] 기존 `users.email/password` 직접 참조 로직을 `User + AuthIdentity` 구조로 옮길 영향 범위를 점검한다.
+- [x] `users` 구조를 `primary_email`, `display_name`, `status`, `deleted_at` 중심으로 정리한다.
+- [x] `auth_identities` 테이블을 추가하고 `provider`, `provider_user_id`, `email`, `password_hash`, `email_verified`를 설계한다.
+- [x] `password_reset_tokens` 테이블을 추가하고 `token_hash`, `expires_at`, `used_at` 정책을 반영한다.
+- [x] `auth_provider_states` 테이블을 추가하고 `provider`, `state`, `platform`, `redirect_uri`, `pkce_verifier`, `expires_at`를 저장할 수 있게 한다.
+- [x] `auth_identities`에 LOCAL 이메일 unique, OAuth provider/provider_user_id unique 제약을 설정한다.
+- [x] 관련 FK, 인덱스, 소프트 삭제 컬럼 정책을 Flyway 마이그레이션으로 반영한다.
+- [x] 기존 `users.email/password` 직접 참조 로직을 `User + AuthIdentity` 구조로 옮길 영향 범위를 점검한다.
 
 ## Phase 1. 로컬 인증 기능 구현
 

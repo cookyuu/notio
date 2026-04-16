@@ -1,12 +1,15 @@
 package com.notio.auth.service;
 
 import com.notio.auth.config.JwtProperties;
+import com.notio.auth.domain.AuthIdentity;
+import com.notio.auth.domain.AuthProvider;
 import com.notio.auth.domain.RefreshToken;
 import com.notio.auth.domain.User;
 import com.notio.auth.dto.LoginRequest;
 import com.notio.auth.dto.LoginResponse;
 import com.notio.auth.dto.RefreshRequest;
 import com.notio.auth.dto.RefreshResponse;
+import com.notio.auth.repository.AuthIdentityRepository;
 import com.notio.auth.repository.RefreshTokenRepository;
 import com.notio.auth.repository.UserRepository;
 import com.notio.auth.util.JwtTokenProvider;
@@ -24,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AuthService {
 
+    private final AuthIdentityRepository authIdentityRepository;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
@@ -35,21 +39,20 @@ public class AuthService {
      */
     @Transactional
     public LoginResponse login(final LoginRequest request) {
-        // 사용자 조회
-        final User user = userRepository.findByEmailAndDeletedAtIsNull(request.getEmail())
+        final AuthIdentity authIdentity = authIdentityRepository
+                .findActiveByProviderAndEmail(AuthProvider.LOCAL, request.getEmail())
                 .orElseThrow(() -> new NotioException(ErrorCode.INVALID_CREDENTIALS));
+        final User user = authIdentity.getUser();
 
-        // 비밀번호 검증
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (authIdentity.getPasswordHash() == null
+                || !passwordEncoder.matches(request.getPassword(), authIdentity.getPasswordHash())) {
             throw new NotioException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        // 토큰 생성
         final String userId = String.valueOf(user.getId());
-        final String accessToken = jwtTokenProvider.generateAccessToken(userId, user.getEmail());
+        final String accessToken = jwtTokenProvider.generateAccessToken(userId, user.getPrimaryEmail());
         final String refreshTokenValue = jwtTokenProvider.generateRefreshToken(userId);
 
-        // Refresh Token 저장
         final RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .token(refreshTokenValue)
@@ -57,11 +60,11 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(refreshToken);
 
-        log.info("User logged in successfully: userId={}, email={}", userId, user.getEmail());
+        log.info("User logged in successfully: userId={}, email={}", userId, user.getPrimaryEmail());
 
         return LoginResponse.builder()
                 .userId(userId)
-                .email(user.getEmail())
+                .email(user.getPrimaryEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
                 .expiresIn((int) (jwtProperties.getExpiration() / 1000))
@@ -73,17 +76,14 @@ public class AuthService {
      */
     @Transactional
     public RefreshResponse refresh(final RefreshRequest request) {
-        // Refresh Token 검증
         if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
             throw new NotioException(ErrorCode.INVALID_TOKEN);
         }
 
-        // DB에서 Refresh Token 조회
         final RefreshToken refreshToken = refreshTokenRepository
                 .findByTokenAndRevokedAtIsNull(request.getRefreshToken())
                 .orElseThrow(() -> new NotioException(ErrorCode.INVALID_TOKEN));
 
-        // Refresh Token 유효성 검증 (만료 여부)
         if (!refreshToken.isValid()) {
             throw new NotioException(ErrorCode.EXPIRED_TOKEN);
         }
@@ -91,14 +91,11 @@ public class AuthService {
         final User user = refreshToken.getUser();
         final String userId = String.valueOf(user.getId());
 
-        // 새로운 토큰 생성
-        final String newAccessToken = jwtTokenProvider.generateAccessToken(userId, user.getEmail());
+        final String newAccessToken = jwtTokenProvider.generateAccessToken(userId, user.getPrimaryEmail());
         final String newRefreshTokenValue = jwtTokenProvider.generateRefreshToken(userId);
 
-        // 기존 Refresh Token 무효화
         refreshToken.revoke();
 
-        // 새로운 Refresh Token 저장
         final RefreshToken newRefreshToken = RefreshToken.builder()
                 .user(user)
                 .token(newRefreshTokenValue)
@@ -120,10 +117,9 @@ public class AuthService {
      */
     @Transactional
     public void logout(final String userId) {
-        final User user = userRepository.findById(Long.parseLong(userId))
+        final User user = userRepository.findActiveById(Long.parseLong(userId))
                 .orElseThrow(() -> new NotioException(ErrorCode.UNAUTHORIZED));
 
-        // 사용자의 모든 Refresh Token 무효화
         refreshTokenRepository.revokeAllByUser(user);
 
         log.info("User logged out successfully: userId={}", userId);

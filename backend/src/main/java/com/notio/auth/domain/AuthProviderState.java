@@ -15,53 +15,40 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "users")
+@Table(name = "auth_provider_states")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class User {
+public class AuthProviderState {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
-    private String primaryEmail;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private AuthProvider provider;
 
-    @Column(nullable = false, length = 100)
-    private String displayName;
+    @Column(nullable = false, unique = true, length = 255)
+    private String state;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private UserStatus status;
+    private AuthPlatform platform;
+
+    @Column(nullable = false, length = 2048)
+    private String redirectUri;
+
+    @Column(length = 255)
+    private String pkceVerifier;
+
+    @Column(nullable = false)
+    private OffsetDateTime expiresAt;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private OffsetDateTime updatedAt;
-
-    @Column
-    private OffsetDateTime deletedAt;
-
-    /**
-     * 사용자가 삭제되지 않았는지 확인
-     */
-    public boolean isActive() {
-        return deletedAt == null && status == UserStatus.ACTIVE;
-    }
-
-    /**
-     * 사용자를 soft delete 처리
-     */
-    public void delete() {
-        this.status = UserStatus.DELETED;
-        this.deletedAt = OffsetDateTime.now();
-    }
 }

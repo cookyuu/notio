@@ -4,9 +4,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import lombok.AccessLevel;
@@ -18,26 +21,36 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "users")
+@Table(name = "auth_identities")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class User {
+public class AuthIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
-    private String primaryEmail;
-
-    @Column(nullable = false, length = 100)
-    private String displayName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private UserStatus status;
+    private AuthProvider provider;
+
+    @Column(length = 255)
+    private String providerUserId;
+
+    @Column(length = 255)
+    private String email;
+
+    @Column(length = 255)
+    private String passwordHash;
+
+    @Column(nullable = false)
+    private boolean emailVerified;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -50,18 +63,7 @@ public class User {
     @Column
     private OffsetDateTime deletedAt;
 
-    /**
-     * 사용자가 삭제되지 않았는지 확인
-     */
     public boolean isActive() {
-        return deletedAt == null && status == UserStatus.ACTIVE;
-    }
-
-    /**
-     * 사용자를 soft delete 처리
-     */
-    public void delete() {
-        this.status = UserStatus.DELETED;
-        this.deletedAt = OffsetDateTime.now();
+        return deletedAt == null && user != null && user.isActive();
     }
 }
