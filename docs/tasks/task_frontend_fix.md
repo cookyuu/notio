@@ -108,40 +108,40 @@
 
 ### Providers
 
-- [ ] `connectionsProvider` 구현
-- [ ] `connectionDetailProvider` 구현
-- [ ] `connectionActionsProvider` 또는 action 상태 notifier 구현
-- [ ] provider/status/auth type filter 상태 provider 구현
-- [ ] one-time API key 표시 상태 provider 구현
-- [ ] OAuth 진행 상태 provider 구현
+- [x] `connectionsProvider` 구현
+- [x] `connectionDetailProvider` 구현
+- [x] `connectionActionsProvider` 또는 action 상태 notifier 구현
+- [x] provider/status/auth type filter 상태 provider 구현
+- [x] one-time API key 표시 상태 provider 구현
+- [x] OAuth 진행 상태 provider 구현
 
 ### 목록 상태
 
-- [ ] 최초 로딩 상태 구현
-- [ ] pull-to-refresh 상태 구현
-- [ ] empty state 처리
-- [ ] error state 처리
-- [ ] filter 변경 시 목록 재계산 또는 재조회
-- [ ] create/delete/rotate/test/refresh 후 목록 refresh
+- [x] 최초 로딩 상태 구현
+- [x] pull-to-refresh 상태 구현
+- [x] empty state 처리
+- [x] error state 처리
+- [x] filter 변경 시 목록 재계산 또는 재조회
+- [x] create/delete/rotate/test/refresh 후 목록 refresh
 
 ### Action 상태
 
-- [ ] connection 생성 중 loading 상태 처리
-- [ ] connection 삭제 중 loading 상태 처리
-- [ ] test 요청 중 loading 상태 처리
-- [ ] refresh 요청 중 loading 상태 처리
-- [ ] rotate-key 요청 중 loading 상태 처리
-- [ ] action별 성공 메시지 처리
-- [ ] action별 실패 메시지 처리
-- [ ] rotate-key 성공 시 one-time API key dialog 표시
+- [x] connection 생성 중 loading 상태 처리
+- [x] connection 삭제 중 loading 상태 처리
+- [x] test 요청 중 loading 상태 처리
+- [x] refresh 요청 중 loading 상태 처리
+- [x] rotate-key 요청 중 loading 상태 처리
+- [x] action별 성공 메시지 처리
+- [x] action별 실패 메시지 처리
+- [x] rotate-key 성공 시 one-time API key dialog 표시
 
 ### One-time API Key 상태
 
-- [ ] API Key 생성 성공 시 원문 key를 dialog 상태에만 보관
-- [ ] API Key rotate 성공 시 원문 key를 dialog 상태에만 보관
-- [ ] dialog 닫기 시 원문 key를 즉시 폐기
-- [ ] 화면 재진입, refresh, 앱 재시작 후 원문 key 재표시 불가
-- [ ] copy 성공/실패 상태 처리
+- [x] API Key 생성 성공 시 원문 key를 dialog 상태에만 보관
+- [x] API Key rotate 성공 시 원문 key를 dialog 상태에만 보관
+- [x] dialog 닫기 시 원문 key를 즉시 폐기
+- [x] 화면 재진입, refresh, 앱 재시작 후 원문 key 재표시 불가
+- [x] copy 성공/실패 상태 처리
 
 ---
 
