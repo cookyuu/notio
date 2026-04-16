@@ -207,45 +207,45 @@
 
 ### Rate Limit 구조
 
-- [ ] `RateLimitFilter` 또는 `HandlerInterceptor` 구현
-- [ ] `RateLimitService` 구현
-- [ ] `RateLimitPolicyResolver` 구현
-- [ ] `RedisRateLimitStore` 구현
-- [ ] `/api/v1/**` 전체에 rate limit 적용
-- [ ] `/swagger-ui/**` 제외
-- [ ] `/api-docs/**` 제외
-- [ ] health check 제외
-- [ ] static assets 제외
-- [ ] Redis 장애 시 local/dev profile fail-open 정책 적용
-- [ ] 운영 profile에서 민감 endpoint fail-closed 옵션 제공
+- [x] `RateLimitFilter` 또는 `HandlerInterceptor` 구현
+- [x] `RateLimitService` 구현
+- [x] `RateLimitPolicyResolver` 구현
+- [x] `RedisRateLimitStore` 구현
+- [x] `/api/v1/**` 전체에 rate limit 적용
+- [x] `/swagger-ui/**` 제외
+- [x] `/api-docs/**` 제외
+- [x] health check 제외
+- [x] static assets 제외
+- [x] Redis 장애 시 local/dev profile fail-open 정책 적용
+- [x] 운영 profile에서 민감 endpoint fail-closed 옵션 제공
 
 ### Rate Limit 정책
 
-- [ ] login은 IP당 5회/분, 30회/시간 제한
-- [ ] refresh는 IP당 30회/분, user당 60회/시간 제한
-- [ ] webhook은 connection/key prefix당 30회/분, 5,000회/일 제한
-- [ ] webhook은 IP당 60회/분 보조 제한
-- [ ] notifications-read는 user당 120회/분 제한
-- [ ] notifications-write는 user당 60회/분 제한
-- [ ] chat-ai는 user당 20회/분, 200회/일 제한
-- [ ] device-register는 user당 10회/분, IP당 30회/분 제한
-- [ ] 잘못된 webhook key 반복 요청도 IP 기준으로 제한
+- [x] login은 IP당 5회/분, 30회/시간 제한
+- [x] refresh는 IP당 30회/분, user당 60회/시간 제한
+- [x] webhook은 connection/key prefix당 30회/분, 5,000회/일 제한
+- [x] webhook은 IP당 60회/분 보조 제한
+- [x] notifications-read는 user당 120회/분 제한
+- [x] notifications-write는 user당 60회/분 제한
+- [x] chat-ai는 user당 20회/분, 200회/일 제한
+- [x] device-register는 user당 10회/분, IP당 30회/분 제한
+- [x] 잘못된 webhook key 반복 요청도 IP 기준으로 제한
 
 ### Rate Limit 응답
 
-- [ ] 초과 시 `429 RATE_LIMIT_EXCEEDED` 반환
-- [ ] `Retry-After` header 포함
-- [ ] `X-RateLimit-Limit` header 포함
-- [ ] `X-RateLimit-Remaining` header 포함
-- [ ] `X-RateLimit-Reset` header 포함
-- [ ] 응답 body는 `ApiResponse` error 형식 유지
+- [x] 초과 시 `429 RATE_LIMIT_EXCEEDED` 반환
+- [x] `Retry-After` header 포함
+- [x] `X-RateLimit-Limit` header 포함
+- [x] `X-RateLimit-Remaining` header 포함
+- [x] `X-RateLimit-Reset` header 포함
+- [x] 응답 body는 `ApiResponse` error 형식 유지
 
 ### Payload 제한
 
-- [ ] Webhook body 64KB 초과 시 JSON parse 전에 `413` 반환
-- [ ] 일반 JSON body 1MB 초과 시 JSON parse 전에 `413` 반환
-- [ ] Chat input 글자 수 제한 적용
-- [ ] 인증, rate limit, payload 제한 이후에만 비싼 작업 수행
+- [x] Webhook body 64KB 초과 시 JSON parse 전에 `413` 반환
+- [x] 일반 JSON body 1MB 초과 시 JSON parse 전에 `413` 반환
+- [x] Chat input 글자 수 제한 적용
+- [x] 인증, rate limit, payload 제한 이후에만 비싼 작업 수행
 
 ---
 

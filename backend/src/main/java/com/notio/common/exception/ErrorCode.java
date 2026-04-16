@@ -9,6 +9,9 @@ public enum ErrorCode {
     CONNECTION_PROVIDER_UNSUPPORTED(HttpStatus.BAD_REQUEST, "CONNECTION_PROVIDER_UNSUPPORTED", "지원하지 않는 연결 제공자입니다."),
     CONNECTION_AUTH_TYPE_UNSUPPORTED(HttpStatus.BAD_REQUEST, "CONNECTION_AUTH_TYPE_UNSUPPORTED", "지원하지 않는 연결 인증 방식입니다."),
 
+    // 413 Payload Too Large
+    PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "PAYLOAD_TOO_LARGE", "요청 본문 크기가 제한을 초과했습니다."),
+
     // 401 Unauthorized
     WEBHOOK_VERIFICATION_FAILED(HttpStatus.UNAUTHORIZED, "WEBHOOK_VERIFICATION_FAILED", "Webhook 서명 검증에 실패했습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증에 실패했습니다."),
@@ -24,6 +27,9 @@ public enum ErrorCode {
     TODO_NOT_FOUND(HttpStatus.NOT_FOUND, "TODO_NOT_FOUND", "할일을 찾을 수 없습니다."),
     DEVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "DEVICE_NOT_FOUND", "디바이스를 찾을 수 없습니다."),
     CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연결을 찾을 수 없습니다."),
+
+    // 429 Too Many Requests
+    RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT_EXCEEDED", "요청 횟수 제한을 초과했습니다."),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다."),

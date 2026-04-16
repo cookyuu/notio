@@ -66,6 +66,12 @@ notio:
     security:
       webhook-key-pepper: ${NOTIO_WEBHOOK_KEY_PEPPER:local-dev-webhook-pepper-change-me}
       credential-encryption-key: ${NOTIO_CREDENTIAL_ENCRYPTION_KEY:}
+  rate-limit:
+    fail-open-profiles: ${NOTIO_RATE_LIMIT_FAIL_OPEN_PROFILES:local,dev,test}
+    fail-closed-paths: ${NOTIO_RATE_LIMIT_FAIL_CLOSED_PATHS:/api/v1/webhook/**}
+    webhook-body-max-bytes: ${NOTIO_RATE_LIMIT_WEBHOOK_BODY_MAX_BYTES:65536}
+    json-body-max-bytes: ${NOTIO_RATE_LIMIT_JSON_BODY_MAX_BYTES:1048576}
+    chat-max-chars: ${NOTIO_RATE_LIMIT_CHAT_MAX_CHARS:4000}
   firebase:
     enabled: ${NOTIO_FIREBASE_ENABLED:false}
     service-account-path: ${NOTIO_FIREBASE_SERVICE_ACCOUNT_PATH:}
