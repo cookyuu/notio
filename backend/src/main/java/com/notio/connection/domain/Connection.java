@@ -2,6 +2,8 @@ package com.notio.connection.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,13 +32,15 @@ public class Connection {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     @Builder.Default
-    private String provider = "CLAUDE";
+    private ConnectionProvider provider = ConnectionProvider.CLAUDE;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "auth_type", nullable = false, length = 50)
     @Builder.Default
-    private String authType = "API_KEY";
+    private ConnectionAuthType authType = ConnectionAuthType.API_KEY;
 
     @Column(name = "display_name", nullable = false, length = 100)
     @Builder.Default
@@ -54,9 +58,10 @@ public class Connection {
     @Column(name = "subscription_id", length = 255)
     private String subscriptionId;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     @Builder.Default
-    private String status = "ACTIVE";
+    private ConnectionStatus status = ConnectionStatus.ACTIVE;
 
     @Column(nullable = false, columnDefinition = "jsonb")
     @Builder.Default
@@ -79,4 +84,17 @@ public class Connection {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    public void refresh() {
+        this.lastUsedAt = Instant.now();
+    }
+
+    public void revoke() {
+        this.status = ConnectionStatus.REVOKED;
+        this.deletedAt = Instant.now();
+    }
+
+    public void activate() {
+        this.status = ConnectionStatus.ACTIVE;
+    }
 }

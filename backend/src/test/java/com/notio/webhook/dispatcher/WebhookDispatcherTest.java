@@ -56,7 +56,7 @@ class WebhookDispatcherTest {
                 "{}",
                 Map.of()
         ))).isInstanceOf(NotioException.class)
-                .hasMessage("Webhook 검증에 실패했습니다.");
+                .hasMessage("Webhook 서명 검증에 실패했습니다.");
     }
 
     private record TestHandler(NotificationEvent event) implements WebhookHandler {

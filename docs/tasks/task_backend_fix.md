@@ -60,64 +60,64 @@
 
 ### 데이터베이스
 
-- [ ] `connections` 테이블 Flyway migration 작성
-- [ ] `connection_credentials` 테이블 Flyway migration 작성
-- [ ] `connection_events` 테이블 Flyway migration 작성
-- [ ] `connections.user_id`에 `fk_connections_users` 외래키 추가
-- [ ] `connection_credentials.connection_id`에 `fk_connection_credentials_connections` 외래키 추가
-- [ ] `idx_connections_user_id` 인덱스 추가
-- [ ] `idx_connections_provider` 인덱스 추가
-- [ ] `idx_connections_status` 인덱스 추가
-- [ ] `idx_connections_external_account` 인덱스 추가
-- [ ] `idx_connections_external_workspace` 인덱스 추가
-- [ ] `idx_connections_subscription` 인덱스 추가
-- [ ] active credential의 `key_prefix` unique partial index 추가
-- [ ] connection event 조회용 인덱스 추가
+- [x] `connections` 테이블 Flyway migration 작성
+- [x] `connection_credentials` 테이블 Flyway migration 작성
+- [x] `connection_events` 테이블 Flyway migration 작성
+- [x] `connections.user_id`에 `fk_connections_users` 외래키 추가
+- [x] `connection_credentials.connection_id`에 `fk_connection_credentials_connections` 외래키 추가
+- [x] `idx_connections_user_id` 인덱스 추가
+- [x] `idx_connections_provider` 인덱스 추가
+- [x] `idx_connections_status` 인덱스 추가
+- [x] `idx_connections_external_account` 인덱스 추가
+- [x] `idx_connections_external_workspace` 인덱스 추가
+- [x] `idx_connections_subscription` 인덱스 추가
+- [x] active credential의 `key_prefix` unique partial index 추가
+- [x] connection event 조회용 인덱스 추가
 
 ### Domain 모델
 
-- [ ] `com.notio.connection` 도메인 패키지 생성
-- [ ] `Connection` 엔티티 정의
-- [ ] `ConnectionCredential` 엔티티 정의
-- [ ] `ConnectionEvent` 엔티티 정의
-- [ ] `ConnectionProvider` enum 정의 (`CLAUDE`, `SLACK`, `GMAIL`, `GITHUB`, `DISCORD`, `JIRA`, `LINEAR`, `TEAMS`)
-- [ ] `ConnectionAuthType` enum 정의 (`API_KEY`, `OAUTH`, `SIGNATURE`, `SYSTEM`)
-- [ ] `ConnectionStatus` enum 정의 (`PENDING`, `ACTIVE`, `NEEDS_ACTION`, `REVOKED`, `ERROR`)
-- [ ] `ConnectionCapability` enum 정의 (`WEBHOOK_RECEIVE`, `TEST_MESSAGE`, `REFRESH_TOKEN`, `ROTATE_KEY`)
-- [ ] `ConnectionRepository` 구현
-- [ ] `ConnectionCredentialRepository` 구현
-- [ ] `ConnectionEventRepository` 구현
-- [ ] soft delete 조건을 repository query에 일관 적용
+- [x] `com.notio.connection` 도메인 패키지 생성
+- [x] `Connection` 엔티티 정의
+- [x] `ConnectionCredential` 엔티티 정의
+- [x] `ConnectionEvent` 엔티티 정의
+- [x] `ConnectionProvider` enum 정의 (`CLAUDE`, `SLACK`, `GMAIL`, `GITHUB`, `DISCORD`, `JIRA`, `LINEAR`, `TEAMS`)
+- [x] `ConnectionAuthType` enum 정의 (`API_KEY`, `OAUTH`, `SIGNATURE`, `SYSTEM`)
+- [x] `ConnectionStatus` enum 정의 (`PENDING`, `ACTIVE`, `NEEDS_ACTION`, `REVOKED`, `ERROR`)
+- [x] `ConnectionCapability` enum 정의 (`WEBHOOK_RECEIVE`, `TEST_MESSAGE`, `REFRESH_TOKEN`, `ROTATE_KEY`)
+- [x] `ConnectionRepository` 구현
+- [x] `ConnectionCredentialRepository` 구현
+- [x] `ConnectionEventRepository` 구현
+- [x] soft delete 조건을 repository query에 일관 적용
 
 ### Connection 관리 API
 
-- [ ] `ConnectionController` 구현
-- [ ] `ConnectionService` 구현
-- [ ] `GET /api/v1/connections` 구현
-- [ ] `GET /api/v1/connections/{id}` 구현
-- [ ] `POST /api/v1/connections` 구현
-- [ ] `DELETE /api/v1/connections/{id}` 구현
-- [ ] `POST /api/v1/connections/{id}/test` 구현
-- [ ] `POST /api/v1/connections/{id}/refresh` 구현
-- [ ] `POST /api/v1/connections/{id}/rotate-key` 구현
-- [ ] 모든 connection 조회는 로그인 사용자 기준으로 제한
-- [ ] 다른 사용자 connection 접근 시 `404 CONNECTION_NOT_FOUND` 반환
-- [ ] 목록/상세 응답에 원문 API Key가 포함되지 않도록 검증
-- [ ] API Key 생성 응답에서만 원문 key 1회 반환
-- [ ] API Key rotate 응답에서만 새 원문 key 1회 반환
-- [ ] 삭제는 soft delete 또는 credential revoke 정책으로 처리
+- [x] `ConnectionController` 구현
+- [x] `ConnectionService` 구현
+- [x] `GET /api/v1/connections` 구현
+- [x] `GET /api/v1/connections/{id}` 구현
+- [x] `POST /api/v1/connections` 구현
+- [x] `DELETE /api/v1/connections/{id}` 구현
+- [x] `POST /api/v1/connections/{id}/test` 구현
+- [x] `POST /api/v1/connections/{id}/refresh` 구현
+- [x] `POST /api/v1/connections/{id}/rotate-key` 구현
+- [x] 모든 connection 조회는 로그인 사용자 기준으로 제한
+- [x] 다른 사용자 connection 접근 시 `404 CONNECTION_NOT_FOUND` 반환
+- [x] 목록/상세 응답에 원문 API Key가 포함되지 않도록 검증
+- [x] API Key 생성 응답에서만 원문 key 1회 반환
+- [x] API Key rotate 응답에서만 새 원문 key 1회 반환
+- [x] 삭제는 soft delete 또는 credential revoke 정책으로 처리
 
 ### 감사 로그
 
-- [ ] connection 생성 event 기록
-- [ ] OAuth 시작 event 기록
-- [ ] OAuth 성공 event 기록
-- [ ] OAuth 실패 event 기록
-- [ ] API Key rotate event 기록
-- [ ] API Key revoke event 기록
-- [ ] webhook success/failure event 기록
-- [ ] rate limit hit event 기록
-- [ ] provider token refresh 실패 event 기록
+- [x] connection 생성 event 기록
+- [x] OAuth 시작 event 기록
+- [x] OAuth 성공 event 기록
+- [x] OAuth 실패 event 기록
+- [x] API Key rotate event 기록
+- [x] API Key revoke event 기록
+- [x] webhook success/failure event 기록
+- [x] rate limit hit event 기록
+- [x] provider token refresh 실패 event 기록
 
 ---
 

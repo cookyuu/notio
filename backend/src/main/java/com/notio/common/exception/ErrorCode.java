@@ -6,6 +6,8 @@ public enum ErrorCode {
     // 400 Bad Request
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "잘못된 요청입니다."),
     UNSUPPORTED_SOURCE(HttpStatus.BAD_REQUEST, "UNSUPPORTED_SOURCE", "지원하지 않는 알림 소스입니다."),
+    CONNECTION_PROVIDER_UNSUPPORTED(HttpStatus.BAD_REQUEST, "CONNECTION_PROVIDER_UNSUPPORTED", "지원하지 않는 연결 제공자입니다."),
+    CONNECTION_AUTH_TYPE_UNSUPPORTED(HttpStatus.BAD_REQUEST, "CONNECTION_AUTH_TYPE_UNSUPPORTED", "지원하지 않는 연결 인증 방식입니다."),
 
     // 401 Unauthorized
     WEBHOOK_VERIFICATION_FAILED(HttpStatus.UNAUTHORIZED, "WEBHOOK_VERIFICATION_FAILED", "Webhook 서명 검증에 실패했습니다."),
@@ -21,6 +23,7 @@ public enum ErrorCode {
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "알림을 찾을 수 없습니다."),
     TODO_NOT_FOUND(HttpStatus.NOT_FOUND, "TODO_NOT_FOUND", "할일을 찾을 수 없습니다."),
     DEVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "DEVICE_NOT_FOUND", "디바이스를 찾을 수 없습니다."),
+    CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연결을 찾을 수 없습니다."),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다."),
