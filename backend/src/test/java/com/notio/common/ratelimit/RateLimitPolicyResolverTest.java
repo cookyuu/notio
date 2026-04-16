@@ -76,6 +76,56 @@ class RateLimitPolicyResolverTest {
             .containsExactly("rateLimit:notifications-read:user:9:1m");
     }
 
+    @Test
+    void resolveNotificationWriteUsesSeparateQuota() throws Exception {
+        SecurityContextHolder.getContext()
+            .setAuthentication(new UsernamePasswordAuthenticationToken("9", null));
+
+        final MockHttpServletRequest request = new MockHttpServletRequest("PATCH", "/api/v1/notifications/1/read");
+
+        final var resolved = resolver.resolve(new CachedBodyHttpServletRequest(request, 0));
+
+        assertThat(resolved).isPresent();
+        assertThat(resolved.get().policyName()).isEqualTo("notifications-write");
+        assertThat(resolved.get().rules())
+            .extracting(RateLimitRule::key)
+            .containsExactly("rateLimit:notifications-write:user:9:1m");
+    }
+
+    @Test
+    void resolveWebhookWithMalformedKeyFallsBackToIpPolicyOnly() throws Exception {
+        final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/webhook/claude");
+        request.addHeader("X-Notio-Webhook-Key", "malformed");
+        request.setRemoteAddr("127.0.0.1");
+
+        final var resolved = resolver.resolve(new CachedBodyHttpServletRequest(request, 65_536));
+
+        assertThat(resolved).isPresent();
+        assertThat(resolved.get().rules())
+            .extracting(RateLimitRule::key)
+            .containsExactly("rateLimit:webhook:ip:127.0.0.1:1m");
+    }
+
+    @Test
+    void resolveChatUsesLowerMinuteAndDailyQuota() throws Exception {
+        SecurityContextHolder.getContext()
+            .setAuthentication(new UsernamePasswordAuthenticationToken("9", null));
+        final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/chat");
+        request.setContentType("application/json");
+        request.setContent("{\"content\":\"hello\"}".getBytes());
+
+        final var resolved = resolver.resolve(new CachedBodyHttpServletRequest(request, 1_048_576));
+
+        assertThat(resolved).isPresent();
+        assertThat(resolved.get().policyName()).isEqualTo("chat-ai");
+        assertThat(resolved.get().rules())
+            .extracting(RateLimitRule::key)
+            .containsExactly(
+                "rateLimit:chat-ai:user:9:1m",
+                "rateLimit:chat-ai:user:9:1d"
+            );
+    }
+
     private JwtProperties jwtProperties() {
         final JwtProperties properties = new JwtProperties();
         properties.setSecret("01234567890123456789012345678901");

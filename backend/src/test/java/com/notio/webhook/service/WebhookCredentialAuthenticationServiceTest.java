@@ -107,4 +107,54 @@ class WebhookCredentialAuthenticationServiceTest {
             .isInstanceOf(NotioException.class)
             .hasMessage("Webhook 서명 검증에 실패했습니다.");
     }
+
+    @Test
+    void authenticateApiKeyRejectsMalformedCredential() {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth("malformed");
+
+        assertThatThrownBy(() -> authenticationService.authenticateApiKey(headers, ConnectionProvider.CLAUDE))
+            .isInstanceOf(NotioException.class)
+            .hasMessage("Webhook 서명 검증에 실패했습니다.");
+    }
+
+    @Test
+    void authenticateApiKeyRejectsRevokedOrMissingCredential() {
+        final String apiKey = "ntio_wh_prefix123_secret12345678901234567890123456789012";
+        final HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Notio-Webhook-Key", apiKey);
+
+        when(credentialRepository.findActiveByKeyPrefixAndAuthType("prefix123", ConnectionAuthType.API_KEY))
+            .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authenticationService.authenticateApiKey(headers, ConnectionProvider.CLAUDE))
+            .isInstanceOf(NotioException.class)
+            .hasMessage("Webhook 서명 검증에 실패했습니다.");
+    }
+
+    @Test
+    void authenticateApiKeyRejectsProviderMismatch() {
+        final String apiKey = "ntio_wh_prefix123_secret12345678901234567890123456789012";
+        final ConnectionCredential credential = ConnectionCredential.builder()
+            .connectionId(20L)
+            .authType(ConnectionAuthType.API_KEY)
+            .keyPrefix("prefix123")
+            .keyHash("hash")
+            .build();
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(apiKey);
+
+        when(credentialRepository.findActiveByKeyPrefixAndAuthType("prefix123", ConnectionAuthType.API_KEY))
+            .thenReturn(Optional.of(credential));
+        when(credentialHasher.matches(apiKey, "hash")).thenReturn(true);
+        when(connectionRepository.findByIdAndProviderAndStatusAndDeletedAtIsNull(
+            20L,
+            ConnectionProvider.SLACK,
+            ConnectionStatus.ACTIVE
+        )).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authenticationService.authenticateApiKey(headers, ConnectionProvider.SLACK))
+            .isInstanceOf(NotioException.class)
+            .hasMessage("Webhook 서명 검증에 실패했습니다.");
+    }
 }

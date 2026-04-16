@@ -255,49 +255,49 @@
 
 ### Connection 테스트
 
-- [ ] 사용자는 본인 connection만 조회 가능
-- [ ] 다른 사용자 connection id 접근 시 404 반환
-- [ ] API Key 생성 응답에만 원문 key 포함
-- [ ] API Key rotate 응답에만 새 원문 key 포함
-- [ ] 목록/상세 응답에 원문 key 미포함
-- [ ] DB에 원문 API Key 미저장 검증
-- [ ] connection 삭제 시 soft delete 또는 revoke 처리 검증
+- [x] 사용자는 본인 connection만 조회 가능
+- [x] 다른 사용자 connection id 접근 시 404 반환
+- [x] API Key 생성 응답에만 원문 key 포함
+- [x] API Key rotate 응답에만 새 원문 key 포함
+- [x] 목록/상세 응답에 원문 key 미포함
+- [x] DB에 원문 API Key 미저장 검증
+- [x] connection 삭제 시 soft delete 또는 revoke 처리 검증
 
 ### Webhook 테스트
 
-- [ ] Claude API Key로 connection과 user를 식별해 notification 저장
-- [ ] revoked key는 401
-- [ ] expired key는 401
-- [ ] malformed key는 401
-- [ ] provider mismatch는 401
-- [ ] Slack signature 실패 시 notification 미저장
-- [ ] Gmail provider 검증 실패 시 notification 미저장
-- [ ] webhook 성공 시 `connection.last_used_at` 갱신
-- [ ] webhook success/failure event 기록
+- [x] Claude API Key로 connection과 user를 식별해 notification 저장
+- [x] revoked key는 401
+- [x] expired key는 401
+- [x] malformed key는 401
+- [x] provider mismatch는 401
+- [x] Slack signature 실패 시 notification 미저장
+- [x] Gmail provider 검증 실패 시 notification 미저장
+- [x] webhook 성공 시 `connection.last_used_at` 갱신
+- [x] webhook success/failure event 기록
 
 ### Notification 테스트
 
-- [ ] 사용자 A는 사용자 A 알림만 목록에서 조회
-- [ ] 사용자 A가 사용자 B 알림 상세 요청 시 404
-- [ ] 사용자 A가 사용자 B 알림 읽음 처리 시 404
-- [ ] `read-all`은 요청 사용자 알림만 변경
-- [ ] unread count는 사용자별 분리
-- [ ] unread count cache key는 사용자별 분리
-- [ ] webhook 저장 알림에 `user_id`와 `connection_id` 저장
+- [x] 사용자 A는 사용자 A 알림만 목록에서 조회
+- [x] 사용자 A가 사용자 B 알림 상세 요청 시 404
+- [x] 사용자 A가 사용자 B 알림 읽음 처리 시 404
+- [x] `read-all`은 요청 사용자 알림만 변경
+- [x] unread count는 사용자별 분리
+- [x] unread count cache key는 사용자별 분리
+- [x] webhook 저장 알림에 `user_id`와 `connection_id` 저장
 
 ### Rate Limit 테스트
 
-- [ ] login 반복 실패는 IP 기준으로 429
-- [ ] webhook 반복 요청은 key prefix 기준으로 429
-- [ ] webhook 반복 요청은 IP 기준으로 429
-- [ ] 잘못된 webhook key 반복 요청은 IP 기준으로 429
-- [ ] notification read/write 정책이 분리 적용
-- [ ] chat/AI API는 낮은 quota 적용
+- [x] login 반복 실패는 IP 기준으로 429
+- [x] webhook 반복 요청은 key prefix 기준으로 429
+- [x] webhook 반복 요청은 IP 기준으로 429
+- [x] 잘못된 webhook key 반복 요청은 IP 기준으로 429
+- [x] notification read/write 정책이 분리 적용
+- [x] chat/AI API는 낮은 quota 적용
 
 ### 품질 확인
 
-- [ ] `./gradlew test` 통과
-- [ ] Checkstyle 설정이 있으면 `./gradlew checkstyleMain` 통과
-- [ ] SpotBugs 설정이 있으면 `./gradlew spotbugsMain` 통과
-- [ ] Swagger/OpenAPI 문서에서 신규 endpoint 확인
-- [ ] local profile에서 애플리케이션 기동 확인
+- [x] `./gradlew test` 통과
+- [x] Checkstyle 설정이 있으면 `./gradlew checkstyleMain` 통과
+- [x] SpotBugs 설정이 있으면 `./gradlew spotbugsMain` 통과
+- [x] Swagger/OpenAPI 문서에서 신규 endpoint 확인
+- [x] local profile에서 애플리케이션 기동 확인

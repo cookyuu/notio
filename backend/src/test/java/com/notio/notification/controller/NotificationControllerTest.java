@@ -2,6 +2,8 @@ package com.notio.notification.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.notio.common.response.ApiResponse;
@@ -59,5 +61,6 @@ class NotificationControllerTest {
         assertThat(response.success()).isTrue();
         assertThat(response.data().getContent()).hasSize(1);
         assertThat(response.data().getContent().getFirst().source()).isEqualTo(NotificationSource.GITHUB.name());
+        verify(notificationService).findAll(eq(10L), any(), any(), any());
     }
 }
