@@ -53,52 +53,52 @@
 
 ### Feature 구조
 
-- [ ] `lib/features/connections/data/datasource/` 생성
-- [ ] `lib/features/connections/data/model/` 생성
-- [ ] `lib/features/connections/data/repository/` 생성
-- [ ] `lib/features/connections/domain/entity/` 생성
-- [ ] `lib/features/connections/domain/repository/` 생성
-- [ ] `lib/features/connections/presentation/providers/` 생성
-- [ ] `lib/features/connections/presentation/screens/` 생성
-- [ ] `lib/features/connections/presentation/widgets/` 생성
+- [x] `lib/features/connections/data/datasource/` 생성
+- [x] `lib/features/connections/data/model/` 생성
+- [x] `lib/features/connections/data/repository/` 생성
+- [x] `lib/features/connections/domain/entity/` 생성
+- [x] `lib/features/connections/domain/repository/` 생성
+- [x] `lib/features/connections/presentation/providers/` 생성
+- [x] `lib/features/connections/presentation/screens/` 생성
+- [x] `lib/features/connections/presentation/widgets/` 생성
 
 ### Remote DataSource
 
-- [ ] `ConnectionRemoteDataSource` 구현
-- [ ] `GET /api/v1/connections` 연동
-- [ ] `GET /api/v1/connections/{id}` 연동
-- [ ] `POST /api/v1/connections` 연동
-- [ ] `DELETE /api/v1/connections/{id}` 연동
-- [ ] `POST /api/v1/connections/{id}/test` 연동
-- [ ] `POST /api/v1/connections/{id}/refresh` 연동
-- [ ] `POST /api/v1/connections/{id}/rotate-key` 연동
-- [ ] `POST /api/v1/connections/oauth-url` 연동
-- [ ] `Dio` 공통 client와 `AuthInterceptor` 재사용
-- [ ] connection API는 사용자 JWT access token 사용
+- [x] `ConnectionRemoteDataSource` 구현
+- [x] `GET /api/v1/connections` 연동
+- [x] `GET /api/v1/connections/{id}` 연동
+- [x] `POST /api/v1/connections` 연동
+- [x] `DELETE /api/v1/connections/{id}` 연동
+- [x] `POST /api/v1/connections/{id}/test` 연동
+- [x] `POST /api/v1/connections/{id}/refresh` 연동
+- [x] `POST /api/v1/connections/{id}/rotate-key` 연동
+- [x] `POST /api/v1/connections/oauth-url` 연동
+- [x] `Dio` 공통 client와 `AuthInterceptor` 재사용
+- [x] connection API는 사용자 JWT access token 사용
 
 ### Repository
 
-- [ ] `ConnectionRepository` interface 정의
-- [ ] `ConnectionRepositoryImpl` 구현
-- [ ] connection 목록 조회 메서드 구현
-- [ ] connection 상세 조회 메서드 구현
-- [ ] connection 생성 메서드 구현
-- [ ] connection 삭제 메서드 구현
-- [ ] connection test 메서드 구현
-- [ ] connection refresh 메서드 구현
-- [ ] API Key rotate 메서드 구현
-- [ ] OAuth URL 요청 메서드 구현
-- [ ] 원문 API Key는 repository 상태나 cache에 저장하지 않음
-- [ ] API 실패 시 기존 network error 처리 패턴 준수
+- [x] `ConnectionRepository` interface 정의
+- [x] `ConnectionRepositoryImpl` 구현
+- [x] connection 목록 조회 메서드 구현
+- [x] connection 상세 조회 메서드 구현
+- [x] connection 생성 메서드 구현
+- [x] connection 삭제 메서드 구현
+- [x] connection test 메서드 구현
+- [x] connection refresh 메서드 구현
+- [x] API Key rotate 메서드 구현
+- [x] OAuth URL 요청 메서드 구현
+- [x] 원문 API Key는 repository 상태나 cache에 저장하지 않음
+- [x] API 실패 시 기존 network error 처리 패턴 준수
 
 ### OAuth 흐름
 
-- [ ] OAuth 방식 provider 선택 시 backend authorize URL 요청
-- [ ] authorize URL을 외부 브라우저 또는 platform browser로 열기
-- [ ] callback 완료 후 connection 목록 refresh
-- [ ] pending 상태 connection 표시
-- [ ] OAuth 실패 상태 connection 표시
-- [ ] `OAUTH_STATE_INVALID`와 `OAUTH_CALLBACK_FAILED` 에러 메시지 처리
+- [ ] OAuth 방식 provider 선택 시 backend authorize URL 요청 (Phase 2/3에서 UI 구현 시)
+- [ ] authorize URL을 외부 브라우저 또는 platform browser로 열기 (Phase 2/3에서 UI 구현 시)
+- [ ] callback 완료 후 connection 목록 refresh (Phase 2에서 상태 관리 시)
+- [ ] pending 상태 connection 표시 (Phase 3에서 UI 구현 시)
+- [ ] OAuth 실패 상태 connection 표시 (Phase 3에서 UI 구현 시)
+- [x] `OAUTH_STATE_INVALID`와 `OAUTH_CALLBACK_FAILED` 에러 메시지 처리 (Phase 0에서 완료)
 
 ---
 
