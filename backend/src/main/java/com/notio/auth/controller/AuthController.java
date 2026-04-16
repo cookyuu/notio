@@ -1,11 +1,20 @@
 package com.notio.auth.controller;
 
+import com.notio.auth.dto.FindIdRequest;
+import com.notio.auth.dto.FindIdResponse;
 import com.notio.auth.dto.LoginRequest;
 import com.notio.auth.dto.LoginResponse;
 import com.notio.auth.dto.LogoutResponse;
+import com.notio.auth.dto.PasswordResetConfirmRequest;
+import com.notio.auth.dto.PasswordResetConfirmResponse;
+import com.notio.auth.dto.PasswordResetRequestRequest;
+import com.notio.auth.dto.PasswordResetRequestResponse;
 import com.notio.auth.dto.RefreshRequest;
 import com.notio.auth.dto.RefreshResponse;
+import com.notio.auth.dto.SignupRequest;
+import com.notio.auth.dto.SignupResponse;
 import com.notio.auth.service.AuthService;
+import com.notio.auth.service.LocalAuthService;
 import com.notio.auth.util.JwtTokenProvider;
 import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
@@ -30,7 +39,38 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final LocalAuthService localAuthService;
     private final JwtTokenProvider jwtTokenProvider;
+
+    @PostMapping("/signup")
+    @Operation(summary = "회원가입", description = "로컬 이메일 계정을 생성합니다.")
+    public ResponseEntity<ApiResponse<SignupResponse>> signup(@Valid @RequestBody final SignupRequest request) {
+        final SignupResponse response = localAuthService.signup(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/find-id")
+    @Operation(summary = "아이디 찾기", description = "계정 존재 여부를 노출하지 않고 계정 안내 요청을 접수합니다.")
+    public ResponseEntity<ApiResponse<FindIdResponse>> findId(@Valid @RequestBody final FindIdRequest request) {
+        final FindIdResponse response = localAuthService.findId(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/password-reset/request")
+    @Operation(summary = "비밀번호 재설정 요청", description = "비밀번호 재설정 요청을 접수하고 토큰을 발급합니다.")
+    public ResponseEntity<ApiResponse<PasswordResetRequestResponse>> requestPasswordReset(
+            @Valid @RequestBody final PasswordResetRequestRequest request) {
+        final PasswordResetRequestResponse response = localAuthService.requestPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/password-reset/confirm")
+    @Operation(summary = "비밀번호 재설정 확정", description = "재설정 토큰을 검증하고 비밀번호를 변경합니다.")
+    public ResponseEntity<ApiResponse<PasswordResetConfirmResponse>> confirmPasswordReset(
+            @Valid @RequestBody final PasswordResetConfirmRequest request) {
+        final PasswordResetConfirmResponse response = localAuthService.confirmPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     @PostMapping("/login")
     @Operation(summary = "로그인", description = "이메일과 비밀번호로 로그인하고 JWT 토큰을 발급받습니다.")

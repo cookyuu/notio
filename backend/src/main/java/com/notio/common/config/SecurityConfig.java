@@ -37,7 +37,14 @@ public class SecurityConfig {
                         // Swagger UI 및 API 문서
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs/**").permitAll()
                         // 인증 API (로그인, 토큰 재발급)
-                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
+                        .requestMatchers(
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/signup",
+                                "/api/v1/auth/find-id",
+                                "/api/v1/auth/password-reset/request",
+                                "/api/v1/auth/password-reset/confirm"
+                        ).permitAll()
                         // Webhook API (외부 서비스에서 호출)
                         .requestMatchers("/api/v1/webhook/**").permitAll()
                         // 그 외 모든 요청은 인증 필요

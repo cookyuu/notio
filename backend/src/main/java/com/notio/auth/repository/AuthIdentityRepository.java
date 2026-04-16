@@ -24,4 +24,20 @@ public interface AuthIdentityRepository extends JpaRepository<AuthIdentity, Long
     Optional<AuthIdentity> findActiveByProviderAndEmail(
             @Param("provider") AuthProvider provider,
             @Param("email") String email);
+
+    default Optional<AuthIdentity> findActiveLocalByEmail(final String email) {
+        return findActiveByProviderAndEmail(AuthProvider.LOCAL, email);
+    }
+
+    @Query("""
+            SELECT COUNT(ai) > 0
+            FROM AuthIdentity ai
+            JOIN ai.user u
+            WHERE ai.provider = com.notio.auth.domain.AuthProvider.LOCAL
+              AND ai.email = :email
+              AND ai.deletedAt IS NULL
+              AND u.deletedAt IS NULL
+              AND u.status = com.notio.auth.domain.UserStatus.ACTIVE
+            """)
+    boolean existsActiveLocalByEmail(@Param("email") String email);
 }

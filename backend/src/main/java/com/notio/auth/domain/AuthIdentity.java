@@ -66,4 +66,12 @@ public class AuthIdentity {
     public boolean isActive() {
         return deletedAt == null && user != null && user.isActive();
     }
+
+    public void updatePasswordHash(final String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public void verifyEmail() {
+        this.emailVerified = true;
+    }
 }

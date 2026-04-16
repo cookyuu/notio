@@ -53,4 +53,12 @@ public class PasswordResetToken {
     public boolean isUsable() {
         return usedAt == null && expiresAt.isAfter(OffsetDateTime.now());
     }
+
+    public boolean isExpired() {
+        return expiresAt.isBefore(OffsetDateTime.now()) || expiresAt.isEqual(OffsetDateTime.now());
+    }
+
+    public void markUsed() {
+        this.usedAt = OffsetDateTime.now();
+    }
 }

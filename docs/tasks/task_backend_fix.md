@@ -17,18 +17,18 @@
 
 ## Phase 1. 로컬 인증 기능 구현
 
-- [ ] `POST /api/v1/auth/signup` 요청/응답 DTO를 추가한다.
-- [ ] `POST /api/v1/auth/find-id` 요청/응답 DTO를 추가한다.
-- [ ] `POST /api/v1/auth/password-reset/request` 요청/응답 DTO를 추가한다.
-- [ ] `POST /api/v1/auth/password-reset/confirm` 요청/응답 DTO를 추가한다.
-- [ ] `LocalAuthService`를 추가하거나 기존 인증 서비스에서 로컬 인증 책임을 분리한다.
-- [ ] 회원가입 시 이메일 중복 검사, 비밀번호 해시 저장, `User + LOCAL AuthIdentity` 생성을 구현한다.
-- [ ] 아이디 찾기 요청 시 계정 존재 여부를 노출하지 않는 공통 성공 응답 정책을 구현한다.
-- [ ] 비밀번호 재설정 요청 시 raw token 발급 후 DB에는 hash만 저장하도록 구현한다.
-- [ ] 비밀번호 재설정 확정 시 token 유효성, 만료, 사용 여부를 검증하도록 구현한다.
-- [ ] 비밀번호 재설정 성공 시 기존 refresh token을 모두 revoke하도록 구현한다.
-- [ ] 기존 로그인 로직이 `LOCAL AuthIdentity` 기준으로 인증하도록 정리한다.
-- [ ] 신규 인증 API를 `AuthController` 또는 인증 전용 컨트롤러에 노출한다.
+- [x] `POST /api/v1/auth/signup` 요청/응답 DTO를 추가한다.
+- [x] `POST /api/v1/auth/find-id` 요청/응답 DTO를 추가한다.
+- [x] `POST /api/v1/auth/password-reset/request` 요청/응답 DTO를 추가한다.
+- [x] `POST /api/v1/auth/password-reset/confirm` 요청/응답 DTO를 추가한다.
+- [x] `LocalAuthService`를 추가하거나 기존 인증 서비스에서 로컬 인증 책임을 분리한다.
+- [x] 회원가입 시 이메일 중복 검사, 비밀번호 해시 저장, `User + LOCAL AuthIdentity` 생성을 구현한다.
+- [x] 아이디 찾기 요청 시 계정 존재 여부를 노출하지 않는 공통 성공 응답 정책을 구현한다.
+- [x] 비밀번호 재설정 요청 시 raw token 발급 후 DB에는 hash만 저장하도록 구현한다.
+- [x] 비밀번호 재설정 확정 시 token 유효성, 만료, 사용 여부를 검증하도록 구현한다.
+- [x] 비밀번호 재설정 성공 시 기존 refresh token을 모두 revoke하도록 구현한다.
+- [x] 기존 로그인 로직이 `LOCAL AuthIdentity` 기준으로 인증하도록 정리한다.
+- [x] 신규 인증 API를 `AuthController` 또는 인증 전용 컨트롤러에 노출한다.
 
 ## Phase 2. OAuth 확장 뼈대 구현
 
