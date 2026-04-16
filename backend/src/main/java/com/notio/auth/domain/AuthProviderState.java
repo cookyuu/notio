@@ -51,4 +51,8 @@ public class AuthProviderState {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    public boolean isExpired() {
+        return expiresAt != null && expiresAt.isBefore(OffsetDateTime.now());
+    }
 }

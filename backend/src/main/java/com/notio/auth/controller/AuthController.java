@@ -5,6 +5,11 @@ import com.notio.auth.dto.FindIdResponse;
 import com.notio.auth.dto.LoginRequest;
 import com.notio.auth.dto.LoginResponse;
 import com.notio.auth.dto.LogoutResponse;
+import com.notio.auth.dto.OAuthCallbackResponse;
+import com.notio.auth.dto.OAuthExchangeRequest;
+import com.notio.auth.dto.OAuthExchangeResponse;
+import com.notio.auth.dto.OAuthStartRequest;
+import com.notio.auth.dto.OAuthStartResponse;
 import com.notio.auth.dto.PasswordResetConfirmRequest;
 import com.notio.auth.dto.PasswordResetConfirmResponse;
 import com.notio.auth.dto.PasswordResetRequestRequest;
@@ -15,6 +20,7 @@ import com.notio.auth.dto.SignupRequest;
 import com.notio.auth.dto.SignupResponse;
 import com.notio.auth.service.AuthService;
 import com.notio.auth.service.LocalAuthService;
+import com.notio.auth.service.OAuthAuthService;
 import com.notio.auth.util.JwtTokenProvider;
 import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
@@ -25,10 +31,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -40,6 +49,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final LocalAuthService localAuthService;
+    private final OAuthAuthService oAuthAuthService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/signup")
@@ -69,6 +79,32 @@ public class AuthController {
     public ResponseEntity<ApiResponse<PasswordResetConfirmResponse>> confirmPasswordReset(
             @Valid @RequestBody final PasswordResetConfirmRequest request) {
         final PasswordResetConfirmResponse response = localAuthService.confirmPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/oauth/start")
+    @Operation(summary = "OAuth 인증 시작", description = "OAuth provider 인증 시작에 필요한 state와 인가 URL을 발급합니다.")
+    public ResponseEntity<ApiResponse<OAuthStartResponse>> startOAuth(@Valid @RequestBody final OAuthStartRequest request) {
+        final OAuthStartResponse response = oAuthAuthService.start(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/oauth/callback/{provider}")
+    @Operation(summary = "OAuth 콜백", description = "OAuth 콜백 요청의 provider/state를 검증하고 후속 교환 흐름으로 전달합니다.")
+    public ResponseEntity<ApiResponse<OAuthCallbackResponse>> oauthCallback(
+            @PathVariable final String provider,
+            @RequestParam("state") final String state,
+            @RequestParam(value = "code", required = false) final String code,
+            @RequestParam(value = "error", required = false) final String error) {
+        final OAuthCallbackResponse response = oAuthAuthService.callback(provider, state, code, error);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/oauth/exchange")
+    @Operation(summary = "OAuth 코드 교환", description = "OAuth provider authorization code를 서비스 토큰 또는 앱 세션으로 교환합니다.")
+    public ResponseEntity<ApiResponse<OAuthExchangeResponse>> exchangeOAuth(
+            @Valid @RequestBody final OAuthExchangeRequest request) {
+        final OAuthExchangeResponse response = oAuthAuthService.exchange(request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
