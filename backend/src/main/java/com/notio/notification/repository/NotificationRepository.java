@@ -16,18 +16,23 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     /**
      * Soft Delete를 고려한 ID 조회
      */
-    @Query("SELECT n FROM Notification n WHERE n.deletedAt IS NULL AND n.id = :id")
-    Optional<Notification> findByIdAndNotDeleted(@Param("id") Long id);
+    @Query("SELECT n FROM Notification n WHERE n.deletedAt IS NULL AND n.userId = :userId AND n.id = :id")
+    Optional<Notification> findByIdAndUserIdAndNotDeleted(
+        @Param("userId") Long userId,
+        @Param("id") Long id
+    );
 
     /**
      * 필터링 조회 (source, isRead 필터 지원)
      * QueryDSL이 비활성화되어 있으므로 JPQL 사용
      */
     @Query("SELECT n FROM Notification n WHERE n.deletedAt IS NULL " +
+           "AND n.userId = :userId " +
            "AND (:source IS NULL OR n.source = :source) " +
            "AND (:isRead IS NULL OR n.read = :isRead) " +
            "ORDER BY n.createdAt DESC")
     Page<Notification> findAllWithFilter(
+        @Param("userId") Long userId,
         @Param("source") NotificationSource source,
         @Param("isRead") Boolean isRead,
         Pageable pageable
@@ -36,20 +41,15 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     /**
      * 미읽음 알림 개수 조회
      */
-    @Query("SELECT COUNT(n) FROM Notification n WHERE n.deletedAt IS NULL AND n.read = false")
-    long countUnread();
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.deletedAt IS NULL AND n.userId = :userId AND n.read = false")
+    long countUnread(@Param("userId") Long userId);
 
     /**
      * 전체 알림 읽음 처리
      */
     @Modifying
     @Query("UPDATE Notification n SET n.read = true, n.updatedAt = CURRENT_TIMESTAMP " +
-           "WHERE n.deletedAt IS NULL AND n.read = false")
-    int markAllAsRead();
+           "WHERE n.deletedAt IS NULL AND n.userId = :userId AND n.read = false")
+    int markAllAsRead(@Param("userId") Long userId);
 
-    /**
-     * 모든 알림 조회 (삭제되지 않은 것만)
-     */
-    @Query("SELECT n FROM Notification n WHERE n.deletedAt IS NULL ORDER BY n.createdAt DESC")
-    Page<Notification> findAllNotDeleted(Pageable pageable);
 }

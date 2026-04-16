@@ -1,5 +1,7 @@
 package com.notio.notification.controller;
 
+import com.notio.common.exception.ErrorCode;
+import com.notio.common.exception.NotioException;
 import com.notio.common.response.ApiResponse;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationSource;
@@ -12,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,10 +42,13 @@ public class NotificationController {
         @RequestParam(name = "page", defaultValue = "0") int page,
 
         @Parameter(description = "페이지 크기")
-        @RequestParam(name = "size", defaultValue = "20") int size
+        @RequestParam(name = "size", defaultValue = "20") int size,
+
+        Authentication authentication
     ) {
+        Long userId = currentUserId(authentication);
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Notification> notifications = notificationService.findAll(source, isRead, pageable);
+        Page<Notification> notifications = notificationService.findAll(userId, source, isRead, pageable);
         Page<NotificationResponse> response = notifications.map(n ->
             NotificationResponse.from(n, notificationService));
 
@@ -53,9 +59,12 @@ public class NotificationController {
     @GetMapping("/{id}")
     public ApiResponse<NotificationResponse> getNotification(
         @Parameter(description = "알림 ID", required = true)
-        @PathVariable("id") Long id
+        @PathVariable("id") Long id,
+
+        Authentication authentication
     ) {
-        Notification notification = notificationService.markRead(id);  // 조회 시 자동 읽음 처리
+        Long userId = currentUserId(authentication);
+        Notification notification = notificationService.markRead(userId, id);  // 조회 시 자동 읽음 처리
         NotificationResponse response = NotificationResponse.from(notification, notificationService);
 
         return ApiResponse.success(response);
@@ -65,9 +74,12 @@ public class NotificationController {
     @PatchMapping("/{id}/read")
     public ApiResponse<MarkReadResponse> markAsRead(
         @Parameter(description = "알림 ID", required = true)
-        @PathVariable("id") Long id
+        @PathVariable("id") Long id,
+
+        Authentication authentication
     ) {
-        Notification notification = notificationService.markRead(id);
+        Long userId = currentUserId(authentication);
+        Notification notification = notificationService.markRead(userId, id);
         MarkReadResponse response = new MarkReadResponse(notification.getId(), notification.isRead());
 
         return ApiResponse.success(response);
@@ -75,8 +87,9 @@ public class NotificationController {
 
     @Operation(summary = "전체 알림 읽음 처리", description = "모든 미읽음 알림을 읽음 상태로 변경합니다.")
     @PatchMapping("/read-all")
-    public ApiResponse<MarkAllReadResponse> markAllAsRead() {
-        int count = notificationService.markAllRead();
+    public ApiResponse<MarkAllReadResponse> markAllAsRead(Authentication authentication) {
+        Long userId = currentUserId(authentication);
+        int count = notificationService.markAllRead(userId);
         MarkAllReadResponse response = new MarkAllReadResponse(count);
 
         return ApiResponse.success(response);
@@ -84,8 +97,9 @@ public class NotificationController {
 
     @Operation(summary = "미읽음 알림 수 조회", description = "미읽음 알림의 개수를 조회합니다. Redis 캐시를 사용하여 빠른 응답을 제공합니다.")
     @GetMapping("/unread-count")
-    public ApiResponse<UnreadCountResponse> getUnreadCount() {
-        long count = notificationService.countUnread();
+    public ApiResponse<UnreadCountResponse> getUnreadCount(Authentication authentication) {
+        Long userId = currentUserId(authentication);
+        long count = notificationService.countUnread(userId);
         UnreadCountResponse response = new UnreadCountResponse(count);
 
         return ApiResponse.success(response);
@@ -95,9 +109,24 @@ public class NotificationController {
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteNotification(
         @Parameter(description = "알림 ID", required = true)
-        @PathVariable("id") Long id
+        @PathVariable("id") Long id,
+
+        Authentication authentication
     ) {
-        notificationService.delete(id);
+        Long userId = currentUserId(authentication);
+        notificationService.delete(userId, id);
         return ApiResponse.success(null);
+    }
+
+    private Long currentUserId(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new NotioException(ErrorCode.UNAUTHORIZED);
+        }
+
+        try {
+            return Long.valueOf(authentication.getPrincipal().toString());
+        } catch (NumberFormatException exception) {
+            throw new NotioException(ErrorCode.UNAUTHORIZED);
+        }
     }
 }

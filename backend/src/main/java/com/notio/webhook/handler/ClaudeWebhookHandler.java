@@ -33,7 +33,9 @@ public class ClaudeWebhookHandler implements WebhookHandler {
                 safePriority(WebhookPayloadExtractor.stringValue(payload, "priority")),
                 WebhookPayloadExtractor.stringValue(payload, "external_id", "id", "event.id"),
                 WebhookPayloadExtractor.stringValue(payload, "external_url", "url", "event.url"),
-                payload
+                payload,
+                WebhookPayloadExtractor.longValue(payload, "user_id", "userId", "notio.user_id"),
+                WebhookPayloadExtractor.longValue(payload, "connection_id", "connectionId", "notio.connection_id")
         );
     }
 

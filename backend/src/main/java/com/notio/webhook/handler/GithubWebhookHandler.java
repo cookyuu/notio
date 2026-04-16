@@ -45,7 +45,9 @@ public class GithubWebhookHandler implements WebhookHandler {
                         "issue.html_url",
                         "repository.html_url"
                 ),
-                payload
+                payload,
+                WebhookPayloadExtractor.longValue(payload, "user_id", "userId", "notio.user_id"),
+                WebhookPayloadExtractor.longValue(payload, "connection_id", "connectionId", "notio.connection_id")
         );
     }
 

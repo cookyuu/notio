@@ -28,14 +28,14 @@ public class PushService {
     /**
      * 알림 ID로 푸시 발송
      */
-    public void sendPush(Long notificationId) {
+    public void sendPush(Long notificationId, Long userId) {
         // Firebase가 초기화되지 않은 경우 경고 로그만 출력
         if (FirebaseApp.getApps().isEmpty()) {
             log.warn("Firebase not initialized. Skipping push notification for notificationId={}", notificationId);
             return;
         }
 
-        Notification notification = notificationRepository.findByIdAndNotDeleted(notificationId)
+        Notification notification = notificationRepository.findByIdAndUserIdAndNotDeleted(userId, notificationId)
             .orElseThrow(() -> new NotioException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
         // Phase 0: 모든 활성 디바이스에 푸시 발송 (단일 사용자)
@@ -47,6 +47,14 @@ public class PushService {
         }
 
         sendPushToDevices(notification, activeDevices);
+    }
+
+    /**
+     * Phase 0 legacy callers. New notification flows should pass user id.
+     */
+    @Deprecated
+    public void sendPush(Long notificationId) {
+        sendPush(notificationId, 1L);
     }
 
     /**

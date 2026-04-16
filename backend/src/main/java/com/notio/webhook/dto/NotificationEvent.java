@@ -14,6 +14,19 @@ public record NotificationEvent(
         @NotNull NotificationPriority priority,
         @Size(max = 255) String externalId,
         @Size(max = 500) String externalUrl,
-        Map<String, Object> metadata
+        Map<String, Object> metadata,
+        Long userId,
+        Long connectionId
 ) {
+    public NotificationEvent(
+            final NotificationSource source,
+            final String title,
+            final String body,
+            final NotificationPriority priority,
+            final String externalId,
+            final String externalUrl,
+            final Map<String, Object> metadata
+    ) {
+        this(source, title, body, priority, externalId, externalUrl, metadata, null, null);
+    }
 }

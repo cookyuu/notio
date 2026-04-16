@@ -10,6 +10,10 @@ import java.util.Map;
 @Builder
 public record NotificationResponse(
     Long id,
+
+    @JsonProperty("connection_id")
+    Long connectionId,
+
     String source,
     String title,
     String body,
@@ -37,6 +41,7 @@ public record NotificationResponse(
 
         return NotificationResponse.builder()
             .id(notification.getId())
+            .connectionId(notification.getConnectionId())
             .source(notification.getSource().name())
             .title(notification.getTitle())
             .body(notification.getBody())

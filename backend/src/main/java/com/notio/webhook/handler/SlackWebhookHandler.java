@@ -32,7 +32,9 @@ public class SlackWebhookHandler implements WebhookHandler {
                 NotificationPriority.HIGH,
                 WebhookPayloadExtractor.stringValue(payload, "event_id", "event.ts", "ts"),
                 WebhookPayloadExtractor.stringValue(payload, "external_url", "permalink"),
-                payload
+                payload,
+                WebhookPayloadExtractor.longValue(payload, "user_id", "userId", "notio.user_id"),
+                WebhookPayloadExtractor.longValue(payload, "connection_id", "connectionId", "notio.connection_id")
         );
     }
 

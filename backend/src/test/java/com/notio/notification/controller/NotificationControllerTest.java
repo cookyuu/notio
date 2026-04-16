@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationControllerTest {
@@ -41,7 +42,7 @@ class NotificationControllerTest {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
-        when(notificationService.findAll(any(), any(), any())).thenReturn(new PageImpl<>(
+        when(notificationService.findAll(any(), any(), any(), any())).thenReturn(new PageImpl<>(
                 List.of(notification),
                 PageRequest.of(0, 20),
                 1
@@ -51,7 +52,8 @@ class NotificationControllerTest {
                 null,
                 null,
                 0,
-                20
+                20,
+                new UsernamePasswordAuthenticationToken("10", null)
         );
 
         assertThat(response.success()).isTrue();
