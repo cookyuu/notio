@@ -8,12 +8,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.common.exception.GlobalExceptionHandler;
 import com.notio.common.exception.NotioException;
 import com.notio.common.response.ApiResponse;
-import com.notio.notification.domain.NotificationSource;
+import com.notio.connection.adapter.ConnectionProviderAdapter;
+import com.notio.connection.adapter.ConnectionProviderAdapterRegistry;
+import com.notio.connection.domain.ConnectionAuthType;
+import com.notio.connection.domain.ConnectionProvider;
+import com.notio.connection.service.ConnectionService;
+import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.service.NotificationService;
 import com.notio.webhook.dispatcher.WebhookDispatcher;
+import com.notio.webhook.dto.NotificationEvent;
+import com.notio.webhook.dto.WebhookPrincipal;
 import com.notio.webhook.dto.WebhookRequestContext;
-import com.notio.webhook.handler.SlackWebhookHandler;
-import com.notio.webhook.verifier.WebhookVerifier;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -24,8 +29,13 @@ class WebhookControllerTest {
     @Test
     void receiveWebhookReturnsUnauthorizedWhenSignatureIsInvalid() {
         final WebhookController controller = new WebhookController(
-                new WebhookDispatcher(List.of(new SlackWebhookHandler()), List.of(new SlackFailingVerifier())),
+                new WebhookDispatcher(
+                    List.of(),
+                    List.of(),
+                    new ConnectionProviderAdapterRegistry(List.of(new SlackFailingAdapter()))
+                ),
                 mock(NotificationService.class),
+                mock(ConnectionService.class),
                 new ObjectMapper()
         );
 
@@ -43,15 +53,33 @@ class WebhookControllerTest {
                 });
     }
 
-    private static final class SlackFailingVerifier implements WebhookVerifier {
+    private static final class SlackFailingAdapter implements ConnectionProviderAdapter {
         @Override
-        public NotificationSource supports() {
-            return NotificationSource.SLACK;
+        public ConnectionProvider supports() {
+            return ConnectionProvider.SLACK;
         }
 
         @Override
-        public boolean verify(final WebhookRequestContext context) {
-            return false;
+        public boolean supportsAuthType(final ConnectionAuthType authType) {
+            return true;
+        }
+
+        @Override
+        public WebhookPrincipal authenticateWebhook(final WebhookRequestContext context) {
+            throw new NotioException(com.notio.common.exception.ErrorCode.WEBHOOK_VERIFICATION_FAILED);
+        }
+
+        @Override
+        public NotificationEvent toNotificationEvent(final WebhookRequestContext context) {
+            return new NotificationEvent(
+                com.notio.notification.domain.NotificationSource.SLACK,
+                "Slack",
+                context.rawBody(),
+                NotificationPriority.MEDIUM,
+                null,
+                null,
+                context.payload()
+            );
         }
     }
 }

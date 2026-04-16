@@ -127,77 +127,77 @@
 
 ### 인증 경계
 
-- [ ] 일반 앱 API는 기존 JWT 인증 유지
-- [ ] `/api/v1/connections/**`는 JWT 인증 필요
-- [ ] `/api/v1/webhook/**`는 Spring Security에서 `permitAll` 유지
-- [ ] `JwtAuthenticationFilter.shouldNotFilter()`에서 `/api/v1/webhook/` skip
-- [ ] Webhook 실제 인증은 receive service와 provider adapter에서 수행
-- [ ] 기존 `NOTIO_WEBHOOK_CLAUDE_TOKEN` 사용 경로 제거 또는 deprecated 처리
+- [x] 일반 앱 API는 기존 JWT 인증 유지
+- [x] `/api/v1/connections/**`는 JWT 인증 필요
+- [x] `/api/v1/webhook/**`는 Spring Security에서 `permitAll` 유지
+- [x] `JwtAuthenticationFilter.shouldNotFilter()`에서 `/api/v1/webhook/` skip
+- [x] Webhook 실제 인증은 receive service와 provider adapter에서 수행
+- [x] 기존 `NOTIO_WEBHOOK_CLAUDE_TOKEN` 사용 경로 제거 또는 deprecated 처리
 
 ### Opaque Webhook API Key
 
-- [ ] `ApiKeyGenerator` 구현
-- [ ] API Key 형식을 `ntio_wh_<prefix>_<secret>`로 고정
-- [ ] prefix는 8~12 bytes CSPRNG base64url no-padding으로 생성
-- [ ] secret은 최소 32 bytes CSPRNG base64url no-padding으로 생성
-- [ ] `ConnectionCredentialHasher` 구현
-- [ ] `NOTIO_WEBHOOK_KEY_PEPPER` 기반 HMAC-SHA256 hash 저장
-- [ ] constant-time compare 적용
-- [ ] `key_prefix`, `key_preview`, `key_hash` 저장
-- [ ] API Key 원문은 DB에 저장하지 않음
-- [ ] revoked credential 거부
-- [ ] expired credential 거부
-- [ ] deleted credential 거부
-- [ ] provider mismatch 거부
-- [ ] inactive/deleted connection 거부
-- [ ] inactive user 거부
-- [ ] 검증 성공 시 `WebhookPrincipal(connectionId, userId, provider)` 반환
+- [x] `ApiKeyGenerator` 구현
+- [x] API Key 형식을 `ntio_wh_<prefix>_<secret>`로 고정
+- [x] prefix는 8~12 bytes CSPRNG base64url no-padding으로 생성
+- [x] secret은 최소 32 bytes CSPRNG base64url no-padding으로 생성
+- [x] `ConnectionCredentialHasher` 구현
+- [x] `NOTIO_WEBHOOK_KEY_PEPPER` 기반 HMAC-SHA256 hash 저장
+- [x] constant-time compare 적용
+- [x] `key_prefix`, `key_preview`, `key_hash` 저장
+- [x] API Key 원문은 DB에 저장하지 않음
+- [x] revoked credential 거부
+- [x] expired credential 거부
+- [x] deleted credential 거부
+- [x] provider mismatch 거부
+- [x] inactive/deleted connection 거부
+- [x] inactive user 거부
+- [x] 검증 성공 시 `WebhookPrincipal(connectionId, userId, provider)` 반환
 
 ### Credential 암호화
 
-- [ ] `CredentialEncryptionService` 구현
-- [ ] OAuth access token 암호화 저장
-- [ ] OAuth refresh token 암호화 저장
-- [ ] `NOTIO_CREDENTIAL_ENCRYPTION_KEY` 환경변수 사용
-- [ ] 암호화 키 누락 시 애플리케이션 시작 실패 또는 profile별 명확한 실패 정책 적용
+- [x] `CredentialEncryptionService` 구현
+- [x] OAuth access token 암호화 저장
+- [x] OAuth refresh token 암호화 저장
+- [x] `NOTIO_CREDENTIAL_ENCRYPTION_KEY` 환경변수 사용
+- [x] 암호화 키 누락 시 애플리케이션 시작 실패 또는 profile별 명확한 실패 정책 적용
 
 ### Provider Adapter
 
-- [ ] `ConnectionProviderAdapter` interface 정의
-- [ ] `ConnectionProviderAdapterRegistry` 구현
-- [ ] provider 미지원 시 `CONNECTION_PROVIDER_UNSUPPORTED` 반환
-- [ ] auth type 미지원 시 `CONNECTION_AUTH_TYPE_UNSUPPORTED` 반환
-- [ ] `ClaudeConnectionAdapter` 구현
-- [ ] `SlackConnectionAdapter` skeleton 구현
-- [ ] `GmailConnectionAdapter` skeleton 구현
-- [ ] 향후 provider 추가가 adapter 추가 중심으로 가능하도록 분기 격리
+- [x] `ConnectionProviderAdapter` interface 정의
+- [x] `ConnectionProviderAdapterRegistry` 구현
+- [x] provider 미지원 시 `CONNECTION_PROVIDER_UNSUPPORTED` 반환
+- [x] auth type 미지원 시 `CONNECTION_AUTH_TYPE_UNSUPPORTED` 반환
+- [x] `ClaudeConnectionAdapter` 구현
+- [x] `SlackConnectionAdapter` skeleton 구현
+- [x] `GmailConnectionAdapter` skeleton 구현
+- [x] 향후 provider 추가가 adapter 추가 중심으로 가능하도록 분기 격리
 
 ### Claude Webhook
 
-- [ ] Claude connection 생성 시 API Key credential 생성
-- [ ] Claude webhook 요청에서 Notio API Key 검증
-- [ ] Claude payload를 Notification event로 변환
-- [ ] Claude notification 저장 시 connection의 user id 사용
-- [ ] Claude hook script 환경변수를 `NOTIO_WEBHOOK_API_KEY`로 문서화
+- [x] Claude connection 생성 시 API Key credential 생성
+- [x] Claude webhook 요청에서 Notio API Key 검증
+- [x] Claude payload를 Notification event로 변환
+- [x] Claude notification 저장 시 connection의 user id 사용
+- [x] Claude hook script 환경변수를 `NOTIO_WEBHOOK_API_KEY`로 문서화
 
 ### Slack OAuth/Webhook
 
-- [ ] Slack OAuth URL 생성 skeleton 구현
-- [ ] Slack OAuth callback 처리 skeleton 구현
-- [ ] Slack signing secret 검증 skeleton 구현
-- [ ] Slack URL verification challenge 처리 skeleton 구현
-- [ ] `team_id`로 connection 매칭하도록 설계
-- [ ] payload 문자열만으로 사용자를 매칭하지 않음
+- [x] Slack OAuth URL 생성 skeleton 구현
+- [x] Slack OAuth callback 처리 skeleton 구현
+- [x] Slack signing secret 검증 skeleton 구현
+- [x] Slack URL verification challenge 처리 skeleton 구현
+- [x] `team_id`로 connection 매칭하도록 설계
+- [x] payload 문자열만으로 사용자를 매칭하지 않음
 
 ### Gmail OAuth/Webhook
 
-- [ ] Google OAuth URL 생성 skeleton 구현
-- [ ] Google OAuth callback 처리 skeleton 구현
-- [ ] provider account id/email 저장 skeleton 구현
-- [ ] Pub/Sub subscription 생성/갱신 skeleton 구현
-- [ ] Google Pub/Sub/OIDC/subscription 검증 skeleton 구현
-- [ ] `subscription_id` 또는 provider account id로 connection 매칭하도록 설계
-- [ ] payload email 문자열만으로 사용자를 매칭하지 않음
+- [x] Google OAuth URL 생성 skeleton 구현
+- [x] Google OAuth callback 처리 skeleton 구현
+- [x] provider account id/email 저장 skeleton 구현
+- [x] Pub/Sub subscription 생성/갱신 skeleton 구현
+- [x] Google Pub/Sub/OIDC/subscription 검증 skeleton 구현
+- [x] `subscription_id` 또는 provider account id로 connection 매칭하도록 설계
+- [x] payload email 문자열만으로 사용자를 매칭하지 않음
 
 ---
 

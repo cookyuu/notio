@@ -28,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final String WEBHOOK_PATH_PREFIX = "/api/v1/webhook/";
 
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -75,5 +76,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         return null;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(final HttpServletRequest request) {
+        return request.getRequestURI().startsWith(WEBHOOK_PATH_PREFIX);
     }
 }

@@ -4,10 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.common.exception.NotioException;
+import com.notio.connection.adapter.ConnectionProviderAdapter;
+import com.notio.connection.adapter.ConnectionProviderAdapterRegistry;
 import com.notio.connection.domain.Connection;
 import com.notio.connection.domain.ConnectionAuthType;
 import com.notio.connection.domain.ConnectionCredential;
@@ -18,6 +21,10 @@ import com.notio.connection.dto.CreateConnectionRequest;
 import com.notio.connection.repository.ConnectionCredentialRepository;
 import com.notio.connection.repository.ConnectionEventRepository;
 import com.notio.connection.repository.ConnectionRepository;
+import com.notio.connection.security.ApiKeyGenerator;
+import com.notio.connection.security.ConnectionCredentialHasher;
+import com.notio.connection.security.CredentialEncryptionService;
+import com.notio.connection.security.GeneratedApiKey;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +44,21 @@ class ConnectionServiceTest {
     @Mock
     private ConnectionEventRepository connectionEventRepository;
 
+    @Mock
+    private ConnectionProviderAdapterRegistry adapterRegistry;
+
+    @Mock
+    private ConnectionProviderAdapter connectionProviderAdapter;
+
+    @Mock
+    private ApiKeyGenerator apiKeyGenerator;
+
+    @Mock
+    private ConnectionCredentialHasher credentialHasher;
+
+    @Mock
+    private CredentialEncryptionService credentialEncryptionService;
+
     private ConnectionService connectionService;
 
     @BeforeEach
@@ -45,8 +67,14 @@ class ConnectionServiceTest {
             connectionRepository,
             connectionCredentialRepository,
             connectionEventRepository,
-            new ObjectMapper()
+            new ObjectMapper(),
+            adapterRegistry,
+            apiKeyGenerator,
+            credentialHasher,
+            credentialEncryptionService
         );
+        lenient().when(adapterRegistry.get(ConnectionProvider.CLAUDE)).thenReturn(connectionProviderAdapter);
+        lenient().when(adapterRegistry.get(ConnectionProvider.SLACK)).thenReturn(connectionProviderAdapter);
     }
 
     @Test
@@ -71,6 +99,10 @@ class ConnectionServiceTest {
             .metadata("{}")
             .build();
         when(connectionRepository.save(any(Connection.class))).thenReturn(savedConnection);
+        when(connectionProviderAdapter.supportsAuthType(ConnectionAuthType.API_KEY)).thenReturn(true);
+        when(apiKeyGenerator.generate())
+            .thenReturn(new GeneratedApiKey("ntio_wh_prefix123_secret12345678901234567890123456789012", "prefix123", "ntio_wh_prefix123_...9012"));
+        when(credentialHasher.hash("ntio_wh_prefix123_secret12345678901234567890123456789012")).thenReturn("hash");
         when(connectionCredentialRepository.save(any(ConnectionCredential.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 

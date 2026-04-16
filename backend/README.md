@@ -81,7 +81,7 @@ java -jar build/libs/notio-backend-0.0.1-SNAPSHOT.jar
 ./gradlew test
 
 # 코드 품질 검사
-./gradlew checkstyleMain spotbugsMain
+./gradlew check
 
 # 테스트 커버리지
 ./gradlew test jacocoTestReport
@@ -107,9 +107,13 @@ http://localhost:8080/swagger-ui.html
 | `NOTIO_REDIS_PORT` | Redis 포트 | `6379` |
 | `NOTIO_JWT_SECRET` | JWT 시크릿 | - |
 | `NOTIO_SERVER_PORT` | 서버 포트 | `8080` |
-| `NOTIO_WEBHOOK_CLAUDE_TOKEN` | Claude Webhook 토큰 | `change-me` |
+| `NOTIO_WEBHOOK_KEY_PEPPER` | Webhook API Key HMAC pepper | `local-dev-webhook-pepper-change-me` |
+| `NOTIO_CREDENTIAL_ENCRYPTION_KEY` | OAuth credential AES-256 key (base64url, 32 bytes) | - |
 | `NOTIO_WEBHOOK_SLACK_SECRET` | Slack Webhook 시크릿 | `change-me` |
 | `NOTIO_WEBHOOK_GITHUB_SECRET` | GitHub Webhook 시크릿 | `change-me` |
+
+Claude Code hook script는 connection 생성/rotate 응답의 API Key를 `NOTIO_WEBHOOK_API_KEY`로 전달해야 합니다.
+예: `Authorization: Bearer ${NOTIO_WEBHOOK_API_KEY}`
 
 ## 개발 규칙
 
@@ -162,7 +166,7 @@ Flyway를 사용하여 데이터베이스 스키마를 버전 관리합니다.
 ## 보안
 
 - JWT 기반 인증
-- HMAC 또는 Bearer 토큰으로 Webhook 검증
+- Connection 단위 opaque Webhook API Key 또는 provider별 서명으로 Webhook 검증
 - SQL Injection 방지: Prepared Statement 또는 QueryDSL 사용
 - 환경 변수로 민감 정보 관리
 

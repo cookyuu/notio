@@ -58,12 +58,14 @@ notio:
     secret: ${NOTIO_JWT_SECRET:your-256-bit-secret-key-change-this-in-production}
     expiration: 86400000 # 24 hours
   webhook:
-    claude:
-      bearer-token: ${NOTIO_WEBHOOK_CLAUDE_TOKEN:change-me}
     slack:
       signing-secret: ${NOTIO_WEBHOOK_SLACK_SECRET:change-me}
     github:
       webhook-secret: ${NOTIO_WEBHOOK_GITHUB_SECRET:change-me}
+  connection:
+    security:
+      webhook-key-pepper: ${NOTIO_WEBHOOK_KEY_PEPPER:local-dev-webhook-pepper-change-me}
+      credential-encryption-key: ${NOTIO_CREDENTIAL_ENCRYPTION_KEY:}
   firebase:
     enabled: ${NOTIO_FIREBASE_ENABLED:false}
     service-account-path: ${NOTIO_FIREBASE_SERVICE_ACCOUNT_PATH:}

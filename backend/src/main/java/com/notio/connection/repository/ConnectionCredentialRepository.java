@@ -20,4 +20,12 @@ public interface ConnectionCredentialRepository extends JpaRepository<Connection
         @Param("connectionId") Long connectionId,
         @Param("authType") ConnectionAuthType authType
     );
+
+    @Query("SELECT cc FROM ConnectionCredential cc " +
+        "WHERE cc.deletedAt IS NULL AND cc.revokedAt IS NULL " +
+        "AND cc.keyPrefix = :keyPrefix AND cc.authType = :authType")
+    Optional<ConnectionCredential> findActiveByKeyPrefixAndAuthType(
+        @Param("keyPrefix") String keyPrefix,
+        @Param("authType") ConnectionAuthType authType
+    );
 }

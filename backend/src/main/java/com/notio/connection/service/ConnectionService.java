@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
+import com.notio.connection.adapter.ConnectionProviderAdapter;
+import com.notio.connection.adapter.ConnectionProviderAdapterRegistry;
 import com.notio.connection.domain.Connection;
 import com.notio.connection.domain.ConnectionAuthType;
 import com.notio.connection.domain.ConnectionCapability;
@@ -18,12 +20,11 @@ import com.notio.connection.dto.CreateConnectionRequest;
 import com.notio.connection.repository.ConnectionCredentialRepository;
 import com.notio.connection.repository.ConnectionEventRepository;
 import com.notio.connection.repository.ConnectionRepository;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.HexFormat;
+import com.notio.connection.security.ApiKeyGenerator;
+import com.notio.connection.security.ConnectionCredentialHasher;
+import com.notio.connection.security.CredentialEncryptionService;
+import com.notio.connection.security.GeneratedApiKey;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -35,13 +36,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ConnectionService {
 
-    private static final String API_KEY_PREFIX = "ntio_wh";
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-
     private final ConnectionRepository connectionRepository;
     private final ConnectionCredentialRepository connectionCredentialRepository;
     private final ConnectionEventRepository connectionEventRepository;
     private final ObjectMapper objectMapper;
+    private final ConnectionProviderAdapterRegistry adapterRegistry;
+    private final ApiKeyGenerator apiKeyGenerator;
+    private final ConnectionCredentialHasher credentialHasher;
+    private final CredentialEncryptionService credentialEncryptionService;
 
     public List<ConnectionResponse> findAll(final Long userId) {
         return connectionRepository.findAllByUserIdAndNotDeleted(userId)
@@ -140,8 +142,18 @@ public class ConnectionService {
     }
 
     @Transactional
+    public void recordWebhookSuccess(final Long userId, final Long connectionId) {
+        recordEvent(userId, connectionId, "WEBHOOK_RECEIVED", "SUCCESS", Map.of());
+    }
+
+    @Transactional
     public void recordWebhookFailure(final Connection connection, final String reason) {
         recordEvent(connection, "WEBHOOK_RECEIVED", "FAILURE", reasonMetadata(reason));
+    }
+
+    @Transactional
+    public void recordWebhookFailure(final Long userId, final Long connectionId, final String reason) {
+        recordEvent(userId, connectionId, "WEBHOOK_RECEIVED", "FAILURE", reasonMetadata(reason));
     }
 
     @Transactional
@@ -172,28 +184,38 @@ public class ConnectionService {
     }
 
     private void validateSupported(final ConnectionProvider provider, final ConnectionAuthType authType) {
-        final boolean supported = switch (provider) {
-            case CLAUDE -> authType == ConnectionAuthType.API_KEY;
-            case SLACK, GMAIL -> authType == ConnectionAuthType.OAUTH;
-            case GITHUB, DISCORD, JIRA, LINEAR, TEAMS -> authType == ConnectionAuthType.SIGNATURE;
-        };
-        if (!supported) {
+        final ConnectionProviderAdapter adapter = adapterRegistry.get(provider);
+        if (!adapter.supportsAuthType(authType)) {
             throw new NotioException(ErrorCode.CONNECTION_AUTH_TYPE_UNSUPPORTED);
         }
     }
 
     private String createApiKeyCredential(final Connection connection) {
-        final String prefix = randomToken(9);
-        final String secret = randomToken(32);
-        final String apiKey = API_KEY_PREFIX + "_" + prefix + "_" + secret;
+        final GeneratedApiKey apiKey = apiKeyGenerator.generate();
         connectionCredentialRepository.save(ConnectionCredential.builder()
             .connectionId(connection.getId())
             .authType(ConnectionAuthType.API_KEY)
-            .keyPrefix(prefix)
-            .keyPreview(API_KEY_PREFIX + "_" + prefix + "_..." + secret.substring(secret.length() - 4))
-            .keyHash(sha256(apiKey))
+            .keyPrefix(apiKey.prefix())
+            .keyPreview(apiKey.preview())
+            .keyHash(credentialHasher.hash(apiKey.value()))
             .build());
-        return apiKey;
+        return apiKey.value();
+    }
+
+    @Transactional
+    public void saveOAuthTokens(
+        final Connection connection,
+        final String accessToken,
+        final String refreshToken,
+        final Instant expiresAt
+    ) {
+        connectionCredentialRepository.save(ConnectionCredential.builder()
+            .connectionId(connection.getId())
+            .authType(ConnectionAuthType.OAUTH)
+            .accessTokenEncrypted(credentialEncryptionService.encrypt(accessToken))
+            .refreshTokenEncrypted(credentialEncryptionService.encrypt(refreshToken))
+            .expiresAt(expiresAt)
+            .build());
     }
 
     private String capabilitiesJson(final ConnectionAuthType authType) {
@@ -213,9 +235,19 @@ public class ConnectionService {
         final String status,
         final Map<String, Object> metadata
     ) {
+        recordEvent(connection.getUserId(), connection.getId(), eventType, status, metadata);
+    }
+
+    private void recordEvent(
+        final Long userId,
+        final Long connectionId,
+        final String eventType,
+        final String status,
+        final Map<String, Object> metadata
+    ) {
         connectionEventRepository.save(ConnectionEvent.builder()
-            .connectionId(connection.getId())
-            .userId(connection.getUserId())
+            .connectionId(connectionId)
+            .userId(userId)
             .eventType(eventType)
             .status(status)
             .metadata(metadataJson(metadata))
@@ -237,18 +269,4 @@ public class ConnectionService {
         }
     }
 
-    private String randomToken(final int byteLength) {
-        final byte[] bytes = new byte[byteLength];
-        SECURE_RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    private String sha256(final String value) {
-        try {
-            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new NotioException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-    }
 }

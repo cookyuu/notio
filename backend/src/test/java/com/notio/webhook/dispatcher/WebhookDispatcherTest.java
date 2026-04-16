@@ -4,12 +4,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.notio.common.exception.NotioException;
+import com.notio.connection.adapter.ConnectionProviderAdapter;
+import com.notio.connection.adapter.ConnectionProviderAdapterRegistry;
+import com.notio.connection.domain.ConnectionAuthType;
+import com.notio.connection.domain.ConnectionProvider;
 import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
 import com.notio.webhook.dto.NotificationEvent;
+import com.notio.webhook.dto.WebhookDispatchResult;
+import com.notio.webhook.dto.WebhookPrincipal;
 import com.notio.webhook.dto.WebhookRequestContext;
-import com.notio.webhook.handler.WebhookHandler;
-import com.notio.webhook.verifier.WebhookVerifier;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -29,25 +33,29 @@ class WebhookDispatcherTest {
                 Map.of()
         );
         final WebhookDispatcher dispatcher = new WebhookDispatcher(
-                List.of(new TestHandler(event)),
-                List.of(new TestVerifier(true))
+                List.of(),
+                List.of(),
+                new ConnectionProviderAdapterRegistry(List.of(new TestAdapter(event, true)))
         );
 
-        final NotificationEvent dispatchedEvent = dispatcher.dispatch(new WebhookRequestContext(
+        final WebhookDispatchResult result = dispatcher.dispatch(new WebhookRequestContext(
                 NotificationSource.SLACK,
                 new HttpHeaders(),
                 "{\"text\":\"hello\"}",
                 Map.of("text", "hello")
         ));
 
-        assertThat(dispatchedEvent).isEqualTo(event);
+        assertThat(result.event().title()).isEqualTo(event.title());
+        assertThat(result.event().userId()).isEqualTo(10L);
+        assertThat(result.event().connectionId()).isEqualTo(20L);
     }
 
     @Test
     void dispatchThrowsUnauthorizedWhenVerificationFails() {
         final WebhookDispatcher dispatcher = new WebhookDispatcher(
-                List.of(new TestHandler(null)),
-                List.of(new TestVerifier(false))
+                List.of(),
+                List.of(),
+                new ConnectionProviderAdapterRegistry(List.of(new TestAdapter(null, false)))
         );
 
         assertThatThrownBy(() -> dispatcher.dispatch(new WebhookRequestContext(
@@ -59,27 +67,28 @@ class WebhookDispatcherTest {
                 .hasMessage("Webhook 서명 검증에 실패했습니다.");
     }
 
-    private record TestHandler(NotificationEvent event) implements WebhookHandler {
+    private record TestAdapter(NotificationEvent event, boolean authenticated) implements ConnectionProviderAdapter {
         @Override
-        public NotificationSource supports() {
-            return NotificationSource.SLACK;
+        public ConnectionProvider supports() {
+            return ConnectionProvider.SLACK;
         }
 
         @Override
-        public NotificationEvent handle(final WebhookRequestContext context) {
+        public boolean supportsAuthType(final ConnectionAuthType authType) {
+            return true;
+        }
+
+        @Override
+        public WebhookPrincipal authenticateWebhook(final WebhookRequestContext context) {
+            if (!authenticated) {
+                throw new NotioException(com.notio.common.exception.ErrorCode.WEBHOOK_VERIFICATION_FAILED);
+            }
+            return new WebhookPrincipal(20L, 10L, ConnectionProvider.SLACK);
+        }
+
+        @Override
+        public NotificationEvent toNotificationEvent(final WebhookRequestContext context) {
             return event;
-        }
-    }
-
-    private record TestVerifier(boolean result) implements WebhookVerifier {
-        @Override
-        public NotificationSource supports() {
-            return NotificationSource.SLACK;
-        }
-
-        @Override
-        public boolean verify(final WebhookRequestContext context) {
-            return result;
         }
     }
 }

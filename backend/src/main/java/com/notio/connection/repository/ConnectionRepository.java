@@ -25,4 +25,10 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
         ConnectionProvider provider,
         ConnectionStatus status
     );
+
+    Optional<Connection> findByIdAndProviderAndStatusAndDeletedAtIsNull(
+        Long id,
+        ConnectionProvider provider,
+        ConnectionStatus status
+    );
 }

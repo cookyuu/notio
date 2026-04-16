@@ -3,7 +3,10 @@ package com.notio.webhook.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.common.response.ApiResponse;
+import com.notio.connection.service.ConnectionService;
 import com.notio.webhook.dto.NotificationEvent;
+import com.notio.webhook.dto.WebhookDispatchResult;
+import com.notio.webhook.dto.WebhookPrincipal;
 import com.notio.webhook.dto.WebhookReceiptResponse;
 import com.notio.notification.service.NotificationService;
 import com.notio.notification.domain.Notification;
@@ -32,15 +35,18 @@ public class WebhookController {
 
     private final WebhookDispatcher webhookDispatcher;
     private final NotificationService notificationService;
+    private final ConnectionService connectionService;
     private final ObjectMapper objectMapper;
 
     public WebhookController(
             final WebhookDispatcher webhookDispatcher,
             final NotificationService notificationService,
+            final ConnectionService connectionService,
             final ObjectMapper objectMapper
     ) {
         this.webhookDispatcher = webhookDispatcher;
         this.notificationService = notificationService;
+        this.connectionService = connectionService;
         this.objectMapper = objectMapper;
     }
 
@@ -62,8 +68,11 @@ public class WebhookController {
                 rawBody,
                 payload
         );
-        final NotificationEvent event = webhookDispatcher.dispatch(context);
+        final WebhookDispatchResult dispatchResult = webhookDispatcher.dispatch(context);
+        final NotificationEvent event = dispatchResult.event();
         final Notification notification = notificationService.saveFromEvent(event);
+        final WebhookPrincipal principal = dispatchResult.principal();
+        connectionService.recordWebhookSuccess(principal.userId(), principal.connectionId());
         final Instant processedAt = Instant.now();
 
         return ApiResponse.success(WebhookReceiptResponse.of(notification.getId(), processedAt));

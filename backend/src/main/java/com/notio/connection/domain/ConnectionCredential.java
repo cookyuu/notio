@@ -71,4 +71,14 @@ public class ConnectionCredential {
     public void revoke() {
         this.revokedAt = Instant.now();
     }
+
+    public void setEncryptedTokens(
+        final String accessTokenEncrypted,
+        final String refreshTokenEncrypted,
+        final Instant expiresAt
+    ) {
+        this.accessTokenEncrypted = accessTokenEncrypted;
+        this.refreshTokenEncrypted = refreshTokenEncrypted;
+        this.expiresAt = expiresAt;
+    }
 }
