@@ -2,6 +2,7 @@ package com.notio.notification.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.notio.notification.domain.Notification;
+import com.notio.notification.repository.NotificationSummaryProjection;
 import lombok.Builder;
 
 @Builder
@@ -24,6 +25,18 @@ public record NotificationSummaryResponse(
     private static final int BODY_PREVIEW_MAX_LENGTH = 120;
 
     public static NotificationSummaryResponse from(Notification notification) {
+        return NotificationSummaryResponse.builder()
+            .id(notification.getId())
+            .source(notification.getSource().name())
+            .title(notification.getTitle())
+            .priority(notification.getPriority().name())
+            .isRead(notification.isRead())
+            .createdAt(notification.getCreatedAt().toString())
+            .bodyPreview(createBodyPreview(notification.getBody()))
+            .build();
+    }
+
+    public static NotificationSummaryResponse from(NotificationSummaryProjection notification) {
         return NotificationSummaryResponse.builder()
             .id(notification.getId())
             .source(notification.getSource().name())

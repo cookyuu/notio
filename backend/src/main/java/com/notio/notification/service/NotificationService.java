@@ -7,6 +7,7 @@ import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationSource;
+import com.notio.notification.dto.NotificationSummaryResponse;
 import com.notio.notification.repository.NotificationRepository;
 import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
@@ -105,6 +106,16 @@ public class NotificationService {
      */
     public Page<Notification> findAll(Long userId, NotificationSource source, Boolean isRead, Pageable pageable) {
         return notificationRepository.findAllWithFilter(userId, source, isRead, pageable);
+    }
+
+    public Page<NotificationSummaryResponse> findAllSummaries(
+        Long userId,
+        NotificationSource source,
+        Boolean isRead,
+        Pageable pageable
+    ) {
+        return notificationRepository.findAllSummariesWithFilter(userId, source, isRead, pageable)
+            .map(NotificationSummaryResponse::from);
     }
 
     /**

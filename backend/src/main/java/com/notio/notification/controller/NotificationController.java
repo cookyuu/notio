@@ -52,8 +52,7 @@ public class NotificationController {
     ) {
         Long userId = currentUserId(authentication);
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Notification> notifications = notificationService.findAll(userId, source, isRead, pageable);
-        Page<NotificationSummaryResponse> response = notifications.map(NotificationSummaryResponse::from);
+        Page<NotificationSummaryResponse> response = notificationService.findAllSummaries(userId, source, isRead, pageable);
 
         return ApiResponse.success(response);
     }

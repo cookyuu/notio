@@ -38,17 +38,17 @@
 
 ## Phase 4. 목록 응답 최적화
 
-- [ ] 목록 API가 화면에 불필요한 전체 본문/메타데이터를 조회·직렬화하지 않도록 정리한다.
-- [ ] 필요 시 repository projection 또는 DTO 매핑 단에서 목록 응답을 경량화한다.
-- [ ] 목록 API 변경이 페이지네이션 구조(`content`, `page`, `size`)를 깨지 않도록 유지한다.
-- [ ] 프론트가 사용하는 목록 정렬 기준(`createdAt desc`)을 유지한다.
+- [x] 목록 API가 화면에 불필요한 전체 본문/메타데이터를 조회·직렬화하지 않도록 정리한다.
+- [x] 필요 시 repository projection 또는 DTO 매핑 단에서 목록 응답을 경량화한다.
+- [x] 목록 API 변경이 페이지네이션 구조(`content`, `page`, `size`)를 깨지 않도록 유지한다.
+- [x] 프론트가 사용하는 목록 정렬 기준(`createdAt desc`)을 유지한다.
 
 ## Phase 5. 테스트 및 검증
 
-- [ ] 목록 API controller test를 추가하거나 보강한다.
+- [x] 목록 API controller test를 추가하거나 보강한다.
 - [ ] 목록 API가 목록 DTO 필드만 반환하는지 검증한다.
 - [ ] 상세 API 호출 시 미읽음 알림이 읽음으로 바뀌고 `is_read=true`로 응답되는지 테스트한다.
 - [ ] 상세 API 호출 시 이미 읽은 알림은 상태 변화 없이 반환되는지 테스트한다.
-- [ ] `body_preview` 생성 규칙 테스트를 추가한다.
-- [ ] `NotificationService` 단위 테스트에서 unread count cache eviction 조건을 검증한다.
+- [x] `body_preview` 생성 규칙 테스트를 추가한다.
+- [x] `NotificationService` 단위 테스트에서 unread count cache eviction 조건을 검증한다.
 - [ ] `./gradlew test`를 실행해 관련 테스트를 검증한다.

@@ -3,6 +3,7 @@ package com.notio.notification.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -12,7 +13,9 @@ import com.notio.common.exception.NotioException;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
+import com.notio.notification.dto.NotificationSummaryResponse;
 import com.notio.notification.repository.NotificationRepository;
+import com.notio.notification.repository.NotificationSummaryProjection;
 import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
 import java.lang.reflect.Method;
@@ -29,6 +32,8 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -50,7 +55,7 @@ class NotificationServiceTest {
     @BeforeEach
     void setUp() {
         notificationService = new NotificationService(notificationRepository, new ObjectMapper(), pushService, cacheManager);
-        when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
+        lenient().when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
     }
 
     @Test
@@ -106,6 +111,63 @@ class NotificationServiceTest {
         assertThat(notificationService.countUnread(11L)).isEqualTo(5L);
         verify(notificationRepository).countUnread(10L);
         verify(notificationRepository).countUnread(11L);
+    }
+
+    @Test
+    void findAllSummariesUsesLightweightProjectionAndKeepsPagination() {
+        final NotificationSummaryProjection summary = new NotificationSummaryProjection() {
+            @Override
+            public Long getId() {
+                return 1L;
+            }
+
+            @Override
+            public NotificationSource getSource() {
+                return NotificationSource.GITHUB;
+            }
+
+            @Override
+            public String getTitle() {
+                return "PR opened";
+            }
+
+            @Override
+            public NotificationPriority getPriority() {
+                return NotificationPriority.HIGH;
+            }
+
+            @Override
+            public boolean isRead() {
+                return false;
+            }
+
+            @Override
+            public Instant getCreatedAt() {
+                return Instant.parse("2026-04-17T12:30:00Z");
+            }
+
+            @Override
+            public String getBody() {
+                return "A new PR is ready with tests and deployment notes.";
+            }
+        };
+        final PageRequest pageable = PageRequest.of(0, 20);
+        when(notificationRepository.findAllSummariesWithFilter(10L, null, null, pageable))
+            .thenReturn(new PageImpl<>(java.util.List.of(summary), pageable, 1));
+
+        final var result = notificationService.findAllSummaries(10L, null, null, pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getNumber()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(20);
+        assertThat(result.getContent())
+            .extracting(NotificationSummaryResponse::id, NotificationSummaryResponse::source, NotificationSummaryResponse::bodyPreview)
+            .containsExactly(org.assertj.core.groups.Tuple.tuple(
+                1L,
+                NotificationSource.GITHUB.name(),
+                "A new PR is ready with tests and deployment notes."
+            ));
+        verify(notificationRepository).findAllSummariesWithFilter(10L, null, null, pageable);
     }
 
     @Test

@@ -38,6 +38,26 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         Pageable pageable
     );
 
+    @Query("SELECT " +
+           "n.id AS id, " +
+           "n.source AS source, " +
+           "n.title AS title, " +
+           "n.priority AS priority, " +
+           "n.read AS read, " +
+           "n.createdAt AS createdAt, " +
+           "n.body AS body " +
+           "FROM Notification n WHERE n.deletedAt IS NULL " +
+           "AND n.userId = :userId " +
+           "AND (:source IS NULL OR n.source = :source) " +
+           "AND (:isRead IS NULL OR n.read = :isRead) " +
+           "ORDER BY n.createdAt DESC")
+    Page<NotificationSummaryProjection> findAllSummariesWithFilter(
+        @Param("userId") Long userId,
+        @Param("source") NotificationSource source,
+        @Param("isRead") Boolean isRead,
+        Pageable pageable
+    );
+
     /**
      * 미읽음 알림 개수 조회
      */
