@@ -24,10 +24,10 @@
 
 ## Phase 2. 목록 화면 렌더링 정리
 
-- [ ] `notifications_screen.dart`가 목록 응답 기준으로 렌더링되도록 수정한다.
-- [ ] 카드 본문 미리보기는 `bodyPreview`를 사용하도록 변경한다.
-- [ ] 목록 화면이 더 이상 상세 전용 필드(`externalUrl`, `metadata`, 전체 body`)에 의존하지 않도록 정리한다.
-- [ ] 기존 pagination, refresh, source filter 동작이 목록 전용 응답 구조에서도 유지되도록 정리한다.
+- [x] `notifications_screen.dart`가 목록 응답 기준으로 렌더링되도록 수정한다.
+- [x] 카드 본문 미리보기는 `bodyPreview`를 사용하도록 변경한다.
+- [x] 목록 화면이 더 이상 상세 전용 필드(`externalUrl`, `metadata`, 전체 body`)에 의존하지 않도록 정리한다.
+- [x] 기존 pagination, refresh, source filter 동작이 목록 전용 응답 구조에서도 유지되도록 정리한다.
 
 ## Phase 3. 상세 조회 흐름 변경
 
