@@ -206,7 +206,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void getDetailMarksUnreadNotificationAsRead() {
+    void getDetailMarksUnreadNotificationAsReadAndEvictsUnreadCountCache() {
         final Notification notification = Notification.builder()
                 .id(99L)
                 .userId(10L)
@@ -223,11 +223,13 @@ class NotificationServiceTest {
         final Notification result = notificationService.getDetail(10L, 99L);
 
         assertThat(result.isRead()).isTrue();
+        assertThat(notification.isRead()).isTrue();
+        verify(notificationRepository).findByIdAndUserIdAndNotDeleted(10L, 99L);
         verify(unreadCountCache).evict(10L);
     }
 
     @Test
-    void getDetailKeepsReadNotificationRead() {
+    void getDetailReturnsAlreadyReadNotificationWithoutStateChange() {
         final Notification notification = Notification.builder()
                 .id(100L)
                 .userId(10L)
@@ -244,6 +246,8 @@ class NotificationServiceTest {
         final Notification result = notificationService.getDetail(10L, 100L);
 
         assertThat(result.isRead()).isTrue();
+        assertThat(result).isSameAs(notification);
+        verify(notificationRepository).findByIdAndUserIdAndNotDeleted(10L, 100L);
         verify(unreadCountCache, org.mockito.Mockito.never()).evict(ArgumentMatchers.any());
     }
 

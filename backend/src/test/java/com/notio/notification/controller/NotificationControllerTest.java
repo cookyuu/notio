@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.common.response.ApiResponse;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationPriority;
@@ -29,6 +31,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 
 @ExtendWith(MockitoExtension.class)
 class NotificationControllerTest {
+
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     @Mock
     private NotificationService notificationService;
@@ -64,6 +68,53 @@ class NotificationControllerTest {
         assertThat(response.data().getContent().getFirst().source()).isEqualTo(NotificationSource.GITHUB.name());
         assertThat(response.data().getContent().getFirst().bodyPreview()).isEqualTo("A new PR is ready with tests and deployment notes.");
         verify(notificationService).findAllSummaries(eq(10L), any(), any(), any());
+    }
+
+    @Test
+    void getNotificationsSerializesOnlySummaryFields() throws Exception {
+        final NotificationController controller = new NotificationController(notificationService);
+        final NotificationSummaryResponse summary = NotificationSummaryResponse.builder()
+                .id(1L)
+                .source(NotificationSource.GITHUB.name())
+                .title("PR opened")
+                .priority(NotificationPriority.HIGH.name())
+                .isRead(false)
+                .createdAt("2026-04-17T12:30:00Z")
+                .bodyPreview("A new PR is ready with tests and deployment notes.")
+                .build();
+        when(notificationService.findAllSummaries(any(), any(), any(), any())).thenReturn(new PageImpl<>(
+                List.of(summary),
+                PageRequest.of(0, 20),
+                1
+        ));
+
+        final ApiResponse<Page<NotificationSummaryResponse>> response = controller.getNotifications(
+                null,
+                null,
+                0,
+                20,
+                new UsernamePasswordAuthenticationToken("10", null)
+        );
+
+        final JsonNode content = objectMapper.readTree(objectMapper.writeValueAsString(response))
+                .path("data")
+                .path("content")
+                .get(0);
+
+        assertThat(content.size()).isEqualTo(7);
+        assertThat(content.has("id")).isTrue();
+        assertThat(content.has("source")).isTrue();
+        assertThat(content.has("title")).isTrue();
+        assertThat(content.has("priority")).isTrue();
+        assertThat(content.has("is_read")).isTrue();
+        assertThat(content.has("created_at")).isTrue();
+        assertThat(content.has("body_preview")).isTrue();
+        assertThat(content.has("body")).isFalse();
+        assertThat(content.has("external_url")).isFalse();
+        assertThat(content.has("metadata")).isFalse();
+        assertThat(content.has("updated_at")).isFalse();
+        assertThat(content.has("external_id")).isFalse();
+        assertThat(content.has("connection_id")).isFalse();
     }
 
     @Test

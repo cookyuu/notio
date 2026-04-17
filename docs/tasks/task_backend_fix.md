@@ -46,9 +46,11 @@
 ## Phase 5. 테스트 및 검증
 
 - [x] 목록 API controller test를 추가하거나 보강한다.
-- [ ] 목록 API가 목록 DTO 필드만 반환하는지 검증한다.
-- [ ] 상세 API 호출 시 미읽음 알림이 읽음으로 바뀌고 `is_read=true`로 응답되는지 테스트한다.
-- [ ] 상세 API 호출 시 이미 읽은 알림은 상태 변화 없이 반환되는지 테스트한다.
+- [x] 목록 API가 목록 DTO 필드만 반환하는지 검증한다.
+- [x] 상세 API 호출 시 미읽음 알림이 읽음으로 바뀌고 `is_read=true`로 응답되는지 테스트한다.
+- [x] 상세 API 호출 시 이미 읽은 알림은 상태 변화 없이 반환되는지 테스트한다.
 - [x] `body_preview` 생성 규칙 테스트를 추가한다.
 - [x] `NotificationService` 단위 테스트에서 unread count cache eviction 조건을 검증한다.
 - [ ] `./gradlew test`를 실행해 관련 테스트를 검증한다.
+
+> 검증 메모: `./gradlew test`는 `AuthPublicEndpointSecurityTest` 실패로 전체 성공하지 않았고, 알림 관련 테스트(`NotificationControllerTest`, `NotificationServiceTest`, `NotificationSummaryResponseTest`)는 별도 실행 시 통과했다.
