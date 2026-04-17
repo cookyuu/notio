@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notio_app/core/constants/notification_source.dart';
-import 'package:notio_app/features/notification/domain/entity/notification_entity.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
 import 'package:notio_app/features/notification/domain/repository/notification_repository.dart';
 import 'package:notio_app/features/notification/presentation/providers/notification_providers.dart';
 
 /// Notifications state
 class NotificationsState {
-  final List<NotificationEntity> notifications;
+  final List<NotificationSummaryEntity> notifications;
   final bool isLoading;
   final String? error;
   final NotificationSource? selectedSource;
@@ -23,7 +23,7 @@ class NotificationsState {
   });
 
   NotificationsState copyWith({
-    List<NotificationEntity>? notifications,
+    List<NotificationSummaryEntity>? notifications,
     bool? isLoading,
     String? error,
     NotificationSource? selectedSource,
@@ -162,7 +162,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   }
 
   /// Add test notification (for developer menu)
-  void addTestNotification(NotificationEntity notification) {
+  void addTestNotification(NotificationSummaryEntity notification) {
     final updatedNotifications = [notification, ...state.notifications];
     state = state.copyWith(notifications: updatedNotifications);
   }

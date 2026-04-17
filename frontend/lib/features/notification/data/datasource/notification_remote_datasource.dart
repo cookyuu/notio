@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:notio_app/features/notification/data/model/notification_model.dart';
+import 'package:notio_app/features/notification/data/model/notification_summary_model.dart';
+import 'package:notio_app/features/notification/data/model/notification_detail_model.dart';
 
 /// Remote data source for notifications
 class NotificationRemoteDataSource {
@@ -7,8 +8,8 @@ class NotificationRemoteDataSource {
 
   NotificationRemoteDataSource(this._dio);
 
-  /// Fetch notifications from API
-  Future<List<NotificationModel>> fetchNotifications({
+  /// Fetch notification list (summary) from API
+  Future<List<NotificationSummaryModel>> fetchNotifications({
     String? source,
     int page = 0,
     int size = 20,
@@ -19,17 +20,32 @@ class NotificationRemoteDataSource {
         page: page,
         size: size,
       );
-      return _parseNotifications(response.data);
+      return _parseNotificationSummaries(response.data);
     } on DioException catch (e) {
       if (_shouldRetryWithoutSource(e, source)) {
         final fallbackResponse = await _requestNotifications(
           page: page,
           size: size,
         );
-        return _parseNotifications(fallbackResponse.data)
+        return _parseNotificationSummaries(fallbackResponse.data)
             .where((notification) => notification.source == source)
             .toList();
       }
+      throw Exception('네트워크 오류: ${e.message}');
+    }
+  }
+
+  /// Fetch notification detail from API
+  Future<NotificationDetailModel> getNotificationDetail(int id) async {
+    try {
+      final response = await _dio.get('/api/v1/notifications/$id');
+
+      if (response.data['success'] != true) {
+        throw Exception(response.data['error']['message']);
+      }
+
+      return NotificationDetailModel.fromJson(response.data['data']);
+    } on DioException catch (e) {
       throw Exception('네트워크 오류: ${e.message}');
     }
   }
@@ -49,7 +65,7 @@ class NotificationRemoteDataSource {
     );
   }
 
-  List<NotificationModel> _parseNotifications(dynamic responseData) {
+  List<NotificationSummaryModel> _parseNotificationSummaries(dynamic responseData) {
     if (responseData['success'] != true) {
       throw Exception(responseData['error']['message']);
     }
@@ -60,7 +76,7 @@ class NotificationRemoteDataSource {
       Map<String, dynamic>() => (data['content'] as List<dynamic>?) ?? const [],
       _ => const <dynamic>[],
     };
-    return items.map((json) => NotificationModel.fromJson(json)).toList();
+    return items.map((json) => NotificationSummaryModel.fromJson(json)).toList();
   }
 
   bool _shouldRetryWithoutSource(DioException exception, String? source) {

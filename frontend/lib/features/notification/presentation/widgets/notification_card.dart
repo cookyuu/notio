@@ -3,7 +3,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
-import 'package:notio_app/features/notification/domain/entity/notification_entity.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_priority.dart';
 import 'package:notio_app/shared/widgets/glass_card.dart';
 import 'package:notio_app/shared/widgets/source_badge.dart';
@@ -11,7 +11,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 /// Notification card widget
 class NotificationCard extends StatelessWidget {
-  final NotificationEntity notification;
+  final NotificationSummaryEntity notification;
   final VoidCallback? onTap;
   final VoidCallback? onMarkAsRead;
   final VoidCallback? onDelete;
@@ -137,9 +137,9 @@ class NotificationCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.s4),
 
-                    // Body
+                    // Body preview
                     Text(
-                      notification.body,
+                      notification.bodyPreview,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textTertiary,
                       ),

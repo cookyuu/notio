@@ -15,12 +15,12 @@
 
 ## Phase 1. 데이터 모델 및 repository 계약 분리
 
-- [ ] 목록 전용 notification model/entity를 정의하거나 기존 타입을 목록 전용 구조로 축소한다.
-- [ ] 상세 전용 notification detail model/entity를 추가한다.
-- [ ] `fetchNotifications()`가 목록 응답 타입을 반환하도록 수정한다.
-- [ ] `getNotificationDetail(int id)` repository 계약을 추가한다.
-- [ ] remote datasource에 상세 조회 API 호출 메서드를 추가한다.
-- [ ] 목록/상세 JSON 파싱 로직을 분리한다.
+- [x] 목록 전용 notification model/entity를 정의하거나 기존 타입을 목록 전용 구조로 축소한다.
+- [x] 상세 전용 notification detail model/entity를 추가한다.
+- [x] `fetchNotifications()`가 목록 응답 타입을 반환하도록 수정한다.
+- [x] `getNotificationDetail(int id)` repository 계약을 추가한다.
+- [x] remote datasource에 상세 조회 API 호출 메서드를 추가한다.
+- [x] 목록/상세 JSON 파싱 로직을 분리한다.
 
 ## Phase 2. 목록 화면 렌더링 정리
 

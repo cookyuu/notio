@@ -1,6 +1,7 @@
 import 'package:notio_app/core/constants/notification_source.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_priority.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
 
 /// Data model for notifications (DTO)
 class NotificationModel {
@@ -88,5 +89,32 @@ class NotificationModel {
       externalUrl: entity.externalUrl,
       metadata: entity.metadata,
     );
+  }
+
+  /// Convert to summary entity (for list display)
+  NotificationSummaryEntity toSummaryEntity() {
+    return NotificationSummaryEntity(
+      id: id,
+      source: NotificationSourceExtension.fromApiValue(source),
+      title: title,
+      bodyPreview: _createBodyPreview(body),
+      priority: NotificationPriorityExtension.fromApiValue(priority),
+      isRead: isRead,
+      createdAt: DateTime.parse(createdAt),
+    );
+  }
+
+  /// Create body preview (max 120 chars)
+  static String _createBodyPreview(String body) {
+    if (body.isEmpty) {
+      return '';
+    }
+
+    final normalized = body.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (normalized.length <= 120) {
+      return normalized;
+    }
+
+    return '${normalized.substring(0, 117)}...';
   }
 }

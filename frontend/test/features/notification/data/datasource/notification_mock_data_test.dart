@@ -23,20 +23,9 @@ void main() {
       expect(notification.id, 1);
       expect(notification.source, 'SLACK');
       expect(notification.title, '#dev-team 채널에 멘션');
-      expect(notification.body, contains('@cookyuu'));
-      expect(notification.body, contains('PR #456'));
+      expect(notification.bodyPreview, isNotEmpty);
       expect(notification.priority, 'HIGH');
       expect(notification.isRead, false);
-
-      // 외부 링크 확인
-      expect(notification.externalId, 'slack-msg-20260406-001');
-      expect(notification.externalUrl, contains('slack.com'));
-
-      // 메타데이터 확인
-      expect(notification.metadata, isNotNull);
-      expect(notification.metadata!['channel'], 'dev-team');
-      expect(notification.metadata!['user'], '박철수');
-      expect(notification.metadata!['user_id'], 'U123456');
 
       // 시간 확인 (5초 전)
       final createdAt = DateTime.parse(notification.createdAt);

@@ -4,7 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
-import 'package:notio_app/features/notification/domain/entity/notification_entity.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_priority.dart';
 import 'package:notio_app/shared/widgets/glass_card.dart';
 import 'package:notio_app/shared/widgets/source_badge.dart';
@@ -12,8 +12,9 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
 /// Modal for displaying notification details
+/// TODO: Phase 3 - Update to use NotificationDetailEntity
 class NotificationDetailModal extends ConsumerWidget {
-  final NotificationEntity notification;
+  final NotificationSummaryEntity notification;
 
   const NotificationDetailModal({
     required this.notification,
@@ -88,7 +89,7 @@ class NotificationDetailModal extends ConsumerWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(AppSpacing.s16),
                         child: SelectableText(
-                          notification.body,
+                          notification.bodyPreview,
                           style: AppTextStyles.bodyLarge.copyWith(
                             color: AppColors.textPrimary,
                             height: 1.6,
@@ -104,17 +105,18 @@ class NotificationDetailModal extends ConsumerWidget {
 
                     const SizedBox(height: AppSpacing.s20),
 
+                    // TODO: Phase 3 - Add external link and metadata from NotificationDetailEntity
                     // External link (if available)
-                    if (notification.externalUrl != null)
-                      _buildExternalLinkSection(
-                        context,
-                        notification.externalUrl!,
-                      ),
+                    // if (notification.externalUrl != null)
+                    //   _buildExternalLinkSection(
+                    //     context,
+                    //     notification.externalUrl!,
+                    //   ),
 
                     // Metadata (if available)
-                    if (notification.metadata != null &&
-                        notification.metadata!.isNotEmpty)
-                      _buildMetadataSection(notification.metadata!),
+                    // if (notification.metadata != null &&
+                    //     notification.metadata!.isNotEmpty)
+                    //   _buildMetadataSection(notification.metadata!),
 
                     const SizedBox(height: AppSpacing.s20),
 
@@ -178,6 +180,8 @@ class NotificationDetailModal extends ConsumerWidget {
     );
   }
 
+  // TODO: Phase 3 - Will be used when implementing detail API
+  // ignore: unused_element
   Widget _buildExternalLinkSection(BuildContext context, String url) {
     return GlassCard(
       child: InkWell(
@@ -226,6 +230,8 @@ class NotificationDetailModal extends ConsumerWidget {
     );
   }
 
+  // TODO: Phase 3 - Will be used when implementing detail API
+  // ignore: unused_element
   Widget _buildMetadataSection(Map<String, dynamic> metadata) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,7 +288,7 @@ class NotificationDetailModal extends ConsumerWidget {
               // Copy notification content to clipboard
               Clipboard.setData(
                 ClipboardData(
-                  text: '${notification.title}\n\n${notification.body}',
+                  text: '${notification.title}\n\n${notification.bodyPreview}',
                 ),
               );
 

@@ -3,6 +3,8 @@ import 'package:notio_app/features/notification/data/datasource/notification_loc
 import 'package:notio_app/features/notification/data/datasource/notification_remote_datasource.dart';
 import 'package:notio_app/features/notification/data/model/notification_model.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_entity.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_detail_entity.dart';
 import 'package:notio_app/features/notification/domain/repository/notification_repository.dart';
 
 /// Implementation of NotificationRepository
@@ -17,36 +19,36 @@ class NotificationRepositoryImpl implements NotificationRepository {
         _localDataSource = localDataSource;
 
   @override
-  Future<List<NotificationEntity>> fetchNotifications({
+  Future<List<NotificationSummaryEntity>> fetchNotifications({
     NotificationSource? source,
     int page = 0,
     int size = 20,
   }) async {
     try {
       // Try to fetch from remote
-      final models = await _remoteDataSource.fetchNotifications(
+      final summaryModels = await _remoteDataSource.fetchNotifications(
         source: source?.apiValue,
         page: page,
         size: size,
       );
 
-      try {
-        // Remote data should still be shown even if cache sync fails.
-        await _localDataSource.cacheNotifications(models);
-      } catch (_) {
-        // Ignore cache write failures and prefer the fresh server response.
-      }
-
       // Convert to entities
-      return models.map((model) => model.toEntity()).toList();
+      return summaryModels.map((model) => model.toEntity()).toList();
     } catch (e) {
       // If remote fails, fall back to cached data
       final cachedModels = await _localDataSource.getCachedNotifications(
         source: source?.apiValue,
       );
 
-      return cachedModels.map((model) => model.toEntity()).toList();
+      // Convert cached full models to summary entities
+      return cachedModels.map((model) => model.toSummaryEntity()).toList();
     }
+  }
+
+  @override
+  Future<NotificationDetailEntity> getNotificationDetail(int id) async {
+    final detailModel = await _remoteDataSource.getNotificationDetail(id);
+    return detailModel.toEntity();
   }
 
   @override
