@@ -23,10 +23,10 @@
 
 ## Phase 2. Controller 응답 분리
 
-- [ ] `NotificationController.getNotifications()`가 목록 DTO 페이지를 반환하도록 변경한다.
-- [ ] `NotificationController.getNotification()`가 상세 DTO를 반환하도록 정리한다.
-- [ ] 목록 API와 상세 API가 동일한 사용자 스코프 규칙을 사용하도록 확인한다.
-- [ ] 상세 조회 엔드포인트 설명과 Swagger 문구를 새 계약 기준으로 정리한다.
+- [x] `NotificationController.getNotifications()`가 목록 DTO 페이지를 반환하도록 변경한다.
+- [x] `NotificationController.getNotification()`가 상세 DTO를 반환하도록 정리한다.
+- [x] 목록 API와 상세 API가 동일한 사용자 스코프 규칙을 사용하도록 확인한다.
+- [x] 상세 조회 엔드포인트 설명과 Swagger 문구를 새 계약 기준으로 정리한다.
 
 ## Phase 3. Service 상세 조회 읽음 처리 정리
 

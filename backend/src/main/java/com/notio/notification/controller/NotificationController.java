@@ -30,7 +30,10 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    @Operation(summary = "알림 목록 조회", description = "알림 목록을 조회합니다. 필터링 및 페이지네이션을 지원합니다.")
+    @Operation(
+        summary = "알림 목록 조회",
+        description = "현재 사용자 범위의 알림 목록을 조회합니다. 카드 렌더링에 필요한 요약 필드만 반환하며 필터링과 페이지네이션을 지원합니다."
+    )
     @GetMapping
     public ApiResponse<Page<NotificationSummaryResponse>> getNotifications(
         @Parameter(description = "알림 소스 필터")
@@ -55,7 +58,10 @@ public class NotificationController {
         return ApiResponse.success(response);
     }
 
-    @Operation(summary = "알림 상세 조회", description = "특정 알림의 전체 본문과 부가 정보를 조회합니다. 조회 시 미읽음 알림은 자동으로 읽음 처리됩니다.")
+    @Operation(
+        summary = "알림 상세 조회",
+        description = "현재 사용자 범위에서 특정 알림의 전체 본문과 부가 정보를 조회합니다. 조회 시 미읽음 알림은 자동으로 읽음 처리됩니다."
+    )
     @GetMapping("/{id}")
     public ApiResponse<NotificationDetailResponse> getNotification(
         @Parameter(description = "알림 ID", required = true)
