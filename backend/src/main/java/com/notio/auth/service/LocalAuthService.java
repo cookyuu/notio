@@ -1,5 +1,6 @@
 package com.notio.auth.service;
 
+import com.notio.auth.config.AuthProperties;
 import com.notio.auth.domain.AuthIdentity;
 import com.notio.auth.domain.AuthProvider;
 import com.notio.auth.domain.PasswordResetToken;
@@ -40,7 +41,6 @@ public class LocalAuthService {
     private static final String FIND_ID_MESSAGE = "입력한 이메일로 계정 안내를 전송할 예정입니다.";
     private static final String PASSWORD_RESET_REQUEST_MESSAGE = "비밀번호 재설정 안내를 전송할 예정입니다.";
     private static final String PASSWORD_RESET_CONFIRM_MESSAGE = "비밀번호가 재설정되었습니다.";
-    private static final long PASSWORD_RESET_TOKEN_TTL_MINUTES = 30L;
 
     private final UserRepository userRepository;
     private final AuthIdentityRepository authIdentityRepository;
@@ -50,6 +50,7 @@ public class LocalAuthService {
     private final AuthMailTemplateService authMailTemplateService;
     private final AuthMailSender authMailSender;
     private final AuthAuditService authAuditService;
+    private final AuthProperties authProperties;
 
     @Transactional
     public SignupResponse signup(final SignupRequest request) {
@@ -107,7 +108,7 @@ public class LocalAuthService {
                     .user(identity.getUser())
                     .authIdentity(identity)
                     .tokenHash(tokenHash)
-                    .expiresAt(OffsetDateTime.now().plusMinutes(PASSWORD_RESET_TOKEN_TTL_MINUTES))
+                    .expiresAt(OffsetDateTime.now().plus(authProperties.getPasswordReset().getTokenTtl()))
                     .build());
 
             authMailSender.send(authMailTemplateService.buildPasswordResetMessage(identity.getUser(), rawToken));

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import com.notio.auth.adapter.AuthProviderAdapterRegistry;
+import com.notio.auth.config.AuthProperties;
 import com.notio.auth.domain.AuthPlatform;
 import com.notio.auth.domain.AuthProvider;
 import com.notio.auth.domain.AuthProviderState;
@@ -12,11 +13,12 @@ import com.notio.auth.dto.OAuthStartRequest;
 import com.notio.auth.repository.AuthProviderStateRepository;
 import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,11 +34,24 @@ class OAuthAuthServiceTest {
     @Mock
     private AuthAuditService authAuditService;
 
-    @InjectMocks
     private OAuthAuthService oAuthAuthService;
+
+    private AuthProperties authProperties;
+
+    @BeforeEach
+    void setUp() {
+        authProperties = new AuthProperties();
+        oAuthAuthService = new OAuthAuthService(
+                authProviderAdapterRegistry,
+                authProviderStateRepository,
+                authAuditService,
+                authProperties
+        );
+    }
 
     @Test
     void startRejectsUnsupportedProviderWhenAdapterIsMissing() {
+        authProperties.getOauth().setStateTtl(Duration.ofMinutes(5));
         when(authProviderAdapterRegistry.get(AuthProvider.GOOGLE))
                 .thenThrow(new NotioException(ErrorCode.AUTH_PROVIDER_UNSUPPORTED));
 
@@ -49,6 +64,7 @@ class OAuthAuthServiceTest {
 
     @Test
     void callbackRejectsInvalidStateBeforeAdapterResolution() {
+        authProperties.getOauth().setStateTtl(Duration.ofMinutes(5));
         when(authProviderStateRepository.findByState("missing-state")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> oAuthAuthService.callback("google", "missing-state", "code", null))
@@ -59,6 +75,7 @@ class OAuthAuthServiceTest {
 
     @Test
     void exchangeRejectsExpiredState() {
+        authProperties.getOauth().setStateTtl(Duration.ofMinutes(5));
         when(authProviderStateRepository.findByState("expired-state"))
                 .thenReturn(Optional.of(AuthProviderState.builder()
                         .provider(AuthProvider.GOOGLE)

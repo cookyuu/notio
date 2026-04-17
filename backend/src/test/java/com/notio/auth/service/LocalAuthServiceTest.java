@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.notio.auth.config.AuthProperties;
 import com.notio.auth.domain.AuthIdentity;
 import com.notio.auth.domain.AuthProvider;
 import com.notio.auth.domain.PasswordResetToken;
@@ -27,12 +28,13 @@ import com.notio.auth.repository.RefreshTokenRepository;
 import com.notio.auth.repository.UserRepository;
 import com.notio.auth.util.AuthTokenUtils;
 import com.notio.common.exception.NotioException;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -64,11 +66,29 @@ class LocalAuthServiceTest {
     @Mock
     private AuthAuditService authAuditService;
 
-    @InjectMocks
     private LocalAuthService localAuthService;
+
+    private AuthProperties authProperties;
+
+    @BeforeEach
+    void setUp() {
+        authProperties = new AuthProperties();
+        localAuthService = new LocalAuthService(
+                userRepository,
+                authIdentityRepository,
+                passwordResetTokenRepository,
+                refreshTokenRepository,
+                passwordEncoder,
+                authMailTemplateService,
+                authMailSender,
+                authAuditService,
+                authProperties
+        );
+    }
 
     @Test
     void signupCreatesUserAndLocalIdentity() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
         final SignupRequest request = SignupRequest.builder()
                 .email("USER@example.com")
                 .password("password123")
@@ -101,6 +121,7 @@ class LocalAuthServiceTest {
 
     @Test
     void signupRejectsDuplicateLocalEmail() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
         when(authIdentityRepository.existsActiveLocalByEmail("user@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> localAuthService.signup(SignupRequest.builder()
@@ -114,6 +135,7 @@ class LocalAuthServiceTest {
 
     @Test
     void findIdReturnsSameResponseWhetherAccountExistsOrNot() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
         final FindIdRequest request = FindIdRequest.builder()
                 .email("user@example.com")
                 .build();
@@ -145,6 +167,7 @@ class LocalAuthServiceTest {
 
     @Test
     void requestPasswordResetReturnsSameResponseWhetherAccountExistsOrNot() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(15));
         final PasswordResetRequestRequest request = PasswordResetRequestRequest.builder()
                 .email("user@example.com")
                 .build();
@@ -171,12 +194,15 @@ class LocalAuthServiceTest {
         final var missingResponse = localAuthService.requestPasswordReset(request);
 
         assertThat(existingResponse.getMessage()).isEqualTo(missingResponse.getMessage());
-        verify(passwordResetTokenRepository).save(any(PasswordResetToken.class));
+        final ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
+        verify(passwordResetTokenRepository).save(tokenCaptor.capture());
+        assertThat(tokenCaptor.getValue().getExpiresAt()).isAfter(OffsetDateTime.now().plusMinutes(14));
         verify(authMailSender).send(any(AuthMailMessage.class));
     }
 
     @Test
     void confirmPasswordResetRejectsExpiredToken() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
         final String rawToken = "expired-token";
         when(passwordResetTokenRepository.findByTokenHash(AuthTokenUtils.sha256Hex(rawToken)))
                 .thenReturn(Optional.of(PasswordResetToken.builder()
@@ -200,6 +226,7 @@ class LocalAuthServiceTest {
 
     @Test
     void confirmPasswordResetUpdatesPasswordMarksTokenUsedAndRevokesRefreshTokens() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
         final User user = User.builder()
                 .id(1L)
                 .primaryEmail("user@example.com")

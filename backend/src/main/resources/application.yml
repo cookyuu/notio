@@ -57,6 +57,37 @@ notio:
   jwt:
     secret: ${NOTIO_JWT_SECRET:your-256-bit-secret-key-change-this-in-production}
     expiration: 86400000 # 24 hours
+  auth:
+    password-reset:
+      token-ttl: ${NOTIO_AUTH_PASSWORD_RESET_TOKEN_TTL:30m}
+    mail:
+      delivery-mode: ${NOTIO_AUTH_MAIL_DELIVERY_MODE:NOOP}
+      from-address: ${NOTIO_AUTH_MAIL_FROM_ADDRESS:no-reply@notio.local}
+      from-name: ${NOTIO_AUTH_MAIL_FROM_NAME:Notio}
+      reset-link-base-url: ${NOTIO_AUTH_MAIL_RESET_LINK_BASE_URL:http://localhost:3000/reset-password/confirm}
+    oauth:
+      state-ttl: ${NOTIO_AUTH_OAUTH_STATE_TTL:5m}
+      providers:
+        google:
+          client-id: ${NOTIO_AUTH_OAUTH_GOOGLE_CLIENT_ID:}
+          client-secret: ${NOTIO_AUTH_OAUTH_GOOGLE_CLIENT_SECRET:}
+          web-redirect-uri: ${NOTIO_AUTH_OAUTH_GOOGLE_WEB_REDIRECT_URI:}
+          mobile-redirect-uri: ${NOTIO_AUTH_OAUTH_GOOGLE_MOBILE_REDIRECT_URI:}
+        apple:
+          client-id: ${NOTIO_AUTH_OAUTH_APPLE_CLIENT_ID:}
+          client-secret: ${NOTIO_AUTH_OAUTH_APPLE_CLIENT_SECRET:}
+          web-redirect-uri: ${NOTIO_AUTH_OAUTH_APPLE_WEB_REDIRECT_URI:}
+          mobile-redirect-uri: ${NOTIO_AUTH_OAUTH_APPLE_MOBILE_REDIRECT_URI:}
+        kakao:
+          client-id: ${NOTIO_AUTH_OAUTH_KAKAO_CLIENT_ID:}
+          client-secret: ${NOTIO_AUTH_OAUTH_KAKAO_CLIENT_SECRET:}
+          web-redirect-uri: ${NOTIO_AUTH_OAUTH_KAKAO_WEB_REDIRECT_URI:}
+          mobile-redirect-uri: ${NOTIO_AUTH_OAUTH_KAKAO_MOBILE_REDIRECT_URI:}
+        naver:
+          client-id: ${NOTIO_AUTH_OAUTH_NAVER_CLIENT_ID:}
+          client-secret: ${NOTIO_AUTH_OAUTH_NAVER_CLIENT_SECRET:}
+          web-redirect-uri: ${NOTIO_AUTH_OAUTH_NAVER_WEB_REDIRECT_URI:}
+          mobile-redirect-uri: ${NOTIO_AUTH_OAUTH_NAVER_MOBILE_REDIRECT_URI:}
   webhook:
     slack:
       signing-secret: ${NOTIO_WEBHOOK_SLACK_SECRET:change-me}

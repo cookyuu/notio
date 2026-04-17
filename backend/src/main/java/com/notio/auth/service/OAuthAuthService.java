@@ -2,6 +2,7 @@ package com.notio.auth.service;
 
 import com.notio.auth.adapter.AuthProviderAdapter;
 import com.notio.auth.adapter.AuthProviderAdapterRegistry;
+import com.notio.auth.config.AuthProperties;
 import com.notio.auth.domain.AuthProvider;
 import com.notio.auth.domain.AuthProviderState;
 import com.notio.auth.dto.OAuthCallbackResponse;
@@ -26,16 +27,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class OAuthAuthService {
 
-    private static final long OAUTH_STATE_TTL_MINUTES = 5L;
-
     private final AuthProviderAdapterRegistry authProviderAdapterRegistry;
     private final AuthProviderStateRepository authProviderStateRepository;
     private final AuthAuditService authAuditService;
+    private final AuthProperties authProperties;
 
     @Transactional
     public OAuthStartResponse start(final OAuthStartRequest request) {
         final AuthProviderAdapter adapter = authProviderAdapterRegistry.get(request.getProvider());
-        final OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(OAUTH_STATE_TTL_MINUTES);
+        final OffsetDateTime expiresAt = OffsetDateTime.now().plus(authProperties.getOauth().getStateTtl());
         final AuthProviderState providerState = authProviderStateRepository.save(AuthProviderState.builder()
                 .provider(request.getProvider())
                 .state(UUID.randomUUID().toString())

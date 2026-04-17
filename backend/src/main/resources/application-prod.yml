@@ -1,0 +1,9 @@
+logging:
+  level:
+    com.notio: INFO
+    org.springframework.web: INFO
+
+notio:
+  auth:
+    mail:
+      delivery-mode: ${NOTIO_AUTH_MAIL_DELIVERY_MODE:NOOP}
