@@ -21,13 +21,16 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   final ScrollController _scrollController = ScrollController();
+  int? _loadingNotificationId;
 
   @override
   void initState() {
     super.initState();
     // Load notifications on init
     Future.microtask(() {
-      ref.read(notificationsProvider.notifier).fetchNotifications(refresh: true);
+      ref
+          .read(notificationsProvider.notifier)
+          .fetchNotifications(refresh: true);
     });
 
     // Setup scroll listener for pagination
@@ -48,8 +51,61 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Future<void> _onRefresh() async {
-    await ref.read(notificationsProvider.notifier).fetchNotifications(refresh: true);
+    await ref
+        .read(notificationsProvider.notifier)
+        .fetchNotifications(refresh: true);
     ref.invalidate(unreadCountProvider);
+  }
+
+  Future<void> _openNotificationDetail(int notificationId) async {
+    if (_loadingNotificationId != null) {
+      return;
+    }
+
+    setState(() {
+      _loadingNotificationId = notificationId;
+    });
+
+    try {
+      final detail = await ref
+          .read(notificationsProvider.notifier)
+          .fetchNotificationDetail(notificationId);
+
+      if (!mounted) {
+        return;
+      }
+
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => NotificationDetailModal(
+          notification: detail,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.bg3,
+          content: Text(
+            '상세 알림을 불러오지 못했습니다. ${error.toString()}',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.text1,
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingNotificationId = null;
+        });
+      }
+    }
   }
 
   @override
@@ -209,27 +265,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                 final notification = state.notifications[index];
                                 return NotificationCard(
                                   notification: notification,
-                                  onTap: () async {
-                                    // Mark as read before opening detail modal (only for unread notifications)
-                                    if (!notification.isRead) {
-                                      await ref
-                                          .read(notificationsProvider.notifier)
-                                          .markAsRead(notification.id);
-                                      ref.invalidate(unreadCountProvider);
-                                    }
-
-                                    // Show detail modal
-                                    if (context.mounted) {
-                                      showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (context) => NotificationDetailModal(
-                                          notification: notification,
-                                        ),
-                                      );
-                                    }
-                                  },
+                                  isLoading:
+                                      _loadingNotificationId == notification.id,
+                                  onTap: () =>
+                                      _openNotificationDetail(notification.id),
                                   onMarkAsRead: () {
                                     ref
                                         .read(notificationsProvider.notifier)
@@ -319,7 +358,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             label: Text(filter.$2),
             selected: isSelected,
             onSelected: (_) {
-              ref.read(notificationsProvider.notifier).setSourceFilter(filter.$1);
+              ref
+                  .read(notificationsProvider.notifier)
+                  .setSourceFilter(filter.$1);
             },
             backgroundColor: AppColors.surface,
             selectedColor: AppColors.primary,

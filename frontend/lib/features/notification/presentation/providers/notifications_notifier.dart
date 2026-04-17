@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notio_app/core/constants/notification_source.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_detail_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
 import 'package:notio_app/features/notification/domain/repository/notification_repository.dart';
 import 'package:notio_app/features/notification/presentation/providers/notification_providers.dart';
@@ -43,9 +44,11 @@ class NotificationsState {
 
 /// Notifications Notifier
 class NotificationsNotifier extends StateNotifier<NotificationsState> {
+  final Ref _ref;
   final NotificationRepository _repository;
 
-  NotificationsNotifier(this._repository) : super(const NotificationsState());
+  NotificationsNotifier(this._ref, this._repository)
+      : super(const NotificationsState());
 
   /// Fetch notifications
   Future<void> fetchNotifications({bool refresh = false}) async {
@@ -98,18 +101,32 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     await fetchNotifications(refresh: true);
   }
 
+  /// Fetch notification detail and synchronize read state from the response.
+  Future<NotificationDetailEntity> fetchNotificationDetail(
+      int notificationId) async {
+    final wasUnread = state.notifications.any(
+      (notification) =>
+          notification.id == notificationId && !notification.isRead,
+    );
+
+    final detail = await _repository.getNotificationDetail(notificationId);
+
+    if (detail.isRead) {
+      _markNotificationAsReadLocally(notificationId);
+
+      if (wasUnread) {
+        _ref.invalidate(unreadCountProvider);
+      }
+    }
+
+    return detail;
+  }
+
   /// Mark as read
   Future<void> markAsRead(int notificationId) async {
     try {
       // Optimistic update
-      final updatedNotifications = state.notifications.map((notification) {
-        if (notification.id == notificationId) {
-          return notification.copyWith(isRead: true);
-        }
-        return notification;
-      }).toList();
-
-      state = state.copyWith(notifications: updatedNotifications);
+      _markNotificationAsReadLocally(notificationId);
 
       // Update on server
       await _repository.markAsRead(notificationId);
@@ -180,13 +197,24 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
       state = state.copyWith(error: e.toString());
     }
   }
+
+  void _markNotificationAsReadLocally(int notificationId) {
+    final updatedNotifications = state.notifications.map((notification) {
+      if (notification.id == notificationId) {
+        return notification.copyWith(isRead: true);
+      }
+      return notification;
+    }).toList();
+
+    state = state.copyWith(notifications: updatedNotifications);
+  }
 }
 
 /// Notifications Provider
 final notificationsProvider =
     StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
   final repository = ref.watch(notificationRepositoryProvider);
-  return NotificationsNotifier(repository);
+  return NotificationsNotifier(ref, repository);
 });
 
 /// Unread count provider

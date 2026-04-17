@@ -31,12 +31,12 @@
 
 ## Phase 3. 상세 조회 흐름 변경
 
-- [ ] 알림 카드 탭 시 `getNotificationDetail(id)`를 호출하도록 변경한다.
-- [ ] 상세 조회 중 로딩 상태를 사용자에게 표시한다.
-- [ ] 상세 조회 성공 후 `NotificationDetailModal`을 열도록 변경한다.
-- [ ] 상세 조회 실패 시 에러 피드백을 제공하고 모달은 열지 않도록 정리한다.
-- [ ] 상세 조회 응답의 `isRead` 값이 true이면 목록 상태의 해당 알림을 읽음으로 갱신한다.
-- [ ] 상세 조회 전 unread였던 항목이면 `unreadCountProvider`를 invalidate 하도록 정리한다.
+- [x] 알림 카드 탭 시 `getNotificationDetail(id)`를 호출하도록 변경한다.
+- [x] 상세 조회 중 로딩 상태를 사용자에게 표시한다.
+- [x] 상세 조회 성공 후 `NotificationDetailModal`을 열도록 변경한다.
+- [x] 상세 조회 실패 시 에러 피드백을 제공하고 모달은 열지 않도록 정리한다.
+- [x] 상세 조회 응답의 `isRead` 값이 true이면 목록 상태의 해당 알림을 읽음으로 갱신한다.
+- [x] 상세 조회 전 unread였던 항목이면 `unreadCountProvider`를 invalidate 하도록 정리한다.
 
 ## Phase 4. 상세 모달 책임 정리
 

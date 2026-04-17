@@ -48,6 +48,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
   @override
   Future<NotificationDetailEntity> getNotificationDetail(int id) async {
     final detailModel = await _remoteDataSource.getNotificationDetail(id);
+    if (detailModel.isRead) {
+      await _localDataSource.markAsRead(id);
+    }
     return detailModel.toEntity();
   }
 

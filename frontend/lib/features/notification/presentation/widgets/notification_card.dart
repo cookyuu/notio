@@ -12,6 +12,7 @@ import 'package:timeago/timeago.dart' as timeago;
 /// Notification card widget
 class NotificationCard extends StatelessWidget {
   final NotificationSummaryEntity notification;
+  final bool isLoading;
   final VoidCallback? onTap;
   final VoidCallback? onMarkAsRead;
   final VoidCallback? onDelete;
@@ -19,6 +20,7 @@ class NotificationCard extends StatelessWidget {
   const NotificationCard({
     required this.notification,
     super.key,
+    this.isLoading = false,
     this.onTap,
     this.onMarkAsRead,
     this.onDelete,
@@ -71,85 +73,96 @@ class NotificationCard extends StatelessWidget {
           ],
         ),
         child: InkWell(
-          onTap: onTap,
+          onTap: isLoading ? null : onTap,
           borderRadius: BorderRadius.circular(14),
           child: GlassCard(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              // Priority indicator
-              Container(
-                width: 4,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: _getPriorityColor(),
-                  borderRadius: BorderRadius.circular(2),
+                // Priority indicator
+                Container(
+                  width: 4,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.s12),
+                const SizedBox(width: AppSpacing.s12),
 
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header row
-                    Row(
-                      children: [
-                        SourceBadge(source: notification.source),
-                        const Spacer(),
-                        Text(
-                          timeago.format(
-                            notification.createdAt,
-                            locale: 'ko',
-                          ),
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.s8),
-                        if (!notification.isRead)
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header row
+                      Row(
+                        children: [
+                          SourceBadge(source: notification.source),
+                          const Spacer(),
+                          Text(
+                            timeago.format(
+                              notification.createdAt,
+                              locale: 'ko',
+                            ),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textTertiary,
                             ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-
-                    // Title
-                    Text(
-                      notification.title,
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        fontWeight: notification.isRead
-                            ? FontWeight.normal
-                            : FontWeight.bold,
-                        color: notification.isRead
-                            ? AppColors.textSecondary
-                            : AppColors.textPrimary,
+                          const SizedBox(width: AppSpacing.s8),
+                          if (isLoading)
+                            const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.violet2,
+                                ),
+                              ),
+                            )
+                          else if (!notification.isRead)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSpacing.s4),
+                      const SizedBox(height: AppSpacing.s8),
 
-                    // Body preview
-                    Text(
-                      notification.bodyPreview,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textTertiary,
+                      // Title
+                      Text(
+                        notification.title,
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          fontWeight: notification.isRead
+                              ? FontWeight.normal
+                              : FontWeight.bold,
+                          color: notification.isRead
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                      const SizedBox(height: AppSpacing.s4),
+
+                      // Body preview
+                      Text(
+                        notification.bodyPreview,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
             ),
           ),
         ),

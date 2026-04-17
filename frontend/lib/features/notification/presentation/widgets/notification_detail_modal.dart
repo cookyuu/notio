@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
-import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_detail_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_priority.dart';
 import 'package:notio_app/shared/widgets/glass_card.dart';
 import 'package:notio_app/shared/widgets/source_badge.dart';
@@ -12,9 +11,8 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
 /// Modal for displaying notification details
-/// TODO: Phase 3 - Update to use NotificationDetailEntity
-class NotificationDetailModal extends ConsumerWidget {
-  final NotificationSummaryEntity notification;
+class NotificationDetailModal extends StatelessWidget {
+  final NotificationDetailEntity notification;
 
   const NotificationDetailModal({
     required this.notification,
@@ -22,7 +20,7 @@ class NotificationDetailModal extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -89,7 +87,7 @@ class NotificationDetailModal extends ConsumerWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(AppSpacing.s16),
                         child: SelectableText(
-                          notification.bodyPreview,
+                          notification.body,
                           style: AppTextStyles.bodyLarge.copyWith(
                             color: AppColors.textPrimary,
                             height: 1.6,
@@ -103,25 +101,24 @@ class NotificationDetailModal extends ConsumerWidget {
                     // Priority indicator
                     _buildPrioritySection(),
 
-                    const SizedBox(height: AppSpacing.s20),
+                    if (notification.externalUrl != null) ...[
+                      const SizedBox(height: AppSpacing.s20),
+                      _buildExternalLinkSection(
+                        context,
+                        notification.externalUrl!,
+                      ),
+                    ],
 
-                    // TODO: Phase 3 - Add external link and metadata from NotificationDetailEntity
-                    // External link (if available)
-                    // if (notification.externalUrl != null)
-                    //   _buildExternalLinkSection(
-                    //     context,
-                    //     notification.externalUrl!,
-                    //   ),
-
-                    // Metadata (if available)
-                    // if (notification.metadata != null &&
-                    //     notification.metadata!.isNotEmpty)
-                    //   _buildMetadataSection(notification.metadata!),
+                    if (notification.metadata != null &&
+                        notification.metadata!.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.s20),
+                      _buildMetadataSection(notification.metadata!),
+                    ],
 
                     const SizedBox(height: AppSpacing.s20),
 
                     // Action buttons
-                    _buildActionButtons(context, ref),
+                    _buildActionButtons(context),
                   ],
                 ),
               ),
@@ -133,28 +130,12 @@ class NotificationDetailModal extends ConsumerWidget {
   }
 
   Widget _buildPrioritySection() {
-    Color priorityColor;
-    String priorityText;
-
-    switch (notification.priority.apiValue) {
-      case 'URGENT':
-        priorityColor = AppColors.error;
-        priorityText = 'Urgent';
-        break;
-      case 'HIGH':
-        priorityColor = AppColors.warning;
-        priorityText = 'High';
-        break;
-      case 'MEDIUM':
-        priorityColor = AppColors.primary;
-        priorityText = 'Medium';
-        break;
-      case 'LOW':
-      default:
-        priorityColor = AppColors.textSecondary;
-        priorityText = 'Low';
-        break;
-    }
+    final priorityColor = switch (notification.priority) {
+      NotificationPriority.urgent => AppColors.error,
+      NotificationPriority.high => AppColors.warning,
+      NotificationPriority.medium => AppColors.violet2,
+      NotificationPriority.low => AppColors.textSecondary,
+    };
 
     return GlassCard(
       child: Padding(
@@ -168,7 +149,7 @@ class NotificationDetailModal extends ConsumerWidget {
             ),
             const SizedBox(width: AppSpacing.s12),
             Text(
-              'Priority: $priorityText',
+              '우선순위: ${notification.priority.displayName}',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: priorityColor,
                 fontWeight: FontWeight.w600,
@@ -180,8 +161,6 @@ class NotificationDetailModal extends ConsumerWidget {
     );
   }
 
-  // TODO: Phase 3 - Will be used when implementing detail API
-  // ignore: unused_element
   Widget _buildExternalLinkSection(BuildContext context, String url) {
     return GlassCard(
       child: InkWell(
@@ -202,7 +181,7 @@ class NotificationDetailModal extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Related Link',
+                      '외부 링크',
                       style: AppTextStyles.bodyMedium,
                     ),
                     const SizedBox(height: AppSpacing.s4),
@@ -230,16 +209,15 @@ class NotificationDetailModal extends ConsumerWidget {
     );
   }
 
-  // TODO: Phase 3 - Will be used when implementing detail API
-  // ignore: unused_element
   Widget _buildMetadataSection(Map<String, dynamic> metadata) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: AppSpacing.s20),
-        const Text(
-          'Additional Information',
-          style: AppTextStyles.headlineSmall,
+        Text(
+          '추가 정보',
+          style: AppTextStyles.headlineSmall.copyWith(
+            color: AppColors.text1,
+          ),
         ),
         const SizedBox(height: AppSpacing.s12),
         GlassCard(
@@ -279,7 +257,7 @@ class NotificationDetailModal extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
+  Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [
         Expanded(
@@ -288,14 +266,20 @@ class NotificationDetailModal extends ConsumerWidget {
               // Copy notification content to clipboard
               Clipboard.setData(
                 ClipboardData(
-                  text: '${notification.title}\n\n${notification.bodyPreview}',
+                  text: '${notification.title}\n\n${notification.body}',
                 ),
               );
 
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Copied to clipboard'),
-                  duration: Duration(seconds: 2),
+                SnackBar(
+                  backgroundColor: AppColors.bg3,
+                  content: Text(
+                    '클립보드에 복사했습니다',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.text1,
+                    ),
+                  ),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
