@@ -225,6 +225,57 @@ class LocalAuthServiceTest {
     }
 
     @Test
+    void confirmPasswordResetRejectsForgedToken() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
+        final String rawToken = "forged-token";
+        when(passwordResetTokenRepository.findByTokenHash(AuthTokenUtils.sha256Hex(rawToken)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> localAuthService.confirmPasswordReset(PasswordResetConfirmRequest.builder()
+                .token(rawToken)
+                .newPassword("newPassword123")
+                .build())).isInstanceOf(NotioException.class);
+
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(refreshTokenRepository, never()).revokeAllByUser(any(User.class));
+    }
+
+    @Test
+    void confirmPasswordResetRejectsReusedToken() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
+        final User user = User.builder()
+                .id(1L)
+                .primaryEmail("user@example.com")
+                .displayName("user")
+                .status(UserStatus.ACTIVE)
+                .build();
+        final AuthIdentity authIdentity = AuthIdentity.builder()
+                .id(10L)
+                .user(user)
+                .provider(AuthProvider.LOCAL)
+                .email("user@example.com")
+                .passwordHash("encoded")
+                .build();
+        final String rawToken = "used-token";
+        when(passwordResetTokenRepository.findByTokenHash(AuthTokenUtils.sha256Hex(rawToken)))
+                .thenReturn(Optional.of(PasswordResetToken.builder()
+                        .user(user)
+                        .authIdentity(authIdentity)
+                        .tokenHash(AuthTokenUtils.sha256Hex(rawToken))
+                        .expiresAt(OffsetDateTime.now().plusMinutes(5))
+                        .usedAt(OffsetDateTime.now().minusMinutes(1))
+                        .build()));
+
+        assertThatThrownBy(() -> localAuthService.confirmPasswordReset(PasswordResetConfirmRequest.builder()
+                .token(rawToken)
+                .newPassword("newPassword123")
+                .build())).isInstanceOf(NotioException.class);
+
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(refreshTokenRepository, never()).revokeAllByUser(any(User.class));
+    }
+
+    @Test
     void confirmPasswordResetUpdatesPasswordMarksTokenUsedAndRevokesRefreshTokens() {
         authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
         final User user = User.builder()
