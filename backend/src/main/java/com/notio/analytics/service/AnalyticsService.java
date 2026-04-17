@@ -1,9 +1,8 @@
 package com.notio.analytics.service;
 
 import com.notio.analytics.dto.WeeklyAnalyticsResponse;
-import com.notio.notification.dto.NotificationFilterRequest;
-import com.notio.notification.service.NotificationService;
 import com.notio.notification.domain.Notification;
+import com.notio.notification.service.NotificationService;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
@@ -23,14 +22,16 @@ public class AnalyticsService {
         this.notificationService = notificationService;
     }
 
-    public WeeklyAnalyticsResponse getWeeklySummary() {
+    public WeeklyAnalyticsResponse getWeeklySummary(final Long userId) {
         final List<Notification> notifications = notificationService.findAll(
+                userId,
                 null, // source
                 null, // isRead
                 PageRequest.of(0, 500, Sort.by(Sort.Direction.DESC, "createdAt"))
         ).getContent();
         final LocalDate threshold = LocalDate.now(ZoneOffset.UTC).minusDays(6);
         final List<Notification> weeklyNotifications = notifications.stream()
+                .filter(notification -> userId.equals(notification.getUserId()))
                 .filter(notification -> !notification.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate().isBefore(threshold))
                 .toList();
         final Map<String, Long> sourceDistribution = weeklyNotifications.stream()

@@ -1,80 +1,55 @@
 # Backend Fix 개발 체크리스트
 
-> 대상: `docs/plans/plan_fix.md` 기반 인증 확장 구현  
-> 범위: Spring Boot 4.x · Java 25 · 이메일 인증 + 계정 복구 + OAuth 확장 구조
+> 대상: Analytics 화면의 개인별 알림 요약 스코프 오류 수정
+> 범위: Spring Boot 4.x · Java 25 · Analytics API 사용자별 집계 보장
 
 ---
 
-## Phase 0. 인증 도메인 재구성
+## Phase 0. 현상 고정 및 영향 범위 확인
 
-- [x] `users` 구조를 `primary_email`, `display_name`, `status`, `deleted_at` 중심으로 정리한다.
-- [x] `auth_identities` 테이블을 추가하고 `provider`, `provider_user_id`, `email`, `password_hash`, `email_verified`를 설계한다.
-- [x] `password_reset_tokens` 테이블을 추가하고 `token_hash`, `expires_at`, `used_at` 정책을 반영한다.
-- [x] `auth_provider_states` 테이블을 추가하고 `provider`, `state`, `platform`, `redirect_uri`, `pkce_verifier`, `expires_at`를 저장할 수 있게 한다.
-- [x] `auth_identities`에 LOCAL 이메일 unique, OAuth provider/provider_user_id unique 제약을 설정한다.
-- [x] 관련 FK, 인덱스, 소프트 삭제 컬럼 정책을 Flyway 마이그레이션으로 반영한다.
-- [x] 기존 `users.email/password` 직접 참조 로직을 `User + AuthIdentity` 구조로 옮길 영향 범위를 점검한다.
+- [x] `AnalyticsController`가 현재 인증 사용자 정보를 사용하지 않는 구조인지 확인한다.
+- [x] `AnalyticsService`가 사용자 ID 없이 `NotificationService`를 호출하는지 확인한다.
+- [x] `NotificationService`의 deprecated 기본 사용자 조회 경로를 Analytics가 타고 있는지 확인한다.
+- [x] Analytics 응답 필드(`totalNotifications`, `unreadNotifications`, `sourceDistribution`, `priorityDistribution`, `dailyTrend`, `insight`)가 모두 동일 스코프에서 계산되는지 점검한다.
+- [x] 이번 수정 범위를 backend 한정으로 유지하고, frontend는 회귀 확인만 수행하는 것으로 정리한다.
 
-## Phase 1. 로컬 인증 기능 구현
+## Phase 1. Controller 사용자 스코프 적용
 
-- [x] `POST /api/v1/auth/signup` 요청/응답 DTO를 추가한다.
-- [x] `POST /api/v1/auth/find-id` 요청/응답 DTO를 추가한다.
-- [x] `POST /api/v1/auth/password-reset/request` 요청/응답 DTO를 추가한다.
-- [x] `POST /api/v1/auth/password-reset/confirm` 요청/응답 DTO를 추가한다.
-- [x] `LocalAuthService`를 추가하거나 기존 인증 서비스에서 로컬 인증 책임을 분리한다.
-- [x] 회원가입 시 이메일 중복 검사, 비밀번호 해시 저장, `User + LOCAL AuthIdentity` 생성을 구현한다.
-- [x] 아이디 찾기 요청 시 계정 존재 여부를 노출하지 않는 공통 성공 응답 정책을 구현한다.
-- [x] 비밀번호 재설정 요청 시 raw token 발급 후 DB에는 hash만 저장하도록 구현한다.
-- [x] 비밀번호 재설정 확정 시 token 유효성, 만료, 사용 여부를 검증하도록 구현한다.
-- [x] 비밀번호 재설정 성공 시 기존 refresh token을 모두 revoke하도록 구현한다.
-- [x] 기존 로그인 로직이 `LOCAL AuthIdentity` 기준으로 인증하도록 정리한다.
-- [x] 신규 인증 API를 `AuthController` 또는 인증 전용 컨트롤러에 노출한다.
+- [x] `AnalyticsController`에서 `Authentication`을 받아 현재 사용자 ID를 추출하도록 수정한다.
+- [x] 인증 정보가 없거나 principal 파싱이 실패하면 `UNAUTHORIZED`를 반환하도록 기존 규칙과 맞춘다.
+- [x] `GET /api/v1/analytics/weekly`가 `analyticsService.getWeeklySummary(userId)`를 호출하도록 변경한다.
+- [x] Analytics 엔드포인트가 기존과 동일하게 인증이 필요한 API로 유지되는지 확인한다.
 
-## Phase 2. OAuth 확장 뼈대 구현
+## Phase 2. Service 집계 로직 사용자별로 수정
 
-- [x] `AuthProvider` enum에 `LOCAL`, `GOOGLE`, `APPLE`, `KAKAO`, `NAVER`를 정의한다.
-- [x] `AuthPlatform` enum에 모바일/웹 구분값을 정의한다.
-- [x] `AuthProviderAdapter` 인터페이스를 추가한다.
-- [x] provider adapter registry 또는 resolver를 추가한다.
-- [x] `OAuthAuthService`를 추가하고 OAuth 시작/콜백/교환 흐름의 공통 책임을 모은다.
-- [x] `POST /api/v1/auth/oauth/start` 요청/응답 DTO와 컨트롤러를 추가한다.
-- [x] `GET /api/v1/auth/oauth/callback/{provider}` 엔드포인트와 state 검증 흐름을 추가한다.
-- [x] `POST /api/v1/auth/oauth/exchange` 요청/응답 DTO와 컨트롤러를 추가한다.
-- [x] 미지원 provider, 잘못된 callback/state, provider별 오류를 표준 에러 코드로 변환한다.
-- [x] 실제 Google/Apple/Kakao/Naver 연동 전까지는 공통 registry/adapter 뼈대와 unsupported 처리까지 구현한다.
+- [x] `AnalyticsService` 메서드 시그니처를 `getWeeklySummary(Long userId)`로 변경한다.
+- [x] 알림 조회 시 `notificationService.findAll(userId, source, isRead, pageable)` 사용자 스코프 오버로드만 사용하도록 수정한다.
+- [x] 최근 7일 필터가 사용자별 알림 집합에 대해서만 적용되도록 정리한다.
+- [x] source 분포 집계가 해당 사용자 알림만 반영하도록 검증한다.
+- [x] priority 분포 집계가 해당 사용자 알림만 반영하도록 검증한다.
+- [x] daily trend 집계가 해당 사용자 알림만 반영하도록 검증한다.
+- [x] unread count 계산이 해당 사용자 알림만 반영하도록 검증한다.
+- [x] insight 문구가 해당 사용자 집계 결과를 기준으로 생성되도록 정리한다.
+- [x] 신규 코드에서 deprecated 기본 사용자 조회 메서드를 더 이상 사용하지 않도록 정리한다.
 
-## Phase 3. 보안 및 운영 정책 반영
+## Phase 3. 테스트 보강
 
-- [x] `SecurityConfig`에 `signup`, `find-id`, `password-reset/**`, `oauth/start`, `oauth/callback/**`, `oauth/exchange`를 `permitAll`로 반영한다.
-- [x] `EMAIL_ALREADY_EXISTS`, `PASSWORD_RESET_TOKEN_INVALID`, `PASSWORD_RESET_TOKEN_EXPIRED`, `AUTH_PROVIDER_UNSUPPORTED`, `OAUTH_STATE_INVALID`, `OAUTH_CALLBACK_FAILED` 등을 에러 코드에 추가한다.
-- [x] 인증 관련 요청 body 검증 규칙을 추가한다.
-- [x] 비밀번호 최소 길이, 이메일 형식 검증을 backend에서 강제한다.
-- [x] `AuthMailSender` 인터페이스를 추가한다.
-- [x] `local/dev` 프로필용 fake/log mail sender 구현을 추가한다.
-- [x] 아이디 찾기/비밀번호 찾기 메일 템플릿 또는 메시지 생성 책임을 정리한다.
-- [x] 신규 인증 엔드포인트에 대한 rate limit 정책을 추가한다.
-- [x] 감사 로그/audit 이벤트에 signup, password reset, oauth start/callback 결과를 기록한다.
-- [x] password, raw reset token, provider token이 로그에 남지 않도록 마스킹 정책을 점검한다.
-- [x] OpenAPI 또는 `/api-docs`에 신규 인증 API가 노출되도록 정리한다.
+- [x] `AnalyticsService` 단위 테스트를 추가한다.
+- [x] 서로 다른 `userId`를 가진 알림이 섞여 있을 때 요청 사용자 데이터만 집계되는지 테스트한다.
+- [x] 최근 7일 밖의 알림이 집계에서 제외되는지 테스트한다.
+- [x] 미읽음 개수가 요청 사용자 기준으로만 계산되는지 테스트한다.
+- [x] source/priority/daily trend 집계가 요청 사용자 기준으로만 계산되는지 테스트한다.
+- [x] 알림이 없을 때 빈 주간 요약과 기본 insight 문구를 반환하는지 테스트한다.
+- [x] `AnalyticsController` 슬라이스 또는 통합 테스트를 추가한다.
+- [x] 인증 principal에 따라 다른 주간 요약 결과가 반환되는지 테스트한다.
+- [x] 인증 정보가 없을 때 `401 UNAUTHORIZED`가 반환되는지 테스트한다.
 
-## Phase 4. 설정 및 환경 변수 정리
+## Phase 4. 회귀 검증 및 마무리
 
-- [x] `application.yml`에 인증 확장 관련 기본 설정을 추가한다.
-- [x] 메일 발송, reset token TTL, OAuth redirect/state 만료 설정을 구성 가능하게 만든다.
-- [x] OAuth provider별 client 설정 키를 `NOTIO_` prefix 환경 변수 기준으로 정리한다.
-- [x] `local`, `dev`, `prod` 프로필별 동작 차이를 문서화 가능한 형태로 구성한다.
+- [x] Analytics API 응답 스키마가 기존 프론트 계약과 동일한지 확인한다.
+- [x] Notifications API와 Analytics API의 사용자 스코프 처리 방식이 일관적인지 점검한다.
+- [ ] `./gradlew test`를 실행해 관련 테스트가 통과하는지 확인한다.
+- [ ] 필요 시 `./gradlew bootRun`으로 서버 기동 후 `/api/v1/analytics/weekly`를 사용자별로 수동 검증한다.
+- [ ] 수정 결과를 기준으로 향후 공통 `currentUserId` 추출 유틸 리팩터링 필요 여부를 후속 작업으로 분리한다.
 
-## Phase 5. 테스트 및 검증
-
-- [x] 회원가입 성공 케이스 테스트를 추가한다.
-- [x] 중복 이메일 회원가입 실패 테스트를 추가한다.
-- [x] 아이디 찾기 요청이 계정 존재 여부와 무관하게 동일 응답을 반환하는지 테스트한다.
-- [x] 비밀번호 재설정 요청이 계정 존재 여부와 무관하게 동일 응답을 반환하는지 테스트한다.
-- [x] 비밀번호 재설정 token 만료/재사용/위조 실패 테스트를 추가한다.
-- [x] 비밀번호 재설정 성공 후 refresh token revoke 테스트를 추가한다.
-- [x] `SecurityConfig`에서 신규 public auth endpoint 접근 가능 여부를 테스트한다.
-- [x] OAuth provider registry가 미지원 provider를 올바르게 거부하는지 테스트한다.
-- [x] fake/log mail sender 호출 테스트를 추가한다.
-- [x] `./gradlew test` 또는 `gradlew.bat test`를 통과시킨다.
-- [x] 품질 검사 태스크 존재 여부를 확인한다. 현재 `checkstyleMain`, `spotbugsMain`는 미구성이다.
-- [x] 애플리케이션 기동 후 `/api-docs` 또는 `swagger-ui`에서 신규 명세 노출을 확인한다.
+`참고:` Analytics 관련 신규 테스트는 통과했지만, 전체 `./gradlew test`는 기존 `AuthPublicEndpointSecurityTest` 실패로 아직 완료 처리하지 않았다.
