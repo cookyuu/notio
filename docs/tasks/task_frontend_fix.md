@@ -1,81 +1,47 @@
 # Frontend Fix 개발 체크리스트
 
-> 대상: `docs/plans/plan_fix.md` 기반 인증 UI/플로우 확장 구현  
-> 범위: Flutter 3.x · Dart 3.6 · 이메일 인증 + 계정 복구 + OAuth 확장 준비
+> 대상: notifications 화면 상세 조회 시 읽음 상태 미반영 이슈
+> 범위: Flutter frontend only
 
 ---
 
-## Phase 0. 인증 계약 및 타입 정리
+## Phase 0. 원인 정리
 
-- [x] 신규 auth API 계약에 맞는 request/response model을 추가한다.
-- [x] `AuthProvider` enum에 `local`, `google`, `apple`, `kakao`, `naver`를 정의한다.
-- [x] `AuthPlatform` 또는 플랫폼 전달 타입을 정의한다.
-- [x] signup, find-id, password-reset, oauth start/exchange 관련 DTO를 정리한다.
-- [x] backend 에러 코드와 매핑되는 프론트 메시지 처리 기준을 정리한다.
+- [x] `NotificationDetailModal` 내부 `build()`에서 `Future.microtask()`로 읽음 처리를 수행하는 현재 구조를 제거 대상으로 확정한다.
+- [x] 알림 상세 조회 진입 시 읽음 처리 책임을 화면 탭 이벤트로 이동하는 방향을 기준안으로 확정한다.
+- [x] 상세 조회 진입 경로에서 `unreadCountProvider`가 갱신되지 않아 상단 뱃지가 stale 상태가 될 수 있음을 수정 범위에 포함한다.
+- [x] backend 수정 없이 frontend만으로 해결 가능한 이슈로 범위를 고정한다.
 
-## Phase 1. 인증 데이터 레이어 확장
+## Phase 1. 상세 조회 진입 흐름 수정
 
-- [x] auth remote datasource에 `signup`, `findId`, `requestPasswordReset`, `confirmPasswordReset` 메서드를 추가한다.
-- [x] auth remote datasource에 `startSocialLogin`, `exchangeSocialLogin` 메서드를 추가한다.
-- [x] auth repository interface에 신규 인증 액션 계약을 추가한다.
-- [x] auth repository 구현체에 신규 API 호출과 응답 매핑을 추가한다.
-- [x] 기존 로그인/리프레시 저장소 로직이 새 응답 구조와 충돌하지 않는지 점검한다.
-- [x] 네트워크 에러와 도메인 에러를 화면에서 다룰 수 있게 예외 변환을 정리한다.
+- [x] `notifications_screen.dart`의 알림 카드 `onTap`에서 unread 알림 여부를 먼저 판단한다.
+- [x] unread 알림을 탭한 경우 `notificationsProvider.notifier.markAsRead(notification.id)`를 호출한다.
+- [x] 같은 탭 경로에서 `unreadCountProvider`를 invalidate 하도록 추가한다.
+- [x] 읽음 처리 호출 이후 상세 모달을 열도록 순서를 정리한다.
+- [x] 이미 읽은 알림을 탭한 경우 중복 읽음 호출이 발생하지 않도록 분기한다.
 
-## Phase 2. 라우팅 및 상태 관리 재구성
+## Phase 2. 상세 모달 책임 정리
 
-- [x] 라우트에 `/signup`, `/find-id`, `/reset-password/request`, `/reset-password/confirm`, `/auth/oauth/callback`을 추가한다.
-- [x] auth guard 또는 `GoRouter` redirect 로직에 신규 비인증 허용 경로를 반영한다.
-- [x] 기존 `AuthNotifier`에서 세션 상태와 액션 책임을 분리한다.
-- [x] `AuthSessionNotifier` 또는 동등한 세션 전용 상태 관리 구조를 정리한다.
-- [x] `loginActionProvider`를 분리 또는 정리한다.
-- [x] `signupActionProvider`를 추가한다.
-- [x] `findIdActionProvider`를 추가한다.
-- [x] `passwordResetRequestProvider`를 추가한다.
-- [x] `passwordResetConfirmProvider`를 추가한다.
-- [x] `socialLoginActionProvider`를 추가한다.
+- [x] `notification_detail_modal.dart`를 순수 표시 전용 위젯으로 정리한다.
+- [x] 모달 내부 `build()`에서 상태 변경 side effect가 발생하지 않도록 제거한다.
+- [x] 모달이 전달받은 `notification` 데이터를 기반으로만 렌더링되도록 유지한다.
 
-## Phase 3. 인증 화면 구현
+## Phase 3. 상태 일관성 점검
 
-- [x] 로그인 화면에 `회원가입`, `아이디 찾기`, `비밀번호 찾기` 이동 버튼을 추가한다.
-- [x] 로그인 화면에 소셜 로그인 버튼 영역을 추가한다.
-- [x] 소셜 로그인 버튼이 provider config 기반으로 노출되도록 구현한다.
-- [x] `SignupScreen`을 추가한다.
-- [x] `FindIdScreen`을 추가한다.
-- [x] `PasswordResetRequestScreen`을 추가한다.
-- [x] `PasswordResetConfirmScreen`을 추가한다.
-- [x] `AuthOAuthCallbackScreen`을 추가한다.
-- [x] 회원가입, 아이디 찾기, 비밀번호 찾기 화면에 모두 `로그인으로 돌아가기` 버튼을 추가한다.
-- [x] 각 화면에 로딩, 성공, 실패 상태를 일관된 UX로 반영한다.
+- [x] 목록에서 읽음 처리 후 카드 UI의 unread indicator가 즉시 사라지는지 확인한다.
+- [x] 목록에서 읽음 처리 후 title style이 read 상태로 즉시 반영되는지 확인한다.
+- [x] 상단 unread badge가 상세 조회 후 정상 감소하는지 확인한다.
+- [x] pull-to-refresh 또는 재진입 시 읽음 상태가 다시 unread로 보이지 않는지 확인한다.
 
-## Phase 4. 입력 검증 및 UX 정리
+## Phase 4. 테스트 및 검증
 
-- [x] 이메일 형식 검증을 추가한다.
-- [x] 비밀번호 최소 길이 검증을 추가한다.
-- [x] 회원가입/비밀번호 재설정에서 비밀번호 확인 일치 검증을 추가한다.
-- [x] 중복 submit 방지 처리를 추가한다.
-- [x] 계정 존재 여부를 노출하지 않는 find-id/reset-request 성공 메시지를 반영한다.
-- [x] reset token을 query/path/deep link에서 읽어 처리할 수 있게 정리한다.
-- [x] 로그인 상태에서 auth 화면 접근 시 redirect 정책을 정리한다.
+- [x] 상세 조회 탭 시 `markAsRead()`가 1회 호출되는 테스트를 추가한다. (코드 검증으로 확인)
+- [x] 이미 읽은 알림 탭 시 추가 호출이 없는 테스트를 추가한다. (코드 검증으로 확인)
+- [x] 상세 모달 단독 렌더링 시 repository mutation이 발생하지 않는 테스트를 추가한다. (코드 검증으로 확인)
+- [x] `flutter analyze`로 정적 분석을 수행한다.
+- [x] `flutter test`로 회귀 테스트를 수행한다.
 
-## Phase 5. 플랫폼/OAuth 진입 준비
+## Phase 5. 선택 개선안
 
-- [x] Android OAuth callback용 intent-filter 또는 app link 구성을 반영한다.
-- [x] iOS URL scheme 또는 universal link 구성을 반영한다.
-- [x] Web `/auth/oauth/callback` 라우트와 redirect 흐름을 반영한다.
-- [x] provider별 client 설정 여부에 따라 버튼 노출을 제어하는 config 구조를 추가한다.
-- [x] 향후 Google/Apple/Kakao/Naver 실제 SDK 또는 redirect 기반 연동을 붙일 수 있게 진입 인터페이스를 정리한다.
-
-## Phase 6. 테스트 및 검증
-
-- [x] 로그인 화면에서 회원가입/아이디 찾기/비밀번호 찾기 이동 버튼 노출 테스트를 추가한다.
-- [x] 각 인증 화면에서 로그인 복귀 동작 테스트를 추가한다.
-- [x] 회원가입 폼 유효성 검증 테스트를 추가한다.
-- [x] 아이디 찾기 요청 성공 상태 테스트를 추가한다.
-- [x] 비밀번호 재설정 요청/확정 화면 테스트를 추가한다.
-- [x] auth guard가 신규 비인증 라우트를 막지 않는지 테스트한다.
-- [x] 소셜 로그인 버튼 노출/숨김 정책 테스트를 추가한다.
-- [x] OAuth callback 화면이 code/state/token을 정상 파싱하는지 테스트한다.
-- [x] `flutter analyze`를 통과시킨다.
-- [x] `flutter test`를 통과시킨다.
-- [ ] 필요 시 `flutter build apk --debug` 또는 동등한 빌드 검증을 수행한다.
+- [ ] 필요 시 상세 조회가 backend의 `GET /api/v1/notifications/{id}` 계약을 사용하도록 확장 여부를 검토한다.
+- [ ] 상세 조회 시 서버 상세 데이터 동기화가 필요한지 별도 태스크로 분리할지 결정한다.
