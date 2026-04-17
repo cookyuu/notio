@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
@@ -8,12 +7,12 @@ import 'package:notio_app/core/router/routes.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
 import 'package:notio_app/features/auth/domain/auth_input_policy.dart';
-import 'package:notio_app/features/auth/domain/entities/auth_platform.dart';
 import 'package:notio_app/features/auth/presentation/providers/login_action_provider.dart';
 import 'package:notio_app/features/auth/presentation/providers/social_login_action_provider.dart';
 import 'package:notio_app/features/auth/presentation/providers/social_login_config_provider.dart';
+import 'package:notio_app/features/auth/presentation/providers/social_login_entry_strategy_provider.dart';
+import 'package:notio_app/features/auth/presentation/providers/social_login_platform_provider.dart';
 import 'package:notio_app/features/auth/presentation/widgets/auth_screen_shell.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -27,6 +26,8 @@ class LoginScreen extends HookConsumerWidget {
     final loginState = ref.watch(loginActionNotifierProvider);
     final socialState = ref.watch(socialLoginActionNotifierProvider);
     final socialConfigs = ref.watch(socialLoginProviderConfigsProvider);
+    final currentPlatform = ref.watch(currentAuthPlatformProvider);
+    final redirectUri = ref.watch(oauthRedirectUriProvider);
 
     ref.listen<LoginActionState>(loginActionNotifierProvider, (previous, next) {
       if (next.isSuccess && !(previous?.isSuccess ?? false)) {
@@ -41,12 +42,15 @@ class LoginScreen extends HookConsumerWidget {
     ref.listen<SocialLoginActionState>(socialLoginActionNotifierProvider,
         (previous, next) async {
       final authorizationUrl = next.authorizationUrl;
+      final activeProvider = next.activeProvider;
       if (authorizationUrl != null &&
-          authorizationUrl != previous?.authorizationUrl) {
-        final launched = await launchUrl(
-          Uri.parse(authorizationUrl),
-          mode: LaunchMode.externalApplication,
+          authorizationUrl != previous?.authorizationUrl &&
+          activeProvider != null) {
+        final strategy = ref.read(
+          socialLoginEntryStrategyProvider(activeProvider),
         );
+        final launched =
+            await strategy.launchAuthorizationUrl(authorizationUrl);
 
         if (!launched && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -235,8 +239,8 @@ class LoginScreen extends HookConsumerWidget {
                                 )
                                 .startSocialLogin(
                                   config.provider,
-                                  _currentPlatform(),
-                                  _redirectUri(),
+                                  currentPlatform,
+                                  redirectUri,
                                 );
                           },
                     style: FilledButton.styleFrom(
@@ -287,29 +291,5 @@ class LoginScreen extends HookConsumerWidget {
         borderRadius: BorderRadius.circular(18),
       ),
     );
-  }
-
-  AuthPlatform _currentPlatform() {
-    if (kIsWeb) {
-      return AuthPlatform.web;
-    }
-
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-        return AuthPlatform.ios;
-      case TargetPlatform.android:
-        return AuthPlatform.android;
-      default:
-        return AuthPlatform.web;
-    }
-  }
-
-  String _redirectUri() {
-    if (kIsWeb) {
-      return '${Uri.base.origin}${Routes.authOAuthCallback}';
-    }
-
-    return 'notio://auth/oauth/callback';
   }
 }

@@ -15,12 +15,14 @@ class SocialLoginActionState {
   final String? error;
   final bool isSuccess;
   final String? authorizationUrl;
+  final AuthProvider? activeProvider;
 
   const SocialLoginActionState({
     this.isLoading = false,
     this.error,
     this.isSuccess = false,
     this.authorizationUrl,
+    this.activeProvider,
   });
 
   SocialLoginActionState copyWith({
@@ -28,12 +30,14 @@ class SocialLoginActionState {
     String? error,
     bool? isSuccess,
     String? authorizationUrl,
+    AuthProvider? activeProvider,
   }) {
     return SocialLoginActionState(
       isLoading: isLoading ?? this.isLoading,
       error: error,
       isSuccess: isSuccess ?? this.isSuccess,
       authorizationUrl: authorizationUrl,
+      activeProvider: activeProvider ?? this.activeProvider,
     );
   }
 }
@@ -64,6 +68,7 @@ class SocialLoginActionNotifier extends _$SocialLoginActionNotifier {
       error: null,
       isSuccess: false,
       authorizationUrl: null,
+      activeProvider: provider,
     );
 
     try {
@@ -78,12 +83,14 @@ class SocialLoginActionNotifier extends _$SocialLoginActionNotifier {
         isLoading: false,
         isSuccess: true,
         authorizationUrl: response.authorizationUrl,
+        activeProvider: provider,
       );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
         isSuccess: false,
+        activeProvider: provider,
       );
     }
   }
@@ -98,8 +105,12 @@ class SocialLoginActionNotifier extends _$SocialLoginActionNotifier {
       return;
     }
 
-    this.state =
-        this.state.copyWith(isLoading: true, error: null, isSuccess: false);
+    this.state = this.state.copyWith(
+          isLoading: true,
+          error: null,
+          isSuccess: false,
+          activeProvider: provider,
+        );
 
     try {
       final request = OAuthExchangeRequest(
@@ -116,12 +127,17 @@ class SocialLoginActionNotifier extends _$SocialLoginActionNotifier {
         ref.read(authSessionNotifierProvider.notifier).setAuthenticated(email);
       }
 
-      this.state = this.state.copyWith(isLoading: false, isSuccess: true);
+      this.state = this.state.copyWith(
+            isLoading: false,
+            isSuccess: true,
+            activeProvider: provider,
+          );
     } catch (e) {
       this.state = this.state.copyWith(
             isLoading: false,
             error: e.toString(),
             isSuccess: false,
+            activeProvider: provider,
           );
     }
   }

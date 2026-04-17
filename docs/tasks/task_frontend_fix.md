@@ -60,11 +60,11 @@
 
 ## Phase 5. 플랫폼/OAuth 진입 준비
 
-- [ ] Android OAuth callback용 intent-filter 또는 app link 구성을 반영한다.
-- [ ] iOS URL scheme 또는 universal link 구성을 반영한다.
-- [ ] Web `/auth/oauth/callback` 라우트와 redirect 흐름을 반영한다.
-- [ ] provider별 client 설정 여부에 따라 버튼 노출을 제어하는 config 구조를 추가한다.
-- [ ] 향후 Google/Apple/Kakao/Naver 실제 SDK 또는 redirect 기반 연동을 붙일 수 있게 진입 인터페이스를 정리한다.
+- [x] Android OAuth callback용 intent-filter 또는 app link 구성을 반영한다.
+- [x] iOS URL scheme 또는 universal link 구성을 반영한다.
+- [x] Web `/auth/oauth/callback` 라우트와 redirect 흐름을 반영한다.
+- [x] provider별 client 설정 여부에 따라 버튼 노출을 제어하는 config 구조를 추가한다.
+- [x] 향후 Google/Apple/Kakao/Naver 실제 SDK 또는 redirect 기반 연동을 붙일 수 있게 진입 인터페이스를 정리한다.
 
 ## Phase 6. 테스트 및 검증
 
