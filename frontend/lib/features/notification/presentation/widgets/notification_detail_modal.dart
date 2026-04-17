@@ -6,7 +6,6 @@ import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_priority.dart';
-import 'package:notio_app/features/notification/presentation/providers/notifications_notifier.dart';
 import 'package:notio_app/shared/widgets/glass_card.dart';
 import 'package:notio_app/shared/widgets/source_badge.dart';
 import 'package:timeago/timeago.dart' as timeago;
