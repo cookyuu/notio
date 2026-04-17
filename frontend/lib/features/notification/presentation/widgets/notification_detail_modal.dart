@@ -28,101 +28,96 @@ class NotificationDetailModal extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: AppColors.background,
+            color: AppColors.bg3,
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(20),
             ),
           ),
-          child: Column(
-            children: [
-              // Drag handle
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.text2.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
-              ),
-
-              // Content
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(AppSpacing.s20),
-                  children: [
-                    // Header with source badge and timestamp
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SourceBadge(source: notification.source),
-                        Text(
-                          timeago.format(
-                            notification.createdAt,
-                            locale: 'ko',
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.s20,
+                      AppSpacing.s8,
+                      AppSpacing.s20,
+                      AppSpacing.s24,
+                    ),
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SourceBadge(source: notification.source),
+                          const SizedBox(width: AppSpacing.s12),
+                          Expanded(
+                            child: Text(
+                              timeago.format(
+                                notification.createdAt,
+                                locale: 'ko',
+                              ),
+                              textAlign: TextAlign.end,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.text2,
+                              ),
+                            ),
                           ),
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.s20),
+                      Text(
+                        notification.title,
+                        style: AppTextStyles.displaySmall.copyWith(
+                          color: AppColors.text1,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s16),
+                      GlassCard(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.s16),
+                          child: SelectableText(
+                            notification.body,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.text1,
+                              height: 1.65,
+                            ),
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s20),
+                      _buildPrioritySection(),
+                      if (notification.externalUrl != null) ...[
+                        const SizedBox(height: AppSpacing.s20),
+                        _buildExternalLinkSection(
+                          context,
+                          notification.externalUrl!,
                         ),
                       ],
-                    ),
-
-                    const SizedBox(height: AppSpacing.s20),
-
-                    // Title
-                    Text(
-                      notification.title,
-                      style: AppTextStyles.headlineMedium.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.s16),
-
-                    // Body
-                    GlassCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.s16),
-                        child: SelectableText(
-                          notification.body,
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            color: AppColors.textPrimary,
-                            height: 1.6,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.s20),
-
-                    // Priority indicator
-                    _buildPrioritySection(),
-
-                    if (notification.externalUrl != null) ...[
+                      if (notification.metadata != null &&
+                          notification.metadata!.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.s20),
+                        _buildMetadataSection(notification.metadata!),
+                      ],
                       const SizedBox(height: AppSpacing.s20),
-                      _buildExternalLinkSection(
-                        context,
-                        notification.externalUrl!,
-                      ),
+                      _buildActionButtons(context),
                     ],
-
-                    if (notification.metadata != null &&
-                        notification.metadata!.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.s20),
-                      _buildMetadataSection(notification.metadata!),
-                    ],
-
-                    const SizedBox(height: AppSpacing.s20),
-
-                    // Action buttons
-                    _buildActionButtons(context),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -150,7 +145,7 @@ class NotificationDetailModal extends StatelessWidget {
             const SizedBox(width: AppSpacing.s12),
             Text(
               '우선순위: ${notification.priority.displayName}',
-              style: AppTextStyles.bodyMedium.copyWith(
+              style: AppTextStyles.titleSmall.copyWith(
                 color: priorityColor,
                 fontWeight: FontWeight.w600,
               ),
@@ -182,13 +177,13 @@ class NotificationDetailModal extends StatelessWidget {
                   children: [
                     const Text(
                       '외부 링크',
-                      style: AppTextStyles.bodyMedium,
+                      style: AppTextStyles.titleSmall,
                     ),
                     const SizedBox(height: AppSpacing.s4),
                     Text(
                       url,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.primary,
+                        color: AppColors.violet2,
                         decoration: TextDecoration.underline,
                       ),
                       maxLines: 1,
@@ -236,14 +231,16 @@ class NotificationDetailModal extends StatelessWidget {
                         child: Text(
                           '${entry.key}:',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
+                            color: AppColors.text2,
                           ),
                         ),
                       ),
                       Expanded(
-                        child: Text(
-                          entry.value.toString(),
-                          style: AppTextStyles.bodyMedium,
+                        child: SelectableText(
+                          _formatMetadataValue(entry.value),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.text1,
+                          ),
                         ),
                       ),
                     ],
@@ -258,54 +255,105 @@ class NotificationDetailModal extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // Copy notification content to clipboard
-              Clipboard.setData(
-                ClipboardData(
-                  text: '${notification.title}\n\n${notification.body}',
-                ),
-              );
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: AppColors.bg3,
-                  content: Text(
-                    '클립보드에 복사했습니다',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.text1,
-                    ),
-                  ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-            icon: const Icon(Icons.copy),
-            label: const Text('Copy'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              side: const BorderSide(color: AppColors.divider),
-            ),
+        OutlinedButton.icon(
+          onPressed: () => _copyDetailToClipboard(context),
+          icon: const Icon(Icons.copy_rounded),
+          label: const Text('복사'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.text1,
+            side: const BorderSide(color: AppColors.border2),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s16),
           ),
         ),
-        const SizedBox(width: AppSpacing.s12),
-        Expanded(
-          child: FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            icon: const Icon(Icons.close),
-            label: const Text('Close'),
+        if (notification.externalUrl != null) ...[
+          const SizedBox(height: AppSpacing.s12),
+          FilledButton.icon(
+            onPressed: () => _launchUrl(notification.externalUrl!),
+            icon: const Icon(Icons.open_in_new_rounded),
+            label: const Text('외부 링크 열기'),
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.violet,
+              foregroundColor: AppColors.text1,
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.s16),
             ),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.s12),
+        TextButton.icon(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: const Icon(Icons.close_rounded),
+          label: const Text('닫기'),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.text2,
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _copyDetailToClipboard(BuildContext context) async {
+    await Clipboard.setData(
+      ClipboardData(text: _buildCopyPayload()),
+    );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.bg2,
+        content: Text(
+          '상세 내용을 클립보드에 복사했습니다',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.text1,
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  String _buildCopyPayload() {
+    final buffer = StringBuffer()
+      ..writeln(notification.title)
+      ..writeln()
+      ..writeln(notification.body);
+
+    if (notification.externalUrl != null) {
+      buffer
+        ..writeln()
+        ..writeln('외부 링크')
+        ..writeln(notification.externalUrl);
+    }
+
+    if (notification.metadata != null && notification.metadata!.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('추가 정보');
+      for (final entry in notification.metadata!.entries) {
+        buffer.writeln('${entry.key}: ${_formatMetadataValue(entry.value)}');
+      }
+    }
+
+    return buffer.toString().trimRight();
+  }
+
+  String _formatMetadataValue(Object? value) {
+    if (value == null) {
+      return '-';
+    }
+
+    if (value is Iterable || value is Map<String, dynamic>) {
+      return value.toString();
+    }
+
+    return '$value';
   }
 
   Future<void> _launchUrl(String urlString) async {

@@ -40,10 +40,10 @@
 
 ## Phase 4. 상세 모달 책임 정리
 
-- [ ] `NotificationDetailModal`이 상세 전용 entity/model만 받도록 정리한다.
-- [ ] 모달 내부에서 읽음 처리 API나 상태 변경 side effect를 수행하지 않도록 유지한다.
-- [ ] 모달은 상세 응답의 전체 `body`, `externalUrl`, `metadata`를 렌더링하도록 정리한다.
-- [ ] 공유/복사/외부 링크 액션이 상세 응답 구조와 일치하는지 확인한다.
+- [x] `NotificationDetailModal`이 상세 전용 entity/model만 받도록 정리한다.
+- [x] 모달 내부에서 읽음 처리 API나 상태 변경 side effect를 수행하지 않도록 유지한다.
+- [x] 모달은 상세 응답의 전체 `body`, `externalUrl`, `metadata`를 렌더링하도록 정리한다.
+- [x] 공유/복사/외부 링크 액션이 상세 응답 구조와 일치하는지 확인한다.
 
 ## Phase 5. 상태 동기화 및 캐시 정리
 
