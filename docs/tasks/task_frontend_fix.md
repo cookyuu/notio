@@ -37,16 +37,16 @@
 
 ## Phase 3. 인증 화면 구현
 
-- [ ] 로그인 화면에 `회원가입`, `아이디 찾기`, `비밀번호 찾기` 이동 버튼을 추가한다.
-- [ ] 로그인 화면에 소셜 로그인 버튼 영역을 추가한다.
-- [ ] 소셜 로그인 버튼이 provider config 기반으로 노출되도록 구현한다.
-- [ ] `SignupScreen`을 추가한다.
-- [ ] `FindIdScreen`을 추가한다.
-- [ ] `PasswordResetRequestScreen`을 추가한다.
-- [ ] `PasswordResetConfirmScreen`을 추가한다.
-- [ ] `AuthOAuthCallbackScreen`을 추가한다.
-- [ ] 회원가입, 아이디 찾기, 비밀번호 찾기 화면에 모두 `로그인으로 돌아가기` 버튼을 추가한다.
-- [ ] 각 화면에 로딩, 성공, 실패 상태를 일관된 UX로 반영한다.
+- [x] 로그인 화면에 `회원가입`, `아이디 찾기`, `비밀번호 찾기` 이동 버튼을 추가한다.
+- [x] 로그인 화면에 소셜 로그인 버튼 영역을 추가한다.
+- [x] 소셜 로그인 버튼이 provider config 기반으로 노출되도록 구현한다.
+- [x] `SignupScreen`을 추가한다.
+- [x] `FindIdScreen`을 추가한다.
+- [x] `PasswordResetRequestScreen`을 추가한다.
+- [x] `PasswordResetConfirmScreen`을 추가한다.
+- [x] `AuthOAuthCallbackScreen`을 추가한다.
+- [x] 회원가입, 아이디 찾기, 비밀번호 찾기 화면에 모두 `로그인으로 돌아가기` 버튼을 추가한다.
+- [x] 각 화면에 로딩, 성공, 실패 상태를 일관된 UX로 반영한다.
 
 ## Phase 4. 입력 검증 및 UX 정리
 

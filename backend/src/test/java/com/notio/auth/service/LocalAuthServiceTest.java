@@ -90,6 +90,7 @@ class LocalAuthServiceTest {
     void signupCreatesUserAndLocalIdentity() {
         authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
         final SignupRequest request = SignupRequest.builder()
+                .displayName("  Notio User  ")
                 .email("USER@example.com")
                 .password("password123")
                 .build();
@@ -114,6 +115,7 @@ class LocalAuthServiceTest {
         assertThat(authIdentityCaptor.getValue().getProvider()).isEqualTo(AuthProvider.LOCAL);
         assertThat(authIdentityCaptor.getValue().getEmail()).isEqualTo("user@example.com");
         assertThat(authIdentityCaptor.getValue().getPasswordHash()).isEqualTo("encoded-password");
+        assertThat(authIdentityCaptor.getValue().getUser().getDisplayName()).isEqualTo("Notio User");
     }
 
     @Test
@@ -122,6 +124,7 @@ class LocalAuthServiceTest {
         when(authIdentityRepository.existsActiveLocalByEmail("user@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> localAuthService.signup(SignupRequest.builder()
+                .displayName("Notio User")
                 .email("user@example.com")
                 .password("password123")
                 .build())).isInstanceOf(NotioException.class);

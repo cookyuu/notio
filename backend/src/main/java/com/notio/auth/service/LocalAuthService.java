@@ -56,13 +56,14 @@ public class LocalAuthService {
     @Transactional
     public SignupResponse signup(final SignupRequest request) {
         final String normalizedEmail = normalizeEmail(request.getEmail());
+        final String normalizedDisplayName = normalizeDisplayName(request.getDisplayName());
         if (authIdentityRepository.existsActiveLocalByEmail(normalizedEmail)) {
             throw new NotioException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         final User user = userRepository.save(User.builder()
                 .primaryEmail(normalizedEmail)
-                .displayName(null)
+                .displayName(normalizedDisplayName)
                 .status(UserStatus.ACTIVE)
                 .build());
 
@@ -158,5 +159,9 @@ public class LocalAuthService {
 
     private String normalizeEmail(final String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeDisplayName(final String displayName) {
+        return displayName.trim();
     }
 }

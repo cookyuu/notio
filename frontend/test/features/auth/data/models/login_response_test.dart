@@ -4,19 +4,25 @@ import 'package:notio_app/features/auth/data/models/refresh_token_response.dart'
 
 void main() {
   group('LoginResponse', () {
-    test('parses snake_case auth response', () {
+    test('parses nested login response', () {
       final response = LoginResponse.fromJson({
-        'user_id': 1,
-        'email': 'user@example.com',
         'access_token': 'access-token',
         'refresh_token': 'refresh-token',
+        'token_type': 'Bearer',
         'expires_in': 86400,
+        'user': {
+          'id': 1,
+          'primary_email': 'user@example.com',
+          'display_name': 'Notio User',
+          'status': 'ACTIVE',
+        },
       });
 
       expect(response.userId, '1');
       expect(response.email, 'user@example.com');
       expect(response.accessToken, 'access-token');
       expect(response.refreshToken, 'refresh-token');
+      expect(response.tokenType, 'Bearer');
       expect(response.expiresIn, 86400);
     });
   });

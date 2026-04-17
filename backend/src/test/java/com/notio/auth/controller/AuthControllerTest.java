@@ -43,6 +43,7 @@ class AuthControllerTest {
                         .build());
 
         final var responseEntity = controller.signup(SignupRequest.builder()
+                .displayName("Notio User")
                 .email("user@example.com")
                 .password("password123")
                 .build());

@@ -2,6 +2,7 @@
 enum AuthErrorCode {
   // 400 Bad Request
   invalidRequest,
+  invalidInputValue,
   emailAlreadyExists,
   passwordResetTokenInvalid,
   passwordResetTokenExpired,
@@ -33,6 +34,8 @@ enum AuthErrorCode {
       // 400 Bad Request
       case 'INVALID_REQUEST':
         return AuthErrorCode.invalidRequest;
+      case 'INVALID_INPUT_VALUE':
+        return AuthErrorCode.invalidInputValue;
       case 'EMAIL_ALREADY_EXISTS':
         return AuthErrorCode.emailAlreadyExists;
       case 'PASSWORD_RESET_TOKEN_INVALID':
@@ -79,6 +82,8 @@ enum AuthErrorCode {
       // 400 Bad Request
       case AuthErrorCode.invalidRequest:
         return '잘못된 요청입니다.';
+      case AuthErrorCode.invalidInputValue:
+        return '비밀번호 형식이 올바르지 않습니다. 영문, 숫자, 특수문자를 포함해 다시 입력해주세요.';
       case AuthErrorCode.emailAlreadyExists:
         return '이미 사용 중인 이메일입니다.';
       case AuthErrorCode.passwordResetTokenInvalid:
@@ -154,4 +159,7 @@ class AuthError {
       originalMessage: message,
     );
   }
+
+  @override
+  String toString() => message;
 }

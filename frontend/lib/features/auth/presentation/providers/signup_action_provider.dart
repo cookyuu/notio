@@ -1,7 +1,6 @@
 import 'package:notio_app/features/auth/data/models/signup_request.dart';
 import 'package:notio_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:notio_app/features/auth/presentation/providers/auth_providers.dart';
-import 'package:notio_app/features/auth/presentation/providers/auth_session_notifier.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'signup_action_provider.g.dart';
@@ -52,10 +51,7 @@ class SignupActionNotifier extends _$SignupActionNotifier {
         password: password,
         displayName: displayName,
       );
-      final response = await _repository.signup(request);
-
-      // Update session state after successful signup
-      ref.read(authSessionNotifierProvider.notifier).setAuthenticated(response.email);
+      await _repository.signup(request);
 
       state = state.copyWith(isLoading: false, isSuccess: true);
     } catch (e) {

@@ -15,6 +15,7 @@ class AuthMockData {
       accessToken: 'mock-access-token-${DateTime.now().millisecondsSinceEpoch}',
       refreshToken:
           'mock-refresh-token-${DateTime.now().millisecondsSinceEpoch}',
+      tokenType: 'Bearer',
       expiresIn: 3600, // 1 hour
     );
   }
