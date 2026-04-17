@@ -1,7 +1,19 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:notio_app/features/auth/data/datasources/auth_api_client.dart';
+import 'package:notio_app/features/auth/data/models/find_id_request.dart';
+import 'package:notio_app/features/auth/data/models/find_id_response.dart';
 import 'package:notio_app/features/auth/data/models/login_request.dart';
 import 'package:notio_app/features/auth/data/models/login_response.dart';
+import 'package:notio_app/features/auth/data/models/oauth_exchange_request.dart';
+import 'package:notio_app/features/auth/data/models/oauth_exchange_response.dart';
+import 'package:notio_app/features/auth/data/models/oauth_start_request.dart';
+import 'package:notio_app/features/auth/data/models/oauth_start_response.dart';
+import 'package:notio_app/features/auth/data/models/password_reset_confirm_request.dart';
+import 'package:notio_app/features/auth/data/models/password_reset_confirm_response.dart';
+import 'package:notio_app/features/auth/data/models/password_reset_request_request.dart';
+import 'package:notio_app/features/auth/data/models/password_reset_request_response.dart';
+import 'package:notio_app/features/auth/data/models/signup_request.dart';
+import 'package:notio_app/features/auth/data/models/signup_response.dart';
 import 'package:notio_app/features/auth/domain/auth_token_policy.dart';
 import 'package:notio_app/features/auth/domain/repositories/auth_repository.dart';
 
@@ -128,4 +140,62 @@ class AuthRepositoryImpl implements AuthRepository {
     await _storage.delete(key: _userEmailKey);
     await _storage.delete(key: _expiresAtKey);
   }
+
+  @override
+  Future<SignupResponse> signup(SignupRequest request) async {
+    try {
+      return await _apiClient.signup(request);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<FindIdResponse> findId(FindIdRequest request) async {
+    try {
+      return await _apiClient.findId(request);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<PasswordResetRequestResponse> requestPasswordReset(
+      PasswordResetRequestRequest request) async {
+    try {
+      return await _apiClient.requestPasswordReset(request);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<PasswordResetConfirmResponse> confirmPasswordReset(
+      PasswordResetConfirmRequest request) async {
+    try {
+      return await _apiClient.confirmPasswordReset(request);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<OAuthStartResponse> startSocialLogin(OAuthStartRequest request) async {
+    try {
+      return await _apiClient.startSocialLogin(request);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<OAuthExchangeResponse> exchangeSocialLogin(
+      OAuthExchangeRequest request) async {
+    try {
+      return await _apiClient.exchangeSocialLogin(request);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
 }

@@ -15,6 +15,12 @@ class ApiConstants {
   static const authLogin = '$apiVersion/auth/login';
   static const authRefresh = '$apiVersion/auth/refresh';
   static const authLogout = '$apiVersion/auth/logout';
+  static const authSignup = '$apiVersion/auth/signup';
+  static const authFindId = '$apiVersion/auth/find-id';
+  static const authPasswordResetRequest = '$apiVersion/auth/password-reset/request';
+  static const authPasswordResetConfirm = '$apiVersion/auth/password-reset/confirm';
+  static const authOAuthStart = '$apiVersion/auth/oauth/start';
+  static const authOAuthExchange = '$apiVersion/auth/oauth/exchange';
 
   // Notification endpoints
   static const notifications = '$apiVersion/notifications';

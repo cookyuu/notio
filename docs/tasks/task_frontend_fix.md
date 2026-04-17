@@ -7,20 +7,20 @@
 
 ## Phase 0. 인증 계약 및 타입 정리
 
-- [ ] 신규 auth API 계약에 맞는 request/response model을 추가한다.
-- [ ] `AuthProvider` enum에 `local`, `google`, `apple`, `kakao`, `naver`를 정의한다.
-- [ ] `AuthPlatform` 또는 플랫폼 전달 타입을 정의한다.
-- [ ] signup, find-id, password-reset, oauth start/exchange 관련 DTO를 정리한다.
-- [ ] backend 에러 코드와 매핑되는 프론트 메시지 처리 기준을 정리한다.
+- [x] 신규 auth API 계약에 맞는 request/response model을 추가한다.
+- [x] `AuthProvider` enum에 `local`, `google`, `apple`, `kakao`, `naver`를 정의한다.
+- [x] `AuthPlatform` 또는 플랫폼 전달 타입을 정의한다.
+- [x] signup, find-id, password-reset, oauth start/exchange 관련 DTO를 정리한다.
+- [x] backend 에러 코드와 매핑되는 프론트 메시지 처리 기준을 정리한다.
 
 ## Phase 1. 인증 데이터 레이어 확장
 
-- [ ] auth remote datasource에 `signup`, `findId`, `requestPasswordReset`, `confirmPasswordReset` 메서드를 추가한다.
-- [ ] auth remote datasource에 `startSocialLogin`, `exchangeSocialLogin` 메서드를 추가한다.
-- [ ] auth repository interface에 신규 인증 액션 계약을 추가한다.
-- [ ] auth repository 구현체에 신규 API 호출과 응답 매핑을 추가한다.
-- [ ] 기존 로그인/리프레시 저장소 로직이 새 응답 구조와 충돌하지 않는지 점검한다.
-- [ ] 네트워크 에러와 도메인 에러를 화면에서 다룰 수 있게 예외 변환을 정리한다.
+- [x] auth remote datasource에 `signup`, `findId`, `requestPasswordReset`, `confirmPasswordReset` 메서드를 추가한다.
+- [x] auth remote datasource에 `startSocialLogin`, `exchangeSocialLogin` 메서드를 추가한다.
+- [x] auth repository interface에 신규 인증 액션 계약을 추가한다.
+- [x] auth repository 구현체에 신규 API 호출과 응답 매핑을 추가한다.
+- [x] 기존 로그인/리프레시 저장소 로직이 새 응답 구조와 충돌하지 않는지 점검한다.
+- [x] 네트워크 에러와 도메인 에러를 화면에서 다룰 수 있게 예외 변환을 정리한다.
 
 ## Phase 2. 라우팅 및 상태 관리 재구성
 
@@ -76,6 +76,6 @@
 - [ ] auth guard가 신규 비인증 라우트를 막지 않는지 테스트한다.
 - [ ] 소셜 로그인 버튼 노출/숨김 정책 테스트를 추가한다.
 - [ ] OAuth callback 화면이 code/state/token을 정상 파싱하는지 테스트한다.
-- [ ] `flutter analyze`를 통과시킨다.
+- [x] `flutter analyze`를 통과시킨다.
 - [ ] `flutter test`를 통과시킨다.
 - [ ] 필요 시 `flutter build apk --debug` 또는 동등한 빌드 검증을 수행한다.
