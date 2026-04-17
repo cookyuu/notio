@@ -1,7 +1,6 @@
 package com.notio.common.ratelimit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.auth.config.JwtProperties;
@@ -124,6 +123,63 @@ class RateLimitPolicyResolverTest {
                 "rateLimit:chat-ai:user:9:1m",
                 "rateLimit:chat-ai:user:9:1d"
             );
+    }
+
+    @Test
+    void resolveReturnsSignupPolicyForPublicSignupEndpoint() throws Exception {
+        final MockHttpServletRequest request = jsonRequest(
+                "POST",
+                "/api/v1/auth/signup",
+                "{\"email\":\"user@example.com\",\"password\":\"password123\"}"
+        );
+
+        final var resolved = resolver.resolve(new CachedBodyHttpServletRequest(request, 4_096));
+
+        assertThat(resolved).isPresent();
+        assertThat(resolved.get().policyName()).isEqualTo("signup");
+        assertThat(resolved.get().rules()).hasSize(2);
+    }
+
+    @Test
+    void resolveReturnsEmailScopedPolicyForPasswordResetRequest() throws Exception {
+        final MockHttpServletRequest request = jsonRequest(
+                "POST",
+                "/api/v1/auth/password-reset/request",
+                "{\"email\":\"user@example.com\"}"
+        );
+
+        final var resolved = resolver.resolve(new CachedBodyHttpServletRequest(request, 4_096));
+
+        assertThat(resolved).isPresent();
+        assertThat(resolved.get().policyName()).isEqualTo("password-reset-request");
+        assertThat(resolved.get().rules())
+                .extracting(RateLimitRule::key)
+                .anyMatch(bucket -> bucket.contains("email:user@example.com"));
+    }
+
+    @Test
+    void resolveReturnsCallbackPolicyForOauthCallbackEndpoint() throws Exception {
+        final MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/auth/oauth/callback/google");
+        request.setRemoteAddr("127.0.0.1");
+
+        final var resolved = resolver.resolve(new CachedBodyHttpServletRequest(request, 0));
+
+        assertThat(resolved).isPresent();
+        assertThat(resolved.get().policyName()).isEqualTo("oauth-callback");
+        assertThat(resolved.get().rules()).hasSize(2);
+    }
+
+    private MockHttpServletRequest jsonRequest(
+            final String method,
+            final String requestUri,
+            final String body
+    ) {
+        final MockHttpServletRequest request = new MockHttpServletRequest(method, requestUri);
+        request.setContentType("application/json");
+        request.setCharacterEncoding("UTF-8");
+        request.setContent(body.getBytes());
+        request.setRemoteAddr("127.0.0.1");
+        return request;
     }
 
     private JwtProperties jwtProperties() {

@@ -30,6 +30,7 @@ public class OAuthAuthService {
 
     private final AuthProviderAdapterRegistry authProviderAdapterRegistry;
     private final AuthProviderStateRepository authProviderStateRepository;
+    private final AuthAuditService authAuditService;
 
     @Transactional
     public OAuthStartResponse start(final OAuthStartRequest request) {
@@ -45,7 +46,8 @@ public class OAuthAuthService {
                 .build());
 
         final String authorizationUrl = adapter.buildAuthorizationUrl(providerState);
-        log.info("OAuth start initialized: provider={}, state={}", request.getProvider(), providerState.getState());
+        authAuditService.recordOAuthStart(request.getProvider(), request.getPlatform());
+        log.info("OAuth start initialized: provider={}", request.getProvider());
 
         return OAuthStartResponse.builder()
                 .provider(providerState.getProvider())
@@ -66,18 +68,24 @@ public class OAuthAuthService {
         final AuthProviderState providerState = validateState(provider, state);
 
         if (error != null && !error.isBlank()) {
+            authAuditService.recordOAuthCallbackFailure(provider, providerState.getPlatform(), "provider_error");
             throw new NotioException(ErrorCode.OAUTH_CALLBACK_FAILED, "OAuth provider returned error: " + error);
         }
         if (code == null || code.isBlank()) {
+            authAuditService.recordOAuthCallbackFailure(provider, providerState.getPlatform(), "missing_code");
             throw new NotioException(ErrorCode.OAUTH_CALLBACK_FAILED, "OAuth authorization code is missing.");
         }
 
         final AuthProviderAdapter adapter = authProviderAdapterRegistry.get(provider);
         try {
-            return adapter.handleCallback(code.trim(), providerState);
+            final OAuthCallbackResponse response = adapter.handleCallback(code.trim(), providerState);
+            authAuditService.recordOAuthCallbackSuccess(provider, providerState.getPlatform());
+            return response;
         } catch (NotioException exception) {
+            authAuditService.recordOAuthCallbackFailure(provider, providerState.getPlatform(), exception.getErrorCode().getCode());
             throw exception;
         } catch (RuntimeException exception) {
+            authAuditService.recordOAuthCallbackFailure(provider, providerState.getPlatform(), "callback_exception");
             throw new NotioException(ErrorCode.OAUTH_CALLBACK_FAILED);
         }
     }
@@ -89,8 +97,14 @@ public class OAuthAuthService {
         try {
             return adapter.exchangeAuthorizationCode(request.getCode().trim(), providerState);
         } catch (NotioException exception) {
+            authAuditService.recordOAuthCallbackFailure(
+                    request.getProvider(),
+                    providerState.getPlatform(),
+                    exception.getErrorCode().getCode()
+            );
             throw exception;
         } catch (RuntimeException exception) {
+            authAuditService.recordOAuthCallbackFailure(request.getProvider(), providerState.getPlatform(), "exchange_exception");
             throw new NotioException(ErrorCode.OAUTH_CALLBACK_FAILED);
         }
     }
@@ -98,9 +112,13 @@ public class OAuthAuthService {
     private AuthProviderState validateState(final AuthProvider provider, final String stateValue) {
         final String normalizedState = stateValue == null ? "" : stateValue.trim();
         final AuthProviderState providerState = authProviderStateRepository.findByState(normalizedState)
-                .orElseThrow(() -> new NotioException(ErrorCode.OAUTH_STATE_INVALID));
+                .orElseThrow(() -> {
+                    authAuditService.recordOAuthCallbackFailure(provider, null, "state_missing");
+                    return new NotioException(ErrorCode.OAUTH_STATE_INVALID);
+                });
 
         if (providerState.getProvider() != provider || providerState.isExpired()) {
+            authAuditService.recordOAuthCallbackFailure(provider, providerState.getPlatform(), "state_invalid");
             throw new NotioException(ErrorCode.OAUTH_STATE_INVALID);
         }
 

@@ -3,6 +3,8 @@ package com.notio.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,6 +18,9 @@ import com.notio.auth.dto.FindIdRequest;
 import com.notio.auth.dto.PasswordResetConfirmRequest;
 import com.notio.auth.dto.PasswordResetRequestRequest;
 import com.notio.auth.dto.SignupRequest;
+import com.notio.auth.mail.AuthMailMessage;
+import com.notio.auth.mail.AuthMailSender;
+import com.notio.auth.mail.AuthMailTemplateService;
 import com.notio.auth.repository.AuthIdentityRepository;
 import com.notio.auth.repository.PasswordResetTokenRepository;
 import com.notio.auth.repository.RefreshTokenRepository;
@@ -49,6 +54,15 @@ class LocalAuthServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private AuthMailTemplateService authMailTemplateService;
+
+    @Mock
+    private AuthMailSender authMailSender;
+
+    @Mock
+    private AuthAuditService authAuditService;
 
     @InjectMocks
     private LocalAuthService localAuthService;
@@ -119,11 +133,14 @@ class LocalAuthServiceTest {
 
         when(authIdentityRepository.findActiveLocalByEmail("user@example.com"))
                 .thenReturn(Optional.of(authIdentity), Optional.empty());
+        when(authMailTemplateService.buildFindIdMessage(user))
+                .thenReturn(new AuthMailMessage("user@example.com", "subject", "body", null));
 
         final var existingResponse = localAuthService.findId(request);
         final var missingResponse = localAuthService.findId(request);
 
         assertThat(existingResponse.getMessage()).isEqualTo(missingResponse.getMessage());
+        verify(authMailSender).send(any(AuthMailMessage.class));
     }
 
     @Test
@@ -147,12 +164,15 @@ class LocalAuthServiceTest {
 
         when(authIdentityRepository.findActiveLocalByEmail("user@example.com"))
                 .thenReturn(Optional.of(authIdentity), Optional.empty());
+        when(authMailTemplateService.buildPasswordResetMessage(eq(user), anyString()))
+                .thenReturn(new AuthMailMessage("user@example.com", "subject", "body", null));
 
         final var existingResponse = localAuthService.requestPasswordReset(request);
         final var missingResponse = localAuthService.requestPasswordReset(request);
 
         assertThat(existingResponse.getMessage()).isEqualTo(missingResponse.getMessage());
         verify(passwordResetTokenRepository).save(any(PasswordResetToken.class));
+        verify(authMailSender).send(any(AuthMailMessage.class));
     }
 
     @Test

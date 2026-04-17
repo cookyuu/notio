@@ -29,6 +29,9 @@ class OAuthAuthServiceTest {
     @Mock
     private AuthProviderStateRepository authProviderStateRepository;
 
+    @Mock
+    private AuthAuditService authAuditService;
+
     @InjectMocks
     private OAuthAuthService oAuthAuthService;
 

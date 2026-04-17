@@ -43,7 +43,10 @@ public class SecurityConfig {
                                 "/api/v1/auth/signup",
                                 "/api/v1/auth/find-id",
                                 "/api/v1/auth/password-reset/request",
-                                "/api/v1/auth/password-reset/confirm"
+                                "/api/v1/auth/password-reset/confirm",
+                                "/api/v1/auth/oauth/start",
+                                "/api/v1/auth/oauth/exchange",
+                                "/api/v1/auth/oauth/callback/**"
                         ).permitAll()
                         // Webhook API (외부 서비스에서 호출)
                         .requestMatchers("/api/v1/webhook/**").permitAll()

@@ -13,10 +13,13 @@ import com.notio.auth.dto.PasswordResetRequestRequest;
 import com.notio.auth.dto.PasswordResetRequestResponse;
 import com.notio.auth.dto.SignupRequest;
 import com.notio.auth.dto.SignupResponse;
+import com.notio.auth.mail.AuthMailSender;
+import com.notio.auth.mail.AuthMailTemplateService;
 import com.notio.auth.repository.AuthIdentityRepository;
 import com.notio.auth.repository.PasswordResetTokenRepository;
 import com.notio.auth.repository.RefreshTokenRepository;
 import com.notio.auth.repository.UserRepository;
+import com.notio.auth.support.AuthMaskingUtils;
 import com.notio.auth.util.AuthTokenUtils;
 import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
@@ -44,6 +47,9 @@ public class LocalAuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthMailTemplateService authMailTemplateService;
+    private final AuthMailSender authMailSender;
+    private final AuthAuditService authAuditService;
 
     @Transactional
     public SignupResponse signup(final SignupRequest request) {
@@ -66,7 +72,8 @@ public class LocalAuthService {
                 .emailVerified(false)
                 .build());
 
-        log.info("Local signup completed: userId={}, email={}", user.getId(), normalizedEmail);
+        authAuditService.recordSignupSuccess(user.getId(), normalizedEmail);
+        log.info("Local signup completed: userId={}, email={}", user.getId(), AuthMaskingUtils.maskEmail(normalizedEmail));
 
         return SignupResponse.builder()
                 .userId(String.valueOf(user.getId()))
@@ -77,8 +84,10 @@ public class LocalAuthService {
 
     public FindIdResponse findId(final FindIdRequest request) {
         final String normalizedEmail = normalizeEmail(request.getEmail());
-        authIdentityRepository.findActiveLocalByEmail(normalizedEmail)
-                .ifPresent(authIdentity -> log.info("Find-id requested for local account: userId={}", authIdentity.getUser().getId()));
+        final var authIdentity = authIdentityRepository.findActiveLocalByEmail(normalizedEmail);
+        authIdentity.ifPresent(identity ->
+                authMailSender.send(authMailTemplateService.buildFindIdMessage(identity.getUser())));
+        authAuditService.recordFindIdRequested(normalizedEmail, authIdentity.isPresent());
         return FindIdResponse.builder()
                 .message(FIND_ID_MESSAGE)
                 .build();
@@ -87,21 +96,28 @@ public class LocalAuthService {
     @Transactional
     public PasswordResetRequestResponse requestPasswordReset(final PasswordResetRequestRequest request) {
         final String normalizedEmail = normalizeEmail(request.getEmail());
-        authIdentityRepository.findActiveLocalByEmail(normalizedEmail).ifPresent(authIdentity -> {
-            passwordResetTokenRepository.invalidateUnusedByAuthIdentityId(authIdentity.getId());
+        final var authIdentity = authIdentityRepository.findActiveLocalByEmail(normalizedEmail);
+        authIdentity.ifPresent(identity -> {
+            passwordResetTokenRepository.invalidateUnusedByAuthIdentityId(identity.getId());
 
             final String rawToken = AuthTokenUtils.generateRawToken();
             final String tokenHash = AuthTokenUtils.sha256Hex(rawToken);
 
             passwordResetTokenRepository.save(PasswordResetToken.builder()
-                    .user(authIdentity.getUser())
-                    .authIdentity(authIdentity)
+                    .user(identity.getUser())
+                    .authIdentity(identity)
                     .tokenHash(tokenHash)
                     .expiresAt(OffsetDateTime.now().plusMinutes(PASSWORD_RESET_TOKEN_TTL_MINUTES))
                     .build());
 
-            log.info("Password reset requested for userId={}", authIdentity.getUser().getId());
+            authMailSender.send(authMailTemplateService.buildPasswordResetMessage(identity.getUser(), rawToken));
+            log.info("Password reset requested for userId={}", identity.getUser().getId());
         });
+        authAuditService.recordPasswordResetRequested(
+                authIdentity.map(found -> found.getUser().getId()).orElse(null),
+                normalizedEmail,
+                authIdentity.isPresent()
+        );
 
         return PasswordResetRequestResponse.builder()
                 .message(PASSWORD_RESET_REQUEST_MESSAGE)
@@ -112,13 +128,18 @@ public class LocalAuthService {
     public PasswordResetConfirmResponse confirmPasswordReset(final PasswordResetConfirmRequest request) {
         final String tokenHash = AuthTokenUtils.sha256Hex(request.getToken().trim());
         final PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new NotioException(ErrorCode.PASSWORD_RESET_TOKEN_INVALID));
+                .orElseThrow(() -> {
+                    authAuditService.recordPasswordResetFailed("invalid_token");
+                    return new NotioException(ErrorCode.PASSWORD_RESET_TOKEN_INVALID);
+                });
 
         if (passwordResetToken.getUsedAt() != null) {
+            authAuditService.recordPasswordResetFailed("used_token");
             throw new NotioException(ErrorCode.PASSWORD_RESET_TOKEN_INVALID);
         }
 
         if (passwordResetToken.isExpired()) {
+            authAuditService.recordPasswordResetFailed("expired_token");
             throw new NotioException(ErrorCode.PASSWORD_RESET_TOKEN_EXPIRED);
         }
 
@@ -127,6 +148,7 @@ public class LocalAuthService {
         passwordResetToken.markUsed();
         refreshTokenRepository.revokeAllByUser(passwordResetToken.getUser());
 
+        authAuditService.recordPasswordResetConfirmed(passwordResetToken.getUser().getId());
         log.info("Password reset confirmed for userId={}", passwordResetToken.getUser().getId());
 
         return PasswordResetConfirmResponse.builder()

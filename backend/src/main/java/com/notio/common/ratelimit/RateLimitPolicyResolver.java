@@ -49,6 +49,64 @@ public class RateLimitPolicyResolver {
             return Optional.of(new ResolvedRateLimitRequest("refresh", rules));
         }
 
+        if ("/api/v1/auth/signup".equals(requestUri) && "POST".equals(method)) {
+            return Optional.of(new ResolvedRateLimitRequest(
+                "signup",
+                List.of(
+                    new RateLimitRule(bucket("signup", "ip", clientIp, "1m"), 5, Duration.ofMinutes(1)),
+                    new RateLimitRule(bucket("signup", "ip", clientIp, "1h"), 20, Duration.ofHours(1))
+                )
+            ));
+        }
+
+        if ("/api/v1/auth/find-id".equals(requestUri) && "POST".equals(method)) {
+            return Optional.of(authEmailPolicy("find-id", request, clientIp, 5, Duration.ofMinutes(5), 20, Duration.ofHours(1)));
+        }
+
+        if ("/api/v1/auth/password-reset/request".equals(requestUri) && "POST".equals(method)) {
+            return Optional.of(authEmailPolicy("password-reset-request", request, clientIp, 5, Duration.ofMinutes(5), 20, Duration.ofHours(1)));
+        }
+
+        if ("/api/v1/auth/password-reset/confirm".equals(requestUri) && "POST".equals(method)) {
+            return Optional.of(new ResolvedRateLimitRequest(
+                "password-reset-confirm",
+                List.of(
+                    new RateLimitRule(bucket("password-reset-confirm", "ip", clientIp, "10m"), 10, Duration.ofMinutes(10)),
+                    new RateLimitRule(bucket("password-reset-confirm", "ip", clientIp, "1h"), 30, Duration.ofHours(1))
+                )
+            ));
+        }
+
+        if ("/api/v1/auth/oauth/start".equals(requestUri) && "POST".equals(method)) {
+            final List<RateLimitRule> rules = new ArrayList<>();
+            rules.add(new RateLimitRule(bucket("oauth-start", "ip", clientIp, "5m"), 20, Duration.ofMinutes(5)));
+            extractBodyText(request, "provider").ifPresent(provider ->
+                rules.add(new RateLimitRule(bucket("oauth-start", "provider", provider, "5m"), 30, Duration.ofMinutes(5)))
+            );
+            return Optional.of(new ResolvedRateLimitRequest("oauth-start", rules));
+        }
+
+        if (requestUri.startsWith("/api/v1/auth/oauth/callback/") && "GET".equals(method)) {
+            final String provider = requestUri.substring(requestUri.lastIndexOf('/') + 1);
+            return Optional.of(new ResolvedRateLimitRequest(
+                "oauth-callback",
+                List.of(
+                    new RateLimitRule(bucket("oauth-callback", "ip", clientIp, "5m"), 30, Duration.ofMinutes(5)),
+                    new RateLimitRule(bucket("oauth-callback", "provider", provider, "5m"), 60, Duration.ofMinutes(5))
+                )
+            ));
+        }
+
+        if ("/api/v1/auth/oauth/exchange".equals(requestUri) && "POST".equals(method)) {
+            return Optional.of(new ResolvedRateLimitRequest(
+                "oauth-exchange",
+                List.of(
+                    new RateLimitRule(bucket("oauth-exchange", "ip", clientIp, "5m"), 20, Duration.ofMinutes(5)),
+                    new RateLimitRule(bucket("oauth-exchange", "ip", clientIp, "1h"), 60, Duration.ofHours(1))
+                )
+            ));
+        }
+
         if (requestUri.startsWith("/api/v1/webhook/")) {
             final List<RateLimitRule> rules = new ArrayList<>();
             rules.add(new RateLimitRule(bucket("webhook", "ip", clientIp, "1m"), 60, Duration.ofMinutes(1)));
@@ -97,6 +155,23 @@ public class RateLimitPolicyResolver {
         return Optional.empty();
     }
 
+    private ResolvedRateLimitRequest authEmailPolicy(
+        final String policyName,
+        final CachedBodyHttpServletRequest request,
+        final String clientIp,
+        final long ipLimit,
+        final Duration ipWindow,
+        final long emailLimit,
+        final Duration emailWindow
+    ) {
+        final List<RateLimitRule> rules = new ArrayList<>();
+        rules.add(new RateLimitRule(bucket(policyName, "ip", clientIp, suffix(ipWindow)), ipLimit, ipWindow));
+        extractBodyText(request, "email").ifPresent(email ->
+            rules.add(new RateLimitRule(bucket(policyName, "email", email.toLowerCase(), suffix(emailWindow)), emailLimit, emailWindow))
+        );
+        return new ResolvedRateLimitRequest(policyName, rules);
+    }
+
     private ResolvedRateLimitRequest singleUserPolicy(
         final String policyName,
         final Long userId,
@@ -117,6 +192,19 @@ public class RateLimitPolicyResolver {
                 return Optional.empty();
             }
             return Optional.of(Long.valueOf(jwtTokenProvider.getUserId(refreshToken.asText())));
+        } catch (Exception exception) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<String> extractBodyText(final CachedBodyHttpServletRequest request, final String fieldName) {
+        try {
+            final JsonNode root = objectMapper.readTree(request.cachedBodyAsString());
+            final JsonNode field = root.get(fieldName);
+            if (field == null || field.asText().isBlank()) {
+                return Optional.empty();
+            }
+            return Optional.of(field.asText().trim());
         } catch (Exception exception) {
             return Optional.empty();
         }

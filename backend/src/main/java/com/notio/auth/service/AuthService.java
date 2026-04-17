@@ -12,6 +12,7 @@ import com.notio.auth.dto.RefreshResponse;
 import com.notio.auth.repository.AuthIdentityRepository;
 import com.notio.auth.repository.RefreshTokenRepository;
 import com.notio.auth.repository.UserRepository;
+import com.notio.auth.support.AuthMaskingUtils;
 import com.notio.auth.util.JwtTokenProvider;
 import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
@@ -60,7 +61,7 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(refreshToken);
 
-        log.info("User logged in successfully: userId={}, email={}", userId, user.getPrimaryEmail());
+        log.info("User logged in successfully: userId={}, email={}", userId, AuthMaskingUtils.maskEmail(user.getPrimaryEmail()));
 
         return LoginResponse.builder()
                 .userId(userId)
