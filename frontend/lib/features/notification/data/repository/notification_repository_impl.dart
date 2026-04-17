@@ -2,6 +2,7 @@ import 'package:notio_app/core/constants/notification_source.dart';
 import 'package:notio_app/features/notification/data/datasource/notification_local_datasource.dart';
 import 'package:notio_app/features/notification/data/datasource/notification_remote_datasource.dart';
 import 'package:notio_app/features/notification/data/model/notification_model.dart';
+import 'package:notio_app/features/notification/data/model/notification_summary_model.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_detail_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
@@ -24,27 +25,31 @@ class NotificationRepositoryImpl implements NotificationRepository {
     int page = 0,
     int size = 20,
   }) async {
+    late final List<NotificationSummaryModel> summaryModels;
+
     try {
-      // Try to fetch from remote
-      final summaryModels = await _remoteDataSource.fetchNotifications(
+      summaryModels = await _remoteDataSource.fetchNotifications(
         source: source?.apiValue,
         page: page,
         size: size,
       );
-
-      await _localDataSource.cacheNotificationSummaries(summaryModels);
-
-      // Convert to entities
-      return summaryModels.map((model) => model.toEntity()).toList();
     } catch (e) {
-      // If remote fails, fall back to cached data
       final cachedModels = await _localDataSource.getCachedNotifications(
         source: source?.apiValue,
       );
-
-      // Convert cached full models to summary entities
       return cachedModels.map((model) => model.toSummaryEntity()).toList();
     }
+
+    try {
+      await _localDataSource.cacheNotificationSummaries(
+        summaryModels,
+      );
+    } catch (_) {
+      // Cache persistence is best-effort. A local write failure should not hide
+      // a successful remote response from the notifications list.
+    }
+
+    return summaryModels.map((model) => model.toEntity()).toList();
   }
 
   @override
@@ -54,7 +59,12 @@ class NotificationRepositoryImpl implements NotificationRepository {
     // full detail payload locally.
     final detailModel = await _remoteDataSource.getNotificationDetail(id);
     if (detailModel.isRead) {
-      await _localDataSource.markAsRead(id);
+      try {
+        await _localDataSource.markAsRead(id);
+      } catch (_) {
+        // Local read-state synchronization is best-effort. The detail modal
+        // should still open when the server response is valid.
+      }
     }
     return detailModel.toEntity();
   }
