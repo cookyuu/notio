@@ -1,14 +1,14 @@
 package com.notio.notification.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.notio.notification.service.NotificationService;
 import com.notio.notification.domain.Notification;
+import com.notio.notification.service.NotificationService;
 import lombok.Builder;
 
 import java.util.Map;
 
 @Builder
-public record NotificationResponse(
+public record NotificationDetailResponse(
     Long id,
 
     @JsonProperty("connection_id")
@@ -36,10 +36,10 @@ public record NotificationResponse(
 
     Object metadata
 ) {
-    public static NotificationResponse from(Notification notification, NotificationService service) {
+    public static NotificationDetailResponse from(Notification notification, NotificationService service) {
         Map<String, Object> metadata = service.parseMetadataFromJson(notification.getMetadata());
 
-        return NotificationResponse.builder()
+        return NotificationDetailResponse.builder()
             .id(notification.getId())
             .connectionId(notification.getConnectionId())
             .source(notification.getSource().name())

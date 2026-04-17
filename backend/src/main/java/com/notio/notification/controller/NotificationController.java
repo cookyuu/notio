@@ -7,7 +7,8 @@ import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationSource;
 import com.notio.notification.dto.MarkAllReadResponse;
 import com.notio.notification.dto.MarkReadResponse;
-import com.notio.notification.dto.NotificationResponse;
+import com.notio.notification.dto.NotificationDetailResponse;
+import com.notio.notification.dto.NotificationSummaryResponse;
 import com.notio.notification.dto.UnreadCountResponse;
 import com.notio.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +32,7 @@ public class NotificationController {
 
     @Operation(summary = "알림 목록 조회", description = "알림 목록을 조회합니다. 필터링 및 페이지네이션을 지원합니다.")
     @GetMapping
-    public ApiResponse<Page<NotificationResponse>> getNotifications(
+    public ApiResponse<Page<NotificationSummaryResponse>> getNotifications(
         @Parameter(description = "알림 소스 필터")
         @RequestParam(name = "source", required = false) NotificationSource source,
 
@@ -49,23 +50,22 @@ public class NotificationController {
         Long userId = currentUserId(authentication);
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Notification> notifications = notificationService.findAll(userId, source, isRead, pageable);
-        Page<NotificationResponse> response = notifications.map(n ->
-            NotificationResponse.from(n, notificationService));
+        Page<NotificationSummaryResponse> response = notifications.map(NotificationSummaryResponse::from);
 
         return ApiResponse.success(response);
     }
 
-    @Operation(summary = "알림 상세 조회", description = "특정 알림의 상세 정보를 조회합니다. 조회 시 자동으로 읽음 처리됩니다.")
+    @Operation(summary = "알림 상세 조회", description = "특정 알림의 전체 본문과 부가 정보를 조회합니다. 조회 시 미읽음 알림은 자동으로 읽음 처리됩니다.")
     @GetMapping("/{id}")
-    public ApiResponse<NotificationResponse> getNotification(
+    public ApiResponse<NotificationDetailResponse> getNotification(
         @Parameter(description = "알림 ID", required = true)
         @PathVariable("id") Long id,
 
         Authentication authentication
     ) {
         Long userId = currentUserId(authentication);
-        Notification notification = notificationService.markRead(userId, id);  // 조회 시 자동 읽음 처리
-        NotificationResponse response = NotificationResponse.from(notification, notificationService);
+        Notification notification = notificationService.getDetail(userId, id);
+        NotificationDetailResponse response = NotificationDetailResponse.from(notification, notificationService);
 
         return ApiResponse.success(response);
     }

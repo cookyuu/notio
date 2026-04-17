@@ -16,6 +16,7 @@ import com.notio.notification.repository.NotificationRepository;
 import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -133,6 +134,46 @@ class NotificationServiceTest {
     }
 
     @Test
+    void getDetailMarksUnreadNotificationAsRead() {
+        final Notification notification = Notification.builder()
+                .id(99L)
+                .userId(10L)
+                .source(NotificationSource.GITHUB)
+                .title("PR opened")
+                .body("A new PR is ready")
+                .priority(NotificationPriority.HIGH)
+                .read(false)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+        when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 99L)).thenReturn(Optional.of(notification));
+
+        final Notification result = notificationService.getDetail(10L, 99L);
+
+        assertThat(result.isRead()).isTrue();
+    }
+
+    @Test
+    void getDetailKeepsReadNotificationRead() {
+        final Notification notification = Notification.builder()
+                .id(100L)
+                .userId(10L)
+                .source(NotificationSource.SLACK)
+                .title("Mention")
+                .body("Already read")
+                .priority(NotificationPriority.MEDIUM)
+                .read(true)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+        when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 100L)).thenReturn(Optional.of(notification));
+
+        final Notification result = notificationService.getDetail(10L, 100L);
+
+        assertThat(result.isRead()).isTrue();
+    }
+
+    @Test
     void markAllReadUsesRequestUserOnly() {
         when(notificationRepository.markAllAsRead(10L)).thenReturn(4);
 
@@ -193,6 +234,8 @@ class NotificationServiceTest {
         final CacheEvict saveFromEventEvict = saveFromEvent.getAnnotation(CacheEvict.class);
         final Method saveFromConnection = NotificationService.class.getMethod("saveFromConnection", NotificationEvent.class, Connection.class);
         final CacheEvict saveFromConnectionEvict = saveFromConnection.getAnnotation(CacheEvict.class);
+        final Method getDetail = NotificationService.class.getMethod("getDetail", Long.class, Long.class);
+        final CacheEvict getDetailEvict = getDetail.getAnnotation(CacheEvict.class);
         final Method markRead = NotificationService.class.getMethod("markRead", Long.class, Long.class);
         final CacheEvict markReadEvict = markRead.getAnnotation(CacheEvict.class);
         final Method markAllRead = NotificationService.class.getMethod("markAllRead", Long.class);
@@ -200,6 +243,7 @@ class NotificationServiceTest {
 
         assertThat(saveFromEventEvict.key()).isEqualTo("#event.userId()");
         assertThat(saveFromConnectionEvict.key()).isEqualTo("#connection.userId");
+        assertThat(getDetailEvict.key()).isEqualTo("#userId");
         assertThat(markReadEvict.key()).isEqualTo("#userId");
         assertThat(markAllReadEvict.key()).isEqualTo("#userId");
     }

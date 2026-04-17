@@ -129,13 +129,28 @@ public class NotificationService {
     }
 
     /**
+     * 알림 상세 조회. 미읽음 상태면 읽음 처리 후 반환한다.
+     */
+    @Transactional
+    @CacheEvict(value = "unreadCount", key = "#userId")
+    public Notification getDetail(Long userId, Long id) {
+        Notification notification = findById(userId, id);
+        if (!notification.isRead()) {
+            notification.markAsRead();
+        }
+        return notification;
+    }
+
+    /**
      * 알림을 읽음 상태로 변경
      */
     @Transactional
     @CacheEvict(value = "unreadCount", key = "#userId")
     public Notification markRead(Long userId, Long id) {
         Notification notification = findById(userId, id);
-        notification.markAsRead();
+        if (!notification.isRead()) {
+            notification.markAsRead();
+        }
         return notification;
     }
 
