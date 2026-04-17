@@ -1,4 +1,5 @@
 import 'package:notio_app/features/auth/data/models/find_id_request.dart';
+import 'package:notio_app/features/auth/domain/auth_input_policy.dart';
 import 'package:notio_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:notio_app/features/auth/presentation/providers/auth_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -47,16 +48,25 @@ class FindIdActionNotifier extends _$FindIdActionNotifier {
 
   /// Find ID by email
   Future<void> findId(String email) async {
-    state = state.copyWith(isLoading: true, error: null, isSuccess: false, message: null);
+    if (state.isLoading) {
+      return;
+    }
+
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      isSuccess: false,
+      message: null,
+    );
 
     try {
       final request = FindIdRequest(email: email);
-      final response = await _repository.findId(request);
+      await _repository.findId(request);
 
       state = state.copyWith(
         isLoading: false,
         isSuccess: true,
-        message: response.message,
+        message: AuthInputPolicy.genericFindIdSuccessMessage,
       );
     } catch (e) {
       state = state.copyWith(

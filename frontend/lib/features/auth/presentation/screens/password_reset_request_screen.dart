@@ -6,6 +6,7 @@ import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/router/routes.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
+import 'package:notio_app/features/auth/domain/auth_input_policy.dart';
 import 'package:notio_app/features/auth/presentation/providers/password_reset_request_provider.dart';
 import 'package:notio_app/features/auth/presentation/widgets/auth_screen_shell.dart';
 
@@ -70,10 +71,11 @@ class PasswordResetRequestScreen extends HookConsumerWidget {
                   ? null
                   : () {
                       final email = emailController.text.trim();
-                      if (email.isEmpty) {
+                      final emailError = AuthInputPolicy.validateEmail(email);
+                      if (emailError != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('이메일을 입력해주세요.'),
+                          SnackBar(
+                            content: Text(emailError),
                             backgroundColor: AppColors.warning,
                           ),
                         );

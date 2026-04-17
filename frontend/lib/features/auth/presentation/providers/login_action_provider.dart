@@ -44,6 +44,10 @@ class LoginActionNotifier extends _$LoginActionNotifier {
 
   /// Login with email and password
   Future<void> login(String email, String password) async {
+    if (state.isLoading) {
+      return;
+    }
+
     state = state.copyWith(isLoading: true, error: null, isSuccess: false);
 
     try {
@@ -51,7 +55,9 @@ class LoginActionNotifier extends _$LoginActionNotifier {
       final response = await _repository.login(request);
 
       // Update session state
-      ref.read(authSessionNotifierProvider.notifier).setAuthenticated(response.email);
+      ref
+          .read(authSessionNotifierProvider.notifier)
+          .setAuthenticated(response.email);
 
       state = state.copyWith(isLoading: false, isSuccess: true);
     } catch (e) {

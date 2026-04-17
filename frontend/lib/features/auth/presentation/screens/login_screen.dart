@@ -7,6 +7,7 @@ import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/router/routes.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
+import 'package:notio_app/features/auth/domain/auth_input_policy.dart';
 import 'package:notio_app/features/auth/domain/entities/auth_platform.dart';
 import 'package:notio_app/features/auth/presentation/providers/login_action_provider.dart';
 import 'package:notio_app/features/auth/presentation/providers/social_login_action_provider.dart';
@@ -141,11 +142,22 @@ class LoginScreen extends HookConsumerWidget {
                   : () {
                       final email = emailController.text.trim();
                       final password = passwordController.text.trim();
+                      final emailError = AuthInputPolicy.validateEmail(email);
 
-                      if (email.isEmpty || password.isEmpty) {
+                      if (emailError != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(emailError),
+                            backgroundColor: AppColors.warning,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (password.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('이메일과 비밀번호를 모두 입력해주세요.'),
+                            content: Text('비밀번호를 입력해주세요.'),
                             backgroundColor: AppColors.warning,
                           ),
                         );

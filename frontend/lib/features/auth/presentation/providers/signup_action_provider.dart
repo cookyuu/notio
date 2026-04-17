@@ -43,6 +43,10 @@ class SignupActionNotifier extends _$SignupActionNotifier {
 
   /// Signup with email, password, and display name
   Future<void> signup(String email, String password, String displayName) async {
+    if (state.isLoading) {
+      return;
+    }
+
     state = state.copyWith(isLoading: true, error: null, isSuccess: false);
 
     try {

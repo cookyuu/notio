@@ -6,6 +6,7 @@ import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/router/routes.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
+import 'package:notio_app/features/auth/domain/auth_input_policy.dart';
 import 'package:notio_app/features/auth/domain/auth_password_policy.dart';
 import 'package:notio_app/features/auth/presentation/providers/signup_action_provider.dart';
 import 'package:notio_app/features/auth/presentation/widgets/auth_screen_shell.dart';
@@ -18,13 +19,21 @@ class SignupScreen extends HookConsumerWidget {
     final nameController = useTextEditingController();
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
+    final confirmPasswordController = useTextEditingController();
     final isPasswordVisible = useState(false);
+    final isConfirmPasswordVisible = useState(false);
     useListenable(passwordController);
+    useListenable(confirmPasswordController);
 
     final signupState = ref.watch(signupActionNotifierProvider);
     final passwordValidation =
         AuthPasswordPolicy.validate(passwordController.text);
     final hasPasswordInput = passwordController.text.isNotEmpty;
+    final confirmPasswordError = AuthInputPolicy.validatePasswordConfirmation(
+      password: passwordController.text,
+      confirmation: confirmPasswordController.text,
+    );
+    final showConfirmPasswordError = confirmPasswordController.text.isNotEmpty;
 
     ref.listen<SignupActionState>(signupActionNotifierProvider,
         (previous, next) {
@@ -120,6 +129,30 @@ class SignupScreen extends HookConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(height: AppSpacing.s16),
+          TextField(
+            controller: confirmPasswordController,
+            obscureText: !isConfirmPasswordVisible.value,
+            style: AppTextStyles.bodyMedium,
+            decoration: _decoration(
+              '비밀번호 확인',
+              '비밀번호를 다시 입력하세요',
+              Icons.verified_user_outlined,
+            ).copyWith(
+              suffixIcon: IconButton(
+                onPressed: () {
+                  isConfirmPasswordVisible.value =
+                      !isConfirmPasswordVisible.value;
+                },
+                icon: Icon(
+                  isConfirmPasswordVisible.value
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
+                ),
+              ),
+              errorText: showConfirmPasswordError ? confirmPasswordError : null,
+            ),
+          ),
           const SizedBox(height: AppSpacing.s12),
           _PasswordRequirementCard(
             validation: passwordValidation,
@@ -135,10 +168,14 @@ class SignupScreen extends HookConsumerWidget {
                       final displayName = nameController.text.trim();
                       final email = emailController.text.trim();
                       final password = passwordController.text.trim();
+                      final confirmPassword =
+                          confirmPasswordController.text.trim();
+                      final emailError = AuthInputPolicy.validateEmail(email);
 
                       if (displayName.isEmpty ||
                           email.isEmpty ||
-                          password.isEmpty) {
+                          password.isEmpty ||
+                          confirmPassword.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('이름, 이메일, 비밀번호를 모두 입력해주세요.'),
@@ -148,10 +185,37 @@ class SignupScreen extends HookConsumerWidget {
                         return;
                       }
 
-                      if (!passwordValidation.isValid) {
+                      if (emailError != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(passwordValidation.message),
+                            content: Text(emailError),
+                            backgroundColor: AppColors.warning,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final passwordError =
+                          AuthInputPolicy.validatePassword(password);
+                      if (passwordError != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(passwordError),
+                            backgroundColor: AppColors.warning,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final confirmationError =
+                          AuthInputPolicy.validatePasswordConfirmation(
+                        password: password,
+                        confirmation: confirmPassword,
+                      );
+                      if (confirmationError != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(confirmationError),
                             backgroundColor: AppColors.warning,
                           ),
                         );

@@ -47,7 +47,16 @@ class PasswordResetConfirmNotifier extends _$PasswordResetConfirmNotifier {
 
   /// Confirm password reset
   Future<void> confirmPasswordReset(String token, String newPassword) async {
-    state = state.copyWith(isLoading: true, error: null, isSuccess: false, message: null);
+    if (state.isLoading) {
+      return;
+    }
+
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      isSuccess: false,
+      message: null,
+    );
 
     try {
       final request = PasswordResetConfirmRequest(

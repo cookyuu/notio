@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:notio_app/core/router/routes.dart';
+import 'package:notio_app/features/auth/domain/auth_route_policy.dart';
 import 'package:notio_app/features/auth/presentation/providers/auth_session_notifier.dart';
 import 'package:notio_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:notio_app/features/auth/presentation/screens/signup_screen.dart';
@@ -38,26 +39,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authSessionNotifierProvider);
       final isAuthenticated = authState.value?.isAuthenticated ?? false;
       final currentPath = state.matchedLocation;
-
-      // Define public routes that don't require authentication
-      final publicRoutes = [
-        Routes.login,
-        Routes.signup,
-        Routes.findId,
-        Routes.resetPasswordRequest,
-        Routes.resetPasswordConfirm,
-        Routes.authOAuthCallback,
-      ];
-
-      final isPublicRoute = publicRoutes.contains(currentPath);
+      final isPublicRoute = AuthRoutePolicy.isPublicRoute(currentPath);
 
       // If not authenticated and not on public route, redirect to login
       if (!isAuthenticated && !isPublicRoute) {
         return Routes.login;
       }
 
-      // If authenticated and on public route, redirect to notifications
-      if (isAuthenticated && isPublicRoute) {
+      if (isAuthenticated &&
+          isPublicRoute &&
+          !AuthRoutePolicy.canAuthenticatedUserAccessAuthRoute(
+            path: currentPath,
+            uri: state.uri,
+          )) {
         return Routes.notifications;
       }
 
@@ -91,6 +85,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.resetPasswordConfirm,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: PasswordResetConfirmScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '${Routes.resetPasswordConfirm}/:token',
         pageBuilder: (context, state) => const NoTransitionPage(
           child: PasswordResetConfirmScreen(),
         ),

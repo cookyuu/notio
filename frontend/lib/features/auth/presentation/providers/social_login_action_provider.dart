@@ -55,6 +55,10 @@ class SocialLoginActionNotifier extends _$SocialLoginActionNotifier {
     AuthPlatform platform,
     String redirectUri,
   ) async {
+    if (state.isLoading) {
+      return;
+    }
+
     state = state.copyWith(
       isLoading: true,
       error: null,
@@ -90,7 +94,12 @@ class SocialLoginActionNotifier extends _$SocialLoginActionNotifier {
     String code,
     String state,
   ) async {
-    this.state = this.state.copyWith(isLoading: true, error: null, isSuccess: false);
+    if (this.state.isLoading) {
+      return;
+    }
+
+    this.state =
+        this.state.copyWith(isLoading: true, error: null, isSuccess: false);
 
     try {
       final request = OAuthExchangeRequest(
@@ -110,10 +119,10 @@ class SocialLoginActionNotifier extends _$SocialLoginActionNotifier {
       this.state = this.state.copyWith(isLoading: false, isSuccess: true);
     } catch (e) {
       this.state = this.state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-        isSuccess: false,
-      );
+            isLoading: false,
+            error: e.toString(),
+            isSuccess: false,
+          );
     }
   }
 
