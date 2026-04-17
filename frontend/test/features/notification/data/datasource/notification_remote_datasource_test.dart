@@ -4,6 +4,37 @@ import 'package:notio_app/features/notification/data/datasource/notification_rem
 
 void main() {
   group('NotificationRemoteDataSource', () {
+    test('fetchNotifications parses summary DTO response', () async {
+      final dataSource = NotificationRemoteDataSource(
+        _createDioWithResponse({
+          'success': true,
+          'data': {
+            'content': [
+              {
+                'id': 1,
+                'source': 'GITHUB',
+                'title': 'Build failed',
+                'body_preview': 'CI failed on main branch',
+                'priority': 'HIGH',
+                'is_read': false,
+                'created_at': '2026-04-17T10:00:00Z',
+              },
+            ],
+          },
+          'error': null,
+        }),
+      );
+
+      final notifications = await dataSource.fetchNotifications();
+
+      expect(notifications, hasLength(1));
+      expect(notifications.single.id, 1);
+      expect(notifications.single.title, 'Build failed');
+      expect(notifications.single.bodyPreview, 'CI failed on main branch');
+      expect(notifications.single.priority, 'HIGH');
+      expect(notifications.single.isRead, isFalse);
+    });
+
     test('fetchNotifications returns empty list when data is null', () async {
       final dataSource = NotificationRemoteDataSource(
         _createDioWithResponse({

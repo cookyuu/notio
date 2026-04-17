@@ -55,11 +55,11 @@
 
 ## Phase 6. 테스트 및 검증
 
-- [ ] 목록 API 파싱 테스트를 목록 DTO 기준으로 수정한다.
-- [ ] 상세 API 파싱 테스트를 추가한다.
-- [ ] 알림 탭 시 상세 API가 1회 호출되는 notifier/provider 테스트를 추가한다.
-- [ ] 상세 조회 성공 후 목록 항목 `isRead` 갱신과 unread badge refresh를 검증하는 테스트를 추가한다.
-- [ ] 상세 조회 실패 시 모달이 열리지 않고 에러 처리되는 테스트를 추가한다.
-- [ ] 상세 모달이 상세 응답 데이터를 렌더링하는 widget test를 추가한다.
-- [ ] `flutter analyze`를 실행한다.
-- [ ] `flutter test`를 실행한다.
+- [x] 목록 API 파싱 테스트를 목록 DTO 기준으로 수정한다.
+- [x] 상세 API 파싱 테스트를 추가한다.
+- [x] 알림 탭 시 상세 API가 1회 호출되는 notifier/provider 테스트를 추가한다.
+- [x] 상세 조회 성공 후 목록 항목 `isRead` 갱신과 unread badge refresh를 검증하는 테스트를 추가한다.
+- [x] 상세 조회 실패 시 모달이 열리지 않고 에러 처리되는 테스트를 추가한다.
+- [x] 상세 모달이 상세 응답 데이터를 렌더링하는 widget test를 추가한다.
+- [x] `flutter analyze`를 실행한다.
+- [x] `flutter test`를 실행한다.
