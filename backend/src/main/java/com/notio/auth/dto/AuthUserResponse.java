@@ -1,5 +1,6 @@
 package com.notio.auth.dto;
 
+import com.notio.auth.domain.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,8 +10,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OAuthStartResponse {
+public class AuthUserResponse {
 
-    private String authorizationUrl;
-    private String state;
+    private Long id;
+    private String primaryEmail;
+    private String displayName;
+    private UserStatus status;
 }

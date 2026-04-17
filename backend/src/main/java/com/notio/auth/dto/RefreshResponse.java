@@ -13,5 +13,7 @@ public class RefreshResponse {
 
     private String accessToken;
     private String refreshToken;
+    private String tokenType;
     private Integer expiresIn; // seconds
+    private AuthUserResponse user;
 }

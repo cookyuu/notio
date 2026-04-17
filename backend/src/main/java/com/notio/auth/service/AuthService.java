@@ -5,6 +5,7 @@ import com.notio.auth.domain.AuthIdentity;
 import com.notio.auth.domain.AuthProvider;
 import com.notio.auth.domain.RefreshToken;
 import com.notio.auth.domain.User;
+import com.notio.auth.dto.AuthUserResponse;
 import com.notio.auth.dto.LoginRequest;
 import com.notio.auth.dto.LoginResponse;
 import com.notio.auth.dto.RefreshRequest;
@@ -64,11 +65,11 @@ public class AuthService {
         log.info("User logged in successfully: userId={}, email={}", userId, AuthMaskingUtils.maskEmail(user.getPrimaryEmail()));
 
         return LoginResponse.builder()
-                .userId(userId)
-                .email(user.getPrimaryEmail())
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
+                .tokenType("Bearer")
                 .expiresIn((int) (jwtProperties.getExpiration() / 1000))
+                .user(buildUserResponse(user))
                 .build();
     }
 
@@ -109,7 +110,9 @@ public class AuthService {
         return RefreshResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshTokenValue)
+                .tokenType("Bearer")
                 .expiresIn((int) (jwtProperties.getExpiration() / 1000))
+                .user(buildUserResponse(user))
                 .build();
     }
 
@@ -124,5 +127,14 @@ public class AuthService {
         refreshTokenRepository.revokeAllByUser(user);
 
         log.info("User logged out successfully: userId={}", userId);
+    }
+
+    private AuthUserResponse buildUserResponse(final User user) {
+        return AuthUserResponse.builder()
+                .id(user.getId())
+                .primaryEmail(user.getPrimaryEmail())
+                .displayName(user.getDisplayName())
+                .status(user.getStatus())
+                .build();
     }
 }

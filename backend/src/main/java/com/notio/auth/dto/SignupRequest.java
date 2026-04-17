@@ -22,8 +22,4 @@ public class SignupRequest {
     @NotBlank(message = "비밀번호는 필수입니다.")
     @Size(min = 8, max = 100, message = "비밀번호는 8자 이상 100자 이하여야 합니다.")
     private String password;
-
-    @NotBlank(message = "표시 이름은 필수입니다.")
-    @Size(max = 100, message = "표시 이름은 최대 100자까지 가능합니다.")
-    private String displayName;
 }

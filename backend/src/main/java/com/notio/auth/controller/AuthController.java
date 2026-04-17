@@ -5,7 +5,6 @@ import com.notio.auth.dto.FindIdResponse;
 import com.notio.auth.dto.LoginRequest;
 import com.notio.auth.dto.LoginResponse;
 import com.notio.auth.dto.LogoutResponse;
-import com.notio.auth.dto.OAuthCallbackResponse;
 import com.notio.auth.dto.OAuthExchangeRequest;
 import com.notio.auth.dto.OAuthExchangeResponse;
 import com.notio.auth.dto.OAuthStartRequest;
@@ -30,6 +29,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,7 +57,7 @@ public class AuthController {
     @Operation(summary = "회원가입", description = "로컬 이메일 계정을 생성합니다.")
     public ResponseEntity<ApiResponse<SignupResponse>> signup(@Valid @RequestBody final SignupRequest request) {
         final SignupResponse response = localAuthService.signup(request);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     @PostMapping("/find-id")
@@ -91,13 +92,15 @@ public class AuthController {
 
     @GetMapping("/oauth/callback/{provider}")
     @Operation(summary = "OAuth 콜백", description = "OAuth 콜백 요청의 provider/state를 검증하고 후속 교환 흐름으로 전달합니다.")
-    public ResponseEntity<ApiResponse<OAuthCallbackResponse>> oauthCallback(
+    public ResponseEntity<Void> oauthCallback(
             @PathVariable final String provider,
-            @RequestParam("state") final String state,
+            @RequestParam(value = "state", required = false) final String state,
             @RequestParam(value = "code", required = false) final String code,
             @RequestParam(value = "error", required = false) final String error) {
-        final OAuthCallbackResponse response = oAuthAuthService.callback(provider, state, code, error);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        final String redirectUri = oAuthAuthService.callback(provider, state, code, error);
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header(HttpHeaders.LOCATION, redirectUri)
+                .build();
     }
 
     @PostMapping("/oauth/exchange")

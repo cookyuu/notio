@@ -87,8 +87,10 @@ class OAuthAuthServiceTest {
 
         assertThatThrownBy(() -> oAuthAuthService.exchange(OAuthExchangeRequest.builder()
                 .provider(AuthProvider.GOOGLE)
+                .platform(AuthPlatform.WEB)
                 .state("expired-state")
                 .code("code")
+                .redirectUri("https://app.notio.dev/callback")
                 .build())).isInstanceOf(NotioException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.OAUTH_STATE_INVALID);

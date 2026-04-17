@@ -10,12 +10,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.notio.auth.controller.AuthController;
-import com.notio.auth.domain.AuthPlatform;
-import com.notio.auth.domain.AuthProvider;
+import com.notio.auth.dto.AuthUserResponse;
 import com.notio.auth.dto.FindIdResponse;
-import com.notio.auth.dto.OAuthCallbackResponse;
 import com.notio.auth.dto.OAuthExchangeResponse;
 import com.notio.auth.dto.OAuthStartResponse;
 import com.notio.auth.dto.PasswordResetConfirmResponse;
@@ -31,7 +33,6 @@ import com.notio.common.ratelimit.RateLimitEvaluation;
 import com.notio.common.ratelimit.RateLimitFilter;
 import com.notio.common.ratelimit.RateLimitProperties;
 import com.notio.common.ratelimit.RateLimitService;
-import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,9 +81,7 @@ class AuthPublicEndpointSecurityTest {
     void publicAuthEndpointsAreAccessibleWithoutAuthentication() throws Exception {
         when(localAuthService.signup(any()))
                 .thenReturn(SignupResponse.builder()
-                        .userId("1")
-                        .email("user@example.com")
-                        .displayName("Notio")
+                        .message("회원가입이 완료되었습니다.")
                         .build());
         when(localAuthService.findId(any()))
                 .thenReturn(FindIdResponse.builder()
@@ -98,37 +97,33 @@ class AuthPublicEndpointSecurityTest {
                         .build());
         when(oAuthAuthService.start(any()))
                 .thenReturn(OAuthStartResponse.builder()
-                        .provider(AuthProvider.GOOGLE)
-                        .platform(AuthPlatform.WEB)
-                        .state("state-1")
                         .authorizationUrl("https://example.com/oauth")
-                        .expiresAt(OffsetDateTime.now().plusMinutes(5))
+                        .state("state-1")
                         .build());
         when(oAuthAuthService.exchange(any()))
                 .thenReturn(OAuthExchangeResponse.builder()
-                        .provider(AuthProvider.GOOGLE)
-                        .state("state-1")
-                        .message("exchange completed")
+                        .accessToken("access-token")
+                        .refreshToken("refresh-token")
+                        .tokenType("Bearer")
+                        .expiresIn(3600)
+                        .user(AuthUserResponse.builder()
+                                .id(1L)
+                                .primaryEmail("user@example.com")
+                                .displayName("Notio User")
+                                .build())
                         .build());
         when(oAuthAuthService.callback("google", "state-1", "code-1", null))
-                .thenReturn(OAuthCallbackResponse.builder()
-                        .provider(AuthProvider.GOOGLE)
-                        .platform(AuthPlatform.WEB)
-                        .state("state-1")
-                        .redirectUri("https://app.notio.dev/callback")
-                        .message("callback accepted")
-                        .build());
+                .thenReturn("https://app.notio.dev/callback?provider=GOOGLE&code=code-1&state=state-1");
 
         mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {
                                   "email": "user@example.com",
-                                  "password": "password123",
-                                  "displayName": "Notio"
+                                  "password": "password123"
                                 }
                                 """))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
 
         mockMvc.perform(post("/api/v1/auth/find-id")
@@ -180,7 +175,9 @@ class AuthPublicEndpointSecurityTest {
                                 {
                                   "provider": "GOOGLE",
                                   "state": "state-1",
-                                  "code": "code-1"
+                                  "platform": "WEB",
+                                  "code": "code-1",
+                                  "redirectUri": "https://app.notio.dev/callback"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -189,8 +186,7 @@ class AuthPublicEndpointSecurityTest {
         mockMvc.perform(get("/api/v1/auth/oauth/callback/google")
                         .param("state", "state-1")
                         .param("code", "code-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(status().isFound());
     }
 
     @Configuration
@@ -241,7 +237,11 @@ class AuthPublicEndpointSecurityTest {
 
         @Bean
         ObjectMapper objectMapper() {
-            return new ObjectMapper();
+            return new ObjectMapper()
+                    .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+                    .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                    .registerModule(new JavaTimeModule())
+                    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         }
 
         @Bean

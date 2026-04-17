@@ -33,7 +33,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(
             final MethodArgumentNotValidException exception
     ) {
-        ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         log.error("Exception[{}]: ", errorCode, exception);
         final Map<String, Object> details = new LinkedHashMap<>();
         for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
             IllegalArgumentException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleBadRequest(final Exception exception) {
-        ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         log.error("Exception[{}]: ", errorCode, exception);
         return buildErrorResponse(errorCode, Map.of("reason", exception.getMessage()));
     }

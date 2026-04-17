@@ -81,10 +81,11 @@ class AuthServiceTest {
 
         final LoginResponse response = authService.login(request);
 
-        assertThat(response.getUserId()).isEqualTo("1");
-        assertThat(response.getEmail()).isEqualTo("user@example.com");
         assertThat(response.getAccessToken()).isEqualTo("access-token");
         assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
+        assertThat(response.getTokenType()).isEqualTo("Bearer");
+        assertThat(response.getUser().getId()).isEqualTo(1L);
+        assertThat(response.getUser().getPrimaryEmail()).isEqualTo("user@example.com");
 
         final ArgumentCaptor<com.notio.auth.domain.RefreshToken> refreshTokenCaptor =
                 ArgumentCaptor.forClass(com.notio.auth.domain.RefreshToken.class);

@@ -92,7 +92,6 @@ class LocalAuthServiceTest {
         final SignupRequest request = SignupRequest.builder()
                 .email("USER@example.com")
                 .password("password123")
-                .displayName(" Notio ")
                 .build();
         when(authIdentityRepository.existsActiveLocalByEmail("user@example.com")).thenReturn(false);
         when(passwordEncoder.encode("password123")).thenReturn("encoded-password");
@@ -108,9 +107,7 @@ class LocalAuthServiceTest {
 
         final var response = localAuthService.signup(request);
 
-        assertThat(response.getUserId()).isEqualTo("1");
-        assertThat(response.getEmail()).isEqualTo("user@example.com");
-        assertThat(response.getDisplayName()).isEqualTo("Notio");
+        assertThat(response.getMessage()).isEqualTo("회원가입이 완료되었습니다.");
 
         final ArgumentCaptor<AuthIdentity> authIdentityCaptor = ArgumentCaptor.forClass(AuthIdentity.class);
         verify(authIdentityRepository).save(authIdentityCaptor.capture());
@@ -127,7 +124,6 @@ class LocalAuthServiceTest {
         assertThatThrownBy(() -> localAuthService.signup(SignupRequest.builder()
                 .email("user@example.com")
                 .password("password123")
-                .displayName("Notio")
                 .build())).isInstanceOf(NotioException.class);
 
         verify(userRepository, never()).save(any(User.class));

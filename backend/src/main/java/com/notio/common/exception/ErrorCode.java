@@ -5,15 +5,17 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     // 400 Bad Request
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "잘못된 요청입니다."),
+    INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "INVALID_INPUT_VALUE", "요청 값 형식이 잘못되었습니다."),
     UNSUPPORTED_SOURCE(HttpStatus.BAD_REQUEST, "UNSUPPORTED_SOURCE", "지원하지 않는 알림 소스입니다."),
     CONNECTION_PROVIDER_UNSUPPORTED(HttpStatus.BAD_REQUEST, "CONNECTION_PROVIDER_UNSUPPORTED", "지원하지 않는 연결 제공자입니다."),
     CONNECTION_AUTH_TYPE_UNSUPPORTED(HttpStatus.BAD_REQUEST, "CONNECTION_AUTH_TYPE_UNSUPPORTED", "지원하지 않는 연결 인증 방식입니다."),
     AUTH_PROVIDER_UNSUPPORTED(HttpStatus.BAD_REQUEST, "AUTH_PROVIDER_UNSUPPORTED", "지원하지 않는 인증 제공자입니다."),
-    EMAIL_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "EMAIL_ALREADY_EXISTS", "이미 사용 중인 이메일입니다."),
+    EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "이미 사용 중인 이메일입니다."),
     PASSWORD_RESET_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "PASSWORD_RESET_TOKEN_INVALID", "유효하지 않은 비밀번호 재설정 토큰입니다."),
     PASSWORD_RESET_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "PASSWORD_RESET_TOKEN_EXPIRED", "만료된 비밀번호 재설정 토큰입니다."),
     OAUTH_STATE_INVALID(HttpStatus.BAD_REQUEST, "OAUTH_STATE_INVALID", "유효하지 않은 OAuth state입니다."),
     OAUTH_CALLBACK_FAILED(HttpStatus.BAD_REQUEST, "OAUTH_CALLBACK_FAILED", "OAuth 콜백 처리에 실패했습니다."),
+    AUTH_PROVIDER_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "AUTH_PROVIDER_EMAIL_REQUIRED", "인증 제공자 계정 이메일이 필요합니다."),
 
     // 413 Payload Too Large
     PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "PAYLOAD_TOO_LARGE", "요청 본문 크기가 제한을 초과했습니다."),

@@ -38,8 +38,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class LocalAuthService {
 
-    private static final String FIND_ID_MESSAGE = "입력한 이메일로 계정 안내를 전송할 예정입니다.";
-    private static final String PASSWORD_RESET_REQUEST_MESSAGE = "비밀번호 재설정 안내를 전송할 예정입니다.";
+    private static final String SIGNUP_MESSAGE = "회원가입이 완료되었습니다.";
+    private static final String FIND_ID_MESSAGE = "입력한 이메일로 가입 정보 안내를 전송했습니다.";
+    private static final String PASSWORD_RESET_REQUEST_MESSAGE = "비밀번호 재설정 안내를 전송했습니다.";
     private static final String PASSWORD_RESET_CONFIRM_MESSAGE = "비밀번호가 재설정되었습니다.";
 
     private final UserRepository userRepository;
@@ -61,7 +62,7 @@ public class LocalAuthService {
 
         final User user = userRepository.save(User.builder()
                 .primaryEmail(normalizedEmail)
-                .displayName(request.getDisplayName().trim())
+                .displayName(null)
                 .status(UserStatus.ACTIVE)
                 .build());
 
@@ -77,9 +78,7 @@ public class LocalAuthService {
         log.info("Local signup completed: userId={}, email={}", user.getId(), AuthMaskingUtils.maskEmail(normalizedEmail));
 
         return SignupResponse.builder()
-                .userId(String.valueOf(user.getId()))
-                .email(user.getPrimaryEmail())
-                .displayName(user.getDisplayName())
+                .message(SIGNUP_MESSAGE)
                 .build();
     }
 
