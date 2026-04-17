@@ -23,15 +23,6 @@ class NotificationDetailModal extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Auto-mark as read when modal opens
-    if (!notification.isRead) {
-      Future.microtask(() {
-        ref
-            .read(notificationsProvider.notifier)
-            .markAsRead(notification.id);
-      });
-    }
-
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,

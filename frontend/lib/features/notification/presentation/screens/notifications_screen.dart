@@ -209,16 +209,26 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                 final notification = state.notifications[index];
                                 return NotificationCard(
                                   notification: notification,
-                                  onTap: () {
+                                  onTap: () async {
+                                    // Mark as read before opening detail modal (only for unread notifications)
+                                    if (!notification.isRead) {
+                                      await ref
+                                          .read(notificationsProvider.notifier)
+                                          .markAsRead(notification.id);
+                                      ref.invalidate(unreadCountProvider);
+                                    }
+
                                     // Show detail modal
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => NotificationDetailModal(
-                                        notification: notification,
-                                      ),
-                                    );
+                                    if (context.mounted) {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) => NotificationDetailModal(
+                                          notification: notification,
+                                        ),
+                                      );
+                                    }
                                   },
                                   onMarkAsRead: () {
                                     ref
