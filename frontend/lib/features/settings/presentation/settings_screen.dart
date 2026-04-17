@@ -5,7 +5,7 @@ import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/constants/notification_source.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
-import 'package:notio_app/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:notio_app/features/auth/presentation/providers/auth_session_notifier.dart';
 import 'package:notio_app/features/settings/presentation/providers/settings_providers.dart';
 
 /// Settings screen (Phase 3)
@@ -327,7 +327,7 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await ref.read(authNotifierProvider.notifier).logout();
+              await ref.read(authSessionNotifierProvider.notifier).clearSession();
             },
             child: const Text(
               '로그아웃',

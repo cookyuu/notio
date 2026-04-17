@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:notio_app/core/router/routes.dart';
-import 'package:notio_app/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:notio_app/features/auth/presentation/providers/auth_session_notifier.dart';
 import 'package:notio_app/features/auth/presentation/screens/login_screen.dart';
+import 'package:notio_app/features/auth/presentation/screens/signup_screen.dart';
+import 'package:notio_app/features/auth/presentation/screens/find_id_screen.dart';
+import 'package:notio_app/features/auth/presentation/screens/password_reset_request_screen.dart';
+import 'package:notio_app/features/auth/presentation/screens/password_reset_confirm_screen.dart';
+import 'package:notio_app/features/auth/presentation/screens/auth_oauth_callback_screen.dart';
 import 'package:notio_app/features/notification/presentation/screens/notifications_screen.dart';
 import 'package:notio_app/features/chat/presentation/screens/chat_screen.dart';
 import 'package:notio_app/features/analytics/presentation/analytics_screen.dart';
@@ -22,7 +27,7 @@ class RouterRefreshNotifier extends ChangeNotifier {
 final goRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = RouterRefreshNotifier();
   ref.onDispose(refreshNotifier.dispose);
-  ref.listen(authNotifierProvider, (_, __) {
+  ref.listen(authSessionNotifierProvider, (_, __) {
     refreshNotifier.refresh();
   });
 
@@ -30,27 +35,70 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: Routes.login,
     refreshListenable: refreshNotifier,
     redirect: (context, state) {
-      final authState = ref.read(authNotifierProvider);
+      final authState = ref.read(authSessionNotifierProvider);
       final isAuthenticated = authState.value?.isAuthenticated ?? false;
-      final isLoggingIn = state.matchedLocation == Routes.login;
+      final currentPath = state.matchedLocation;
 
-      // If not authenticated and not on login page, redirect to login
-      if (!isAuthenticated && !isLoggingIn) {
+      // Define public routes that don't require authentication
+      final publicRoutes = [
+        Routes.login,
+        Routes.signup,
+        Routes.findId,
+        Routes.resetPasswordRequest,
+        Routes.resetPasswordConfirm,
+        Routes.authOAuthCallback,
+      ];
+
+      final isPublicRoute = publicRoutes.contains(currentPath);
+
+      // If not authenticated and not on public route, redirect to login
+      if (!isAuthenticated && !isPublicRoute) {
         return Routes.login;
       }
 
-      // If authenticated and on login page, redirect to notifications
-      if (isAuthenticated && isLoggingIn) {
+      // If authenticated and on public route, redirect to notifications
+      if (isAuthenticated && isPublicRoute) {
         return Routes.notifications;
       }
 
       return null;
     },
     routes: [
+      // Auth routes
       GoRoute(
         path: Routes.login,
         pageBuilder: (context, state) => const NoTransitionPage(
           child: LoginScreen(),
+        ),
+      ),
+      GoRoute(
+        path: Routes.signup,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: SignupScreen(),
+        ),
+      ),
+      GoRoute(
+        path: Routes.findId,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: FindIdScreen(),
+        ),
+      ),
+      GoRoute(
+        path: Routes.resetPasswordRequest,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: PasswordResetRequestScreen(),
+        ),
+      ),
+      GoRoute(
+        path: Routes.resetPasswordConfirm,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: PasswordResetConfirmScreen(),
+        ),
+      ),
+      GoRoute(
+        path: Routes.authOAuthCallback,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: AuthOAuthCallbackScreen(),
         ),
       ),
       GoRoute(

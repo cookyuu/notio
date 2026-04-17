@@ -24,16 +24,16 @@
 
 ## Phase 2. 라우팅 및 상태 관리 재구성
 
-- [ ] 라우트에 `/signup`, `/find-id`, `/reset-password/request`, `/reset-password/confirm`, `/auth/oauth/callback`을 추가한다.
-- [ ] auth guard 또는 `GoRouter` redirect 로직에 신규 비인증 허용 경로를 반영한다.
-- [ ] 기존 `AuthNotifier`에서 세션 상태와 액션 책임을 분리한다.
-- [ ] `AuthSessionNotifier` 또는 동등한 세션 전용 상태 관리 구조를 정리한다.
-- [ ] `loginActionProvider`를 분리 또는 정리한다.
-- [ ] `signupActionProvider`를 추가한다.
-- [ ] `findIdActionProvider`를 추가한다.
-- [ ] `passwordResetRequestProvider`를 추가한다.
-- [ ] `passwordResetConfirmProvider`를 추가한다.
-- [ ] `socialLoginActionProvider`를 추가한다.
+- [x] 라우트에 `/signup`, `/find-id`, `/reset-password/request`, `/reset-password/confirm`, `/auth/oauth/callback`을 추가한다.
+- [x] auth guard 또는 `GoRouter` redirect 로직에 신규 비인증 허용 경로를 반영한다.
+- [x] 기존 `AuthNotifier`에서 세션 상태와 액션 책임을 분리한다.
+- [x] `AuthSessionNotifier` 또는 동등한 세션 전용 상태 관리 구조를 정리한다.
+- [x] `loginActionProvider`를 분리 또는 정리한다.
+- [x] `signupActionProvider`를 추가한다.
+- [x] `findIdActionProvider`를 추가한다.
+- [x] `passwordResetRequestProvider`를 추가한다.
+- [x] `passwordResetConfirmProvider`를 추가한다.
+- [x] `socialLoginActionProvider`를 추가한다.
 
 ## Phase 3. 인증 화면 구현
 

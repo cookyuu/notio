@@ -6,7 +6,7 @@ import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/router/routes.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
-import 'package:notio_app/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:notio_app/features/auth/presentation/providers/login_action_provider.dart';
 import 'package:notio_app/shared/widgets/glass_card.dart';
 
 class LoginScreen extends HookConsumerWidget {
@@ -18,28 +18,26 @@ class LoginScreen extends HookConsumerWidget {
     final passwordController = useTextEditingController();
     final isPasswordVisible = useState(false);
 
-    final authState = ref.watch(authNotifierProvider);
+    final loginState = ref.watch(loginActionNotifierProvider);
 
-    // Listen to auth state changes
-    ref.listen<AsyncValue<AuthState>>(authNotifierProvider, (previous, next) {
-      next.whenData((state) {
-        if (state.isAuthenticated) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) {
-              context.go(Routes.notifications);
-            }
-          });
-        }
-        if (state.error != null) {
-          // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.error!),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      });
+    // Listen to login action state changes
+    ref.listen<LoginActionState>(loginActionNotifierProvider, (previous, next) {
+      if (next.isSuccess) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            context.go(Routes.notifications);
+          }
+        });
+      }
+      if (next.error != null) {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     });
 
     return Scaffold(
@@ -137,110 +135,51 @@ class LoginScreen extends HookConsumerWidget {
                         const SizedBox(height: AppSpacing.s24),
 
                         // Login Button
-                        authState.when(
-                          data: (state) => ElevatedButton(
-                            onPressed: state.isLoading
-                                ? null
-                                : () {
-                                    final email = emailController.text.trim();
-                                    final password =
-                                        passwordController.text.trim();
+                        ElevatedButton(
+                          onPressed: loginState.isLoading
+                              ? null
+                              : () {
+                                  final email = emailController.text.trim();
+                                  final password = passwordController.text.trim();
 
-                                    if (email.isEmpty || password.isEmpty) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Please enter email and password'),
-                                          backgroundColor: AppColors.warning,
-                                        ),
-                                      );
-                                      return;
-                                    }
+                                  if (email.isEmpty || password.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Please enter email and password'),
+                                        backgroundColor: AppColors.warning,
+                                      ),
+                                    );
+                                    return;
+                                  }
 
-                                    ref
-                                        .read(authNotifierProvider.notifier)
-                                        .login(email, password);
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: AppColors.textPrimary,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.s16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                  ref
+                                      .read(loginActionNotifierProvider.notifier)
+                                      .login(email, password);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textPrimary,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.s16,
                             ),
-                            child: state.isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Sign In',
-                                    style: AppTextStyles.button,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: loginState.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.textPrimary,
                                   ),
-                          ),
-                          loading: () => ElevatedButton(
-                            onPressed: null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.s16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          error: (error, stack) => ElevatedButton(
-                            onPressed: () {
-                              final email = emailController.text.trim();
-                              final password = passwordController.text.trim();
-
-                              if (email.isEmpty || password.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Please enter email and password'),
-                                    backgroundColor: AppColors.warning,
-                                  ),
-                                );
-                                return;
-                              }
-
-                              ref
-                                  .read(authNotifierProvider.notifier)
-                                  .login(email, password);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: AppColors.textPrimary,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.s16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              'Sign In',
-                              style: AppTextStyles.button,
-                            ),
-                          ),
+                                )
+                              : const Text(
+                                  'Sign In',
+                                  style: AppTextStyles.button,
+                                ),
                         ),
 
                         const SizedBox(height: AppSpacing.s16),
