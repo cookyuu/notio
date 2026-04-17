@@ -41,7 +41,13 @@ class ConnectionsScreen extends ConsumerWidget {
       body: Column(
         children: [
           // Filters
-          _buildFilters(context, ref, providerFilter, statusFilter, authTypeFilter),
+          _buildFilters(
+            context,
+            ref,
+            providerFilter,
+            statusFilter,
+            authTypeFilter,
+          ),
 
           // Connections List
           Expanded(
@@ -209,7 +215,7 @@ class ConnectionsScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.hub_outlined,
             size: 64,
             color: AppColors.textTertiary,

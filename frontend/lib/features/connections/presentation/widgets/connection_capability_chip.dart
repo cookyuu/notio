@@ -9,8 +9,8 @@ class ConnectionCapabilityChip extends StatelessWidget {
   final ConnectionCapability capability;
 
   const ConnectionCapabilityChip({
-    super.key,
     required this.capability,
+    super.key,
   });
 
   IconData _getIcon() {

@@ -296,7 +296,7 @@ void main() {
 
   group('ConnectionActionsProvider', () {
     test('createConnection shows one-time API key on success', () async {
-      final mockConnection = ConnectionModel(
+      const mockConnection = ConnectionModel(
         id: 1,
         provider: 'CLAUDE',
         authType: 'API_KEY',
@@ -306,7 +306,7 @@ void main() {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',
       );
-      final mockResponse = ConnectionCreateResponse(
+      const mockResponse = ConnectionCreateResponse(
         connection: mockConnection,
         apiKey: 'sk-new-api-key',
       );
@@ -325,7 +325,7 @@ void main() {
     });
 
     test('rotateKey shows one-time API key on success', () async {
-      final mockConnection = ConnectionModel(
+      const mockConnection = ConnectionModel(
         id: 1,
         provider: 'CLAUDE',
         authType: 'API_KEY',
@@ -335,7 +335,7 @@ void main() {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-15T10:00:00Z',
       );
-      final mockResponse = ConnectionRotateKeyResponse(
+      const mockResponse = ConnectionRotateKeyResponse(
         connection: mockConnection,
         apiKey: 'sk-rotated-key',
       );
@@ -378,7 +378,7 @@ void main() {
     });
 
     test('testConnection sets success message', () async {
-      final mockResponse = ConnectionTestResponse(
+      const mockResponse = ConnectionTestResponse(
         success: true,
         message: 'Test successful',
         testedAt: '2024-01-15T10:00:00Z',
@@ -393,7 +393,7 @@ void main() {
     });
 
     test('testConnection sets error message on failure', () async {
-      final mockResponse = ConnectionTestResponse(
+      const mockResponse = ConnectionTestResponse(
         success: false,
         message: 'Test failed',
         testedAt: '2024-01-15T10:00:00Z',
@@ -408,7 +408,7 @@ void main() {
     });
 
     test('refreshConnection updates list on success', () async {
-      final mockResponse = ConnectionRefreshResponse(
+      const mockResponse = ConnectionRefreshResponse(
         id: 1,
         status: 'ACTIVE',
         refreshedAt: '2024-01-15T10:00:00Z',
@@ -433,7 +433,7 @@ void main() {
     });
 
     test('startOAuth sets authorization URL on success', () async {
-      final mockResponse = ConnectionOAuthUrlResponse(
+      const mockResponse = ConnectionOAuthUrlResponse(
         authorizationUrl: 'https://oauth.example.com/authorize',
         stateExpiresIn: 600,
       );
@@ -464,7 +464,7 @@ void main() {
     });
 
     test('reset clears OAuth state', () async {
-      final mockResponse = ConnectionOAuthUrlResponse(
+      const mockResponse = ConnectionOAuthUrlResponse(
         authorizationUrl: 'https://oauth.example.com',
         stateExpiresIn: 600,
       );

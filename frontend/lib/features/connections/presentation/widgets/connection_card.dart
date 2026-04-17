@@ -14,9 +14,9 @@ class ConnectionCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const ConnectionCard({
-    super.key,
     required this.connection,
     this.onTap,
+    super.key,
   });
 
   String _getAuthTypeLabel() {
@@ -121,7 +121,7 @@ class ConnectionCard extends StatelessWidget {
             // Timestamps
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.access_time,
                   size: 12,
                   color: AppColors.textTertiary,

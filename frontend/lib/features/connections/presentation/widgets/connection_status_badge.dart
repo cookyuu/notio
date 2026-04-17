@@ -9,8 +9,8 @@ class ConnectionStatusBadge extends StatelessWidget {
   final ConnectionStatus status;
 
   const ConnectionStatusBadge({
-    super.key,
     required this.status,
+    super.key,
   });
 
   Color _getColor() {

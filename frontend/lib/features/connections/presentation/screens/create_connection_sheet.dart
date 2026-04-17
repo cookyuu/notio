@@ -86,18 +86,21 @@ class _CreateConnectionSheetState extends ConsumerState<CreateConnectionSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
               // Header
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Add Connection',
                     style: AppTextStyles.headlineMedium,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
                 ],
+              ),
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               ),
 
               const SizedBox(height: AppSpacing.s24),

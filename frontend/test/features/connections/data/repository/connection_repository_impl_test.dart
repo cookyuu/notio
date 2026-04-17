@@ -137,7 +137,7 @@ void main() {
   group('ConnectionRepositoryImpl - Success Flow', () {
     test('fetchConnections returns list of entities', () async {
       final mockModels = [
-        ConnectionModel(
+        const ConnectionModel(
           id: 1,
           provider: 'CLAUDE',
           authType: 'API_KEY',
@@ -147,7 +147,7 @@ void main() {
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
         ),
-        ConnectionModel(
+        const ConnectionModel(
           id: 2,
           provider: 'SLACK',
           authType: 'OAUTH',
@@ -170,7 +170,7 @@ void main() {
     });
 
     test('fetchConnectionById returns single entity', () async {
-      final mockModel = ConnectionModel(
+      const mockModel = ConnectionModel(
         id: 1,
         provider: 'GITHUB',
         authType: 'OAUTH',
@@ -190,7 +190,7 @@ void main() {
     });
 
     test('createConnection returns response with API key', () async {
-      final mockConnection = ConnectionModel(
+      const mockConnection = ConnectionModel(
         id: 1,
         provider: 'CLAUDE',
         authType: 'API_KEY',
@@ -200,7 +200,7 @@ void main() {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',
       );
-      final mockResponse = ConnectionCreateResponse(
+      const mockResponse = ConnectionCreateResponse(
         connection: mockConnection,
         apiKey: 'sk-test-api-key-1234567890',
       );
@@ -219,7 +219,7 @@ void main() {
     });
 
     test('createConnection does NOT cache API key', () async {
-      final mockConnection = ConnectionModel(
+      const mockConnection = ConnectionModel(
         id: 1,
         provider: 'CLAUDE',
         authType: 'API_KEY',
@@ -229,7 +229,7 @@ void main() {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',
       );
-      final mockResponse = ConnectionCreateResponse(
+      const mockResponse = ConnectionCreateResponse(
         connection: mockConnection,
         apiKey: 'sk-test-secret-key',
       );
@@ -254,7 +254,7 @@ void main() {
     });
 
     test('testConnection returns test response', () async {
-      final mockResponse = ConnectionTestResponse(
+      const mockResponse = ConnectionTestResponse(
         success: true,
         message: 'Connection test successful',
         testedAt: '2024-01-15T10:00:00Z',
@@ -268,7 +268,7 @@ void main() {
     });
 
     test('refreshConnection returns refresh response', () async {
-      final mockResponse = ConnectionRefreshResponse(
+      const mockResponse = ConnectionRefreshResponse(
         id: 1,
         status: 'ACTIVE',
         refreshedAt: '2024-01-15T10:00:00Z',
@@ -282,7 +282,7 @@ void main() {
     });
 
     test('rotateKey returns new API key', () async {
-      final mockConnection = ConnectionModel(
+      const mockConnection = ConnectionModel(
         id: 1,
         provider: 'CLAUDE',
         authType: 'API_KEY',
@@ -293,7 +293,7 @@ void main() {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-15T10:00:00Z',
       );
-      final mockResponse = ConnectionRotateKeyResponse(
+      const mockResponse = ConnectionRotateKeyResponse(
         connection: mockConnection,
         apiKey: 'sk-new-rotated-key-9876543210',
       );
@@ -306,7 +306,7 @@ void main() {
     });
 
     test('rotateKey does NOT cache new API key', () async {
-      final mockConnection = ConnectionModel(
+      const mockConnection = ConnectionModel(
         id: 1,
         provider: 'CLAUDE',
         authType: 'API_KEY',
@@ -317,7 +317,7 @@ void main() {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-15T10:00:00Z',
       );
-      final mockResponse = ConnectionRotateKeyResponse(
+      const mockResponse = ConnectionRotateKeyResponse(
         connection: mockConnection,
         apiKey: 'sk-rotated-secret',
       );
@@ -333,7 +333,7 @@ void main() {
     });
 
     test('requestOAuthUrl returns authorization URL', () async {
-      final mockResponse = ConnectionOAuthUrlResponse(
+      const mockResponse = ConnectionOAuthUrlResponse(
         authorizationUrl: 'https://oauth.example.com/authorize?state=abc123',
         stateExpiresIn: 600,
       );

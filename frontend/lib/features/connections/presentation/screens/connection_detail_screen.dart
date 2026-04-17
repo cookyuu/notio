@@ -18,8 +18,8 @@ class ConnectionDetailScreen extends ConsumerWidget {
   final int connectionId;
 
   const ConnectionDetailScreen({
-    super.key,
     required this.connectionId,
+    super.key,
   });
 
   @override
@@ -239,7 +239,7 @@ class ConnectionDetailScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 64, color: AppColors.error),
               const SizedBox(height: AppSpacing.s16),
-              Text(
+              const Text(
                 'Error loading connection',
                 style: AppTextStyles.titleMedium,
               ),

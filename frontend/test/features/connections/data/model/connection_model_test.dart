@@ -144,7 +144,7 @@ void main() {
 
     group('toEntity', () {
       test('converts model to entity correctly', () {
-        final model = ConnectionModel(
+        const model = ConnectionModel(
           id: 1,
           provider: 'CLAUDE',
           authType: 'API_KEY',
@@ -185,7 +185,7 @@ void main() {
       });
 
       test('handles null optional fields', () {
-        final model = ConnectionModel(
+        const model = ConnectionModel(
           id: 1,
           provider: 'SLACK',
           authType: 'OAUTH',
@@ -210,7 +210,7 @@ void main() {
 
     group('toJson', () {
       test('converts model to JSON correctly', () {
-        final model = ConnectionModel(
+        const model = ConnectionModel(
           id: 1,
           provider: 'CLAUDE',
           authType: 'API_KEY',

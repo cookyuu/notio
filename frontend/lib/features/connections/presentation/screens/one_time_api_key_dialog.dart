@@ -12,8 +12,8 @@ class OneTimeApiKeyDialog extends ConsumerStatefulWidget {
   final String apiKey;
 
   const OneTimeApiKeyDialog({
-    super.key,
     required this.apiKey,
+    super.key,
   });
 
   @override
