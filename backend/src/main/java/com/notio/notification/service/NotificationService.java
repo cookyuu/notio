@@ -12,6 +12,8 @@ import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
     private final PushService pushService;
+    private final CacheManager cacheManager;
 
     /**
      * Webhook 이벤트로부터 알림 생성.
@@ -112,9 +115,6 @@ public class NotificationService {
         return findAll(DEFAULT_PHASE0_USER_ID, source, isRead, pageable);
     }
 
-    /**
-     * 알림 상세 조회
-     */
     public Notification findById(Long userId, Long id) {
         return notificationRepository.findByIdAndUserIdAndNotDeleted(userId, id)
             .orElseThrow(() -> new NotioException(ErrorCode.NOTIFICATION_NOT_FOUND));
@@ -132,26 +132,16 @@ public class NotificationService {
      * 알림 상세 조회. 미읽음 상태면 읽음 처리 후 반환한다.
      */
     @Transactional
-    @CacheEvict(value = "unreadCount", key = "#userId")
     public Notification getDetail(Long userId, Long id) {
-        Notification notification = findById(userId, id);
-        if (!notification.isRead()) {
-            notification.markAsRead();
-        }
-        return notification;
+        return getDetailAndMarkReadIfUnread(userId, id);
     }
 
     /**
      * 알림을 읽음 상태로 변경
      */
     @Transactional
-    @CacheEvict(value = "unreadCount", key = "#userId")
     public Notification markRead(Long userId, Long id) {
-        Notification notification = findById(userId, id);
-        if (!notification.isRead()) {
-            notification.markAsRead();
-        }
-        return notification;
+        return markReadIfUnread(userId, id);
     }
 
     /**
@@ -182,6 +172,36 @@ public class NotificationService {
     @Cacheable(value = "unreadCount", key = "#userId")
     public long countUnread(Long userId) {
         return notificationRepository.countUnread(userId);
+    }
+
+    private Notification getDetailAndMarkReadIfUnread(Long userId, Long id) {
+        Notification notification = findById(userId, id);
+        return applyReadTransitionIfNeeded(userId, notification);
+    }
+
+    private Notification markReadIfUnread(Long userId, Long id) {
+        Notification notification = findById(userId, id);
+        return applyReadTransitionIfNeeded(userId, notification);
+    }
+
+    private Notification applyReadTransitionIfNeeded(Long userId, Notification notification) {
+        if (notification.isRead()) {
+            return notification;
+        }
+
+        notification.markAsRead();
+        evictUnreadCountCache(userId);
+        return notification;
+    }
+
+    private void evictUnreadCountCache(Long userId) {
+        Cache cache = cacheManager.getCache("unreadCount");
+        if (cache == null) {
+            log.warn("Unread count cache is not configured; skip eviction for userId={}", userId);
+            return;
+        }
+
+        cache.evict(userId);
     }
 
     /**

@@ -22,8 +22,11 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 
@@ -36,11 +39,18 @@ class NotificationServiceTest {
     @Mock
     private PushService pushService;
 
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache unreadCountCache;
+
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
-        notificationService = new NotificationService(notificationRepository, new ObjectMapper(), pushService);
+        notificationService = new NotificationService(notificationRepository, new ObjectMapper(), pushService, cacheManager);
+        when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
     }
 
     @Test
@@ -151,6 +161,7 @@ class NotificationServiceTest {
         final Notification result = notificationService.getDetail(10L, 99L);
 
         assertThat(result.isRead()).isTrue();
+        verify(unreadCountCache).evict(10L);
     }
 
     @Test
@@ -171,6 +182,49 @@ class NotificationServiceTest {
         final Notification result = notificationService.getDetail(10L, 100L);
 
         assertThat(result.isRead()).isTrue();
+        verify(unreadCountCache, org.mockito.Mockito.never()).evict(ArgumentMatchers.any());
+    }
+
+    @Test
+    void markReadEvictsUnreadCountOnlyWhenReadStateChanges() {
+        final Notification notification = Notification.builder()
+                .id(101L)
+                .userId(10L)
+                .source(NotificationSource.GITHUB)
+                .title("Issue assigned")
+                .body("Unread issue assignment")
+                .priority(NotificationPriority.HIGH)
+                .read(false)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+        when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 101L)).thenReturn(Optional.of(notification));
+
+        final Notification result = notificationService.markRead(10L, 101L);
+
+        assertThat(result.isRead()).isTrue();
+        verify(unreadCountCache).evict(10L);
+    }
+
+    @Test
+    void markReadDoesNotEvictUnreadCountWhenNotificationAlreadyRead() {
+        final Notification notification = Notification.builder()
+                .id(102L)
+                .userId(10L)
+                .source(NotificationSource.SLACK)
+                .title("Already read")
+                .body("No state change")
+                .priority(NotificationPriority.LOW)
+                .read(true)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+        when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 102L)).thenReturn(Optional.of(notification));
+
+        final Notification result = notificationService.markRead(10L, 102L);
+
+        assertThat(result.isRead()).isTrue();
+        verify(unreadCountCache, org.mockito.Mockito.never()).evict(ArgumentMatchers.any());
     }
 
     @Test
@@ -234,17 +288,14 @@ class NotificationServiceTest {
         final CacheEvict saveFromEventEvict = saveFromEvent.getAnnotation(CacheEvict.class);
         final Method saveFromConnection = NotificationService.class.getMethod("saveFromConnection", NotificationEvent.class, Connection.class);
         final CacheEvict saveFromConnectionEvict = saveFromConnection.getAnnotation(CacheEvict.class);
-        final Method getDetail = NotificationService.class.getMethod("getDetail", Long.class, Long.class);
-        final CacheEvict getDetailEvict = getDetail.getAnnotation(CacheEvict.class);
-        final Method markRead = NotificationService.class.getMethod("markRead", Long.class, Long.class);
-        final CacheEvict markReadEvict = markRead.getAnnotation(CacheEvict.class);
         final Method markAllRead = NotificationService.class.getMethod("markAllRead", Long.class);
         final CacheEvict markAllReadEvict = markAllRead.getAnnotation(CacheEvict.class);
+        final Method delete = NotificationService.class.getMethod("delete", Long.class, Long.class);
+        final CacheEvict deleteEvict = delete.getAnnotation(CacheEvict.class);
 
         assertThat(saveFromEventEvict.key()).isEqualTo("#event.userId()");
         assertThat(saveFromConnectionEvict.key()).isEqualTo("#connection.userId");
-        assertThat(getDetailEvict.key()).isEqualTo("#userId");
-        assertThat(markReadEvict.key()).isEqualTo("#userId");
         assertThat(markAllReadEvict.key()).isEqualTo("#userId");
+        assertThat(deleteEvict.key()).isEqualTo("#userId");
     }
 }
