@@ -172,5 +172,38 @@ void main() {
       final state = container.read(notificationsProvider);
       expect(state.notifications.single.isRead, isFalse);
     });
+
+    test('refresh synchronizes list read state with latest server response',
+        () async {
+      await container.read(notificationsProvider.notifier).fetchNotifications(
+            refresh: true,
+          );
+
+      expect(
+        container.read(notificationsProvider).notifications.single.isRead,
+        isFalse,
+      );
+
+      repository.summaries = [
+        NotificationSummaryEntity(
+          id: 1,
+          source: NotificationSource.github,
+          title: 'Pull request review',
+          bodyPreview: 'A reviewer left a comment',
+          priority: NotificationPriority.high,
+          isRead: true,
+          createdAt: DateTime(2026, 4, 17),
+        ),
+      ];
+
+      await container.read(notificationsProvider.notifier).fetchNotifications(
+            refresh: true,
+          );
+
+      expect(
+        container.read(notificationsProvider).notifications.single.isRead,
+        isTrue,
+      );
+    });
   });
 }

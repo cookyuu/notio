@@ -2,9 +2,9 @@ import 'package:notio_app/core/constants/notification_source.dart';
 import 'package:notio_app/features/notification/data/datasource/notification_local_datasource.dart';
 import 'package:notio_app/features/notification/data/datasource/notification_remote_datasource.dart';
 import 'package:notio_app/features/notification/data/model/notification_model.dart';
+import 'package:notio_app/features/notification/domain/entity/notification_detail_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_entity.dart';
 import 'package:notio_app/features/notification/domain/entity/notification_summary_entity.dart';
-import 'package:notio_app/features/notification/domain/entity/notification_detail_entity.dart';
 import 'package:notio_app/features/notification/domain/repository/notification_repository.dart';
 
 /// Implementation of NotificationRepository
@@ -32,6 +32,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
         size: size,
       );
 
+      await _localDataSource.cacheNotificationSummaries(summaryModels);
+
       // Convert to entities
       return summaryModels.map((model) => model.toEntity()).toList();
     } catch (e) {
@@ -47,6 +49,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
   @override
   Future<NotificationDetailEntity> getNotificationDetail(int id) async {
+    // Keep phase5 detail flow source-of-truth on the server.
+    // We only synchronize read state into the list cache and do not persist the
+    // full detail payload locally.
     final detailModel = await _remoteDataSource.getNotificationDetail(id);
     if (detailModel.isRead) {
       await _localDataSource.markAsRead(id);

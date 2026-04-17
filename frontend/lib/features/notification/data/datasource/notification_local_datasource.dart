@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:notio_app/core/database/app_database.dart';
 import 'package:notio_app/features/notification/data/model/notification_model.dart';
+import 'package:notio_app/features/notification/data/model/notification_summary_model.dart';
 
 /// Drift-based local data source for notifications
 class NotificationLocalDataSource {
@@ -34,6 +35,31 @@ class NotificationLocalDataSource {
 
     // Clean old and expired notifications (TTL: 24h, max: 100)
     await _database.cleanupNotifications();
+  }
+
+  /// Save list responses as lightweight cache entries for offline fallback.
+  ///
+  /// Detailed payloads are intentionally excluded from local cache for the
+  /// phase5 notification flow. Only list snapshots and read-state updates are
+  /// persisted locally.
+  Future<void> cacheNotificationSummaries(
+    List<NotificationSummaryModel> notifications,
+  ) async {
+    final summaryModels = notifications
+        .map(
+          (notification) => NotificationModel(
+            id: notification.id,
+            source: notification.source,
+            title: notification.title,
+            body: notification.bodyPreview,
+            priority: notification.priority,
+            isRead: notification.isRead,
+            createdAt: notification.createdAt,
+          ),
+        )
+        .toList();
+
+    await cacheNotifications(summaryModels);
   }
 
   /// Mark a notification as read
