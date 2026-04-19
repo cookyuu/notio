@@ -39,5 +39,19 @@ void main() {
       expect(response.refreshToken, 'refresh-token');
       expect(response.expiresIn, 86400);
     });
+
+    test('parses camelCase refresh response', () {
+      final response = RefreshTokenResponse.fromJson({
+        'accessToken': 'access-token',
+        'refreshToken': 'refresh-token',
+        'tokenType': 'Bearer',
+        'expiresIn': 86400,
+      });
+
+      expect(response.accessToken, 'access-token');
+      expect(response.refreshToken, 'refresh-token');
+      expect(response.tokenType, 'Bearer');
+      expect(response.expiresIn, 86400);
+    });
   });
 }

@@ -61,7 +61,7 @@ public class NotificationController {
         summary = "알림 상세 조회",
         description = "현재 사용자 범위에서 특정 알림의 전체 본문과 부가 정보를 조회합니다. 조회 시 미읽음 알림은 자동으로 읽음 처리됩니다."
     )
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ApiResponse<NotificationDetailResponse> getNotification(
         @Parameter(description = "알림 ID", required = true)
         @PathVariable("id") Long id,
@@ -76,7 +76,7 @@ public class NotificationController {
     }
 
     @Operation(summary = "알림 읽음 처리", description = "특정 알림을 읽음 상태로 변경합니다.")
-    @PatchMapping("/{id}/read")
+    @PatchMapping("/{id:\\d+}/read")
     public ApiResponse<MarkReadResponse> markAsRead(
         @Parameter(description = "알림 ID", required = true)
         @PathVariable("id") Long id,
@@ -111,7 +111,7 @@ public class NotificationController {
     }
 
     @Operation(summary = "알림 삭제", description = "특정 알림을 삭제합니다 (Soft Delete).")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public ApiResponse<Void> deleteNotification(
         @Parameter(description = "알림 ID", required = true)
         @PathVariable("id") Long id,

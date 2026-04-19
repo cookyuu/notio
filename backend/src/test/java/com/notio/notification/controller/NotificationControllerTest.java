@@ -5,6 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +31,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationControllerTest {
@@ -171,5 +176,20 @@ class NotificationControllerTest {
         assertThat(response.data().externalUrl()).isEqualTo("https://slack.com/app_redirect?channel=backend");
         assertThat(response.data().isRead()).isTrue();
         verify(notificationService).getDetail(10L, 5L);
+    }
+
+    @Test
+    void unreadCountRouteDoesNotConflictWithIdRoute() throws Exception {
+        final NotificationController controller = new NotificationController(notificationService);
+        final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        when(notificationService.countUnread(10L)).thenReturn(7L);
+
+        mockMvc.perform(get("/api/v1/notifications/unread-count")
+                        .principal(new UsernamePasswordAuthenticationToken("10", null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.count").value(7));
+
+        verify(notificationService).countUnread(10L);
     }
 }

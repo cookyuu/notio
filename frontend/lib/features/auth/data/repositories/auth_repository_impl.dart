@@ -14,6 +14,7 @@ import 'package:notio_app/features/auth/data/models/password_reset_request_reque
 import 'package:notio_app/features/auth/data/models/password_reset_request_response.dart';
 import 'package:notio_app/features/auth/data/models/signup_request.dart';
 import 'package:notio_app/features/auth/data/models/signup_response.dart';
+import 'package:notio_app/features/auth/domain/entities/auth_error_code.dart';
 import 'package:notio_app/features/auth/domain/auth_token_policy.dart';
 import 'package:notio_app/features/auth/domain/repositories/auth_repository.dart';
 
@@ -66,6 +67,13 @@ class AuthRepositoryImpl implements AuthRepository {
         value: response.expiresAt.toIso8601String(),
       );
     } catch (e) {
+      if (e is AuthError &&
+          (e.code == AuthErrorCode.invalidInputValue ||
+              e.code == AuthErrorCode.invalidToken ||
+              e.code == AuthErrorCode.expiredToken ||
+              e.code == AuthErrorCode.unauthorized)) {
+        await _clearStoredAuth();
+      }
       rethrow;
     }
   }
