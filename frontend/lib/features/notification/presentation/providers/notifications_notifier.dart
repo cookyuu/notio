@@ -178,13 +178,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     await fetchNotifications();
   }
 
-  /// Add test notification (for developer menu)
-  void addTestNotification(NotificationSummaryEntity notification) {
-    final updatedNotifications = [notification, ...state.notifications];
-    state = state.copyWith(notifications: updatedNotifications);
-  }
-
-  /// Clear cache (for developer menu)
+  /// Clear locally cached notifications and reset pagination state.
   Future<void> clearCache() async {
     try {
       await _repository.clearCache();

@@ -351,7 +351,7 @@ class SettingsScreen extends ConsumerWidget {
           style: AppTextStyles.bodyLarge,
         ),
         subtitle: Text(
-          'v1.0.0 (Phase 4A)',
+          'v1.0.0',
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.textSecondary,
           ),

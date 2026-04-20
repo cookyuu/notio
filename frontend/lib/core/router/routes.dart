@@ -15,6 +15,5 @@ class Routes {
   static const String chat = '/chat';
   static const String analytics = '/analytics';
   static const String settings = '/settings';
-  static const String developer = '/developer';
   static const String connections = '/settings/connections';
 }
