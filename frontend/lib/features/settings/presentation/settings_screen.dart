@@ -59,11 +59,6 @@ class SettingsScreen extends ConsumerWidget {
           // About Section
           _buildSectionHeader('정보'),
           _buildVersionInfo(),
-          const Divider(height: 32, color: AppColors.divider),
-
-          // Developer Section
-          _buildSectionHeader('개발자'),
-          _buildDeveloperMenuButton(context),
         ],
       ),
     );
@@ -361,39 +356,6 @@ class SettingsScreen extends ConsumerWidget {
             color: AppColors.textSecondary,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDeveloperMenuButton(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.s12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: ListTile(
-        leading: const Icon(
-          Icons.code,
-          color: AppColors.primary,
-        ),
-        title: const Text(
-          '개발자 메뉴',
-          style: AppTextStyles.bodyLarge,
-        ),
-        subtitle: Text(
-          '테스트 및 디버깅 도구',
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        trailing: const Icon(
-          Icons.chevron_right,
-          color: AppColors.textSecondary,
-        ),
-        onTap: () {
-          context.push('/developer');
-        },
       ),
     );
   }
