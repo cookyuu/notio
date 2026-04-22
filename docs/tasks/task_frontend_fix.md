@@ -7,18 +7,26 @@
 
 ## Phase 0. 범위 확정
 
-- [ ] `docs/plans/plan_fix.md` 기준으로 프론트 변경 범위를 확정한다.
-- [ ] AI Chat 화면은 이미 구현된 상태로 본다.
-- [ ] Phase 0에서는 프론트 UI 대규모 변경을 하지 않는다.
-- [ ] 기존 Chat API endpoint를 그대로 사용한다.
-- [ ] 기존 Chat request/response model을 유지한다.
-- [ ] 기존 SSE 수신 흐름을 유지한다.
-- [ ] 백엔드가 API 계약을 유지하면 프론트 코드는 변경하지 않는 것을 기본 원칙으로 둔다.
+- [x] `docs/plans/plan_fix.md` 기준으로 프론트 변경 범위를 확정한다.
+- [x] AI Chat 화면은 이미 구현된 상태로 본다.
+- [x] Phase 0에서는 프론트 UI 대규모 변경을 하지 않는다.
+- [x] 기존 Chat API endpoint를 그대로 사용한다.
+- [x] 기존 Chat request/response model을 유지한다.
+- [x] 기존 SSE 수신 흐름을 유지한다.
+- [x] 백엔드가 API 계약을 유지하면 프론트 코드는 변경하지 않는 것을 기본 원칙으로 둔다.
 
 ### Phase 0 확인 메모
 
 - 현재 프론트는 `POST /api/v1/chat`, `GET /api/v1/chat/stream`, `GET /api/v1/chat/daily-summary`, `GET /api/v1/chat/history`를 사용한다.
 - RAG + LLM 도입은 backend/infra 중심 변경이며, 프론트는 계약 검증과 통합 테스트가 핵심이다.
+- **확인 완료 (2026-04-22)**:
+  - Chat 화면 구현 완료: `frontend/lib/features/chat/presentation/screens/chat_screen.dart`
+  - API endpoint 4개 모두 `ChatRemoteDataSource`에 구현됨
+  - `ChatRequest`는 `content` 필드만 전송 (snake_case JSON)
+  - `ChatMessageModel`은 `id`, `role`, `content`, `created_at` 파싱
+  - `DailySummaryModel`은 `summary`, `date`, `total_messages`, `topics` 파싱
+  - SSE는 `Accept: text/event-stream` 헤더 사용, `data: ` prefix 처리
+  - 백엔드가 API 계약을 유지하면 프론트 변경 불필요
 
 ## Phase 1. API 계약 검증
 
