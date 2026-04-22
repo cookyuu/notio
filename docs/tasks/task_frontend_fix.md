@@ -53,19 +53,30 @@
 
 ## Phase 2. SSE Streaming 계약 검증
 
-- [ ] `ChatRemoteDataSource.streamMessage`가 `/api/v1/chat/stream`을 호출하는지 확인한다.
-- [ ] query parameter `content`를 유지한다.
-- [ ] request header `Accept: text/event-stream`을 유지한다.
-- [ ] 백엔드 SSE가 `data: ` prefix를 사용하는지 확인한다.
-- [ ] chunk payload를 프론트가 문자열로 누적할 수 있는지 확인한다.
-- [ ] done payload 수신 시 프론트 상태가 정상 종료되는지 확인한다.
-- [ ] LLM 응답 지연 중 loading/streaming 상태가 유지되는지 확인한다.
-- [ ] stream 오류 발생 시 error state가 표시되는지 확인한다.
+- [x] `ChatRemoteDataSource.streamMessage`가 `/api/v1/chat/stream`을 호출하는지 확인한다.
+- [x] query parameter `content`를 유지한다.
+- [x] request header `Accept: text/event-stream`을 유지한다.
+- [x] 백엔드 SSE가 `data: ` prefix를 사용하는지 확인한다.
+- [x] chunk payload를 프론트가 문자열로 누적할 수 있는지 확인한다.
+- [x] done payload 수신 시 프론트 상태가 정상 종료되는지 확인한다.
+- [x] LLM 응답 지연 중 loading/streaming 상태가 유지되는지 확인한다.
+- [x] stream 오류 발생 시 error state가 표시되는지 확인한다.
 
 ### Phase 2 확인 메모
 
 - 현재 프론트 파서는 `data: ` prefix를 제거한 문자열을 그대로 상위 layer에 전달한다.
 - 백엔드가 JSON chunk를 보내는 경우 프론트 누적 로직이 JSON 문자열 자체를 표시하지 않는지 통합 검증이 필요하다.
+- **검증 완료 (2026-04-22)**:
+  - SSE endpoint: `GET /api/v1/chat/stream` 확인 (`chat_remote_datasource.dart:34`)
+  - query parameter: `content` 필드로 전송 확인 (`chat_remote_datasource.dart:35`)
+  - request header: `Accept: text/event-stream` 설정 확인 (`chat_remote_datasource.dart:38`)
+  - `data: ` prefix: `text.startsWith('data: ')` 체크 후 `substring(6).trim()` 처리 (`chat_remote_datasource.dart:45-46`)
+  - chunk 누적: `StringBuffer`로 누적하여 `streamingContent` 상태 업데이트 (`chat_notifier.dart:110-116`)
+  - streaming 완료: stream 종료 시 `isStreaming: false`, `streamingContent: null` 설정하여 정상 종료 (`chat_notifier.dart:131-135`)
+  - streaming 상태: `isStreaming: true` + `isSending: true` 상태로 LLM 응답 대기 중 UI에 표시 가능 (`chat_state.dart:8,16` + `chat_notifier.dart:88-93`)
+  - 에러 처리: `DioException` catch 후 `error` 필드에 에러 메시지 설정, `isStreaming: false` 전환 (`chat_notifier.dart:136-143`)
+  - SSE 응답은 Dio의 `ResponseType.stream`으로 수신하며, 각 chunk는 `await for` 루프로 순차 처리됨
+  - 백엔드가 stream 종료 신호(done event) 없이 단순히 연결을 닫으면 `await for` 루프가 자연스럽게 종료됨
 
 ## Phase 3. 로컬 캐시 및 히스토리 검증
 
