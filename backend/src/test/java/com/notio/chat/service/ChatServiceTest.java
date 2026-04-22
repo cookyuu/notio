@@ -17,10 +17,13 @@ import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
 import com.notio.chat.dto.ChatRequest;
 import com.notio.chat.repository.ChatMessageRepository;
+import com.notio.common.config.properties.NotioAiProperties;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +41,8 @@ class ChatServiceTest {
                 chatMessageRepository,
                 ragRetriever,
                 promptBuilder,
-                llmProvider
+                llmProvider,
+                aiProperties()
         );
         final ChatMessage userMessage = message(
                 1L,
@@ -88,6 +92,59 @@ class ChatServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void streamChatStreamsLlmChunksThenStoresAssistantMessage() {
+        final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
+        final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final PromptBuilder promptBuilder = mock(PromptBuilder.class);
+        final LlmProvider llmProvider = mock(LlmProvider.class);
+        final ChatService chatService = new ChatService(
+                chatMessageRepository,
+                ragRetriever,
+                promptBuilder,
+                llmProvider,
+                aiProperties()
+        );
+        final ChatMessage userMessage = message(
+                1L,
+                ChatMessageRole.USER,
+                "오늘 중요한 알림 알려줘",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 0, 0, ZoneOffset.UTC)
+        );
+        final ChatMessage assistantMessage = message(
+                2L,
+                ChatMessageRole.ASSISTANT,
+                "GitHub PR 리뷰 요청",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 1, 0, ZoneOffset.UTC)
+        );
+        final LlmPrompt prompt = new LlmPrompt("system", "user");
+        final ArgumentCaptor<ChatMessage> savedMessageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
+
+        when(chatMessageRepository.save(any(ChatMessage.class)))
+                .thenReturn(userMessage)
+                .thenReturn(assistantMessage);
+        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘")).thenReturn(List.of());
+        when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
+        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage)))
+                .thenReturn(prompt);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            final Consumer<String> chunkConsumer = invocation.getArgument(1);
+            chunkConsumer.accept("GitHub PR ");
+            chunkConsumer.accept("리뷰 요청");
+            return null;
+        }).when(llmProvider).stream(eq(prompt), any(Consumer.class));
+
+        chatService.streamChat(new ChatRequest("오늘 중요한 알림 알려줘"));
+
+        verify(llmProvider, org.mockito.Mockito.timeout(1000)).stream(eq(prompt), any(Consumer.class));
+        verify(chatMessageRepository, org.mockito.Mockito.timeout(1000).times(2)).save(savedMessageCaptor.capture());
+        assertThat(savedMessageCaptor.getAllValues())
+                .extracting(ChatMessage::getRole)
+                .containsExactly(ChatMessageRole.USER, ChatMessageRole.ASSISTANT);
+        assertThat(savedMessageCaptor.getAllValues().get(1).getContent()).isEqualTo("GitHub PR 리뷰 요청");
+    }
+
+    @Test
     void historyReadsRecentMessagesFromRepository() {
         final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
         final RagRetriever ragRetriever = mock(RagRetriever.class);
@@ -97,7 +154,8 @@ class ChatServiceTest {
                 chatMessageRepository,
                 ragRetriever,
                 promptBuilder,
-                llmProvider
+                llmProvider,
+                aiProperties()
         );
         final ChatMessage message = message(
                 10L,
@@ -132,5 +190,13 @@ class ChatServiceTest {
         ReflectionTestUtils.setField(message, "createdAt", createdAt);
         ReflectionTestUtils.setField(message, "updatedAt", createdAt);
         return message;
+    }
+
+    private NotioAiProperties aiProperties() {
+        return new NotioAiProperties(
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(15),
+                Duration.ofSeconds(5)
+        );
     }
 }

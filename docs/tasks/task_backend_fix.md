@@ -255,20 +255,30 @@
 
 ## Phase 10. SSE Streaming 전환
 
-- [ ] `GET /api/v1/chat/stream` endpoint를 유지한다.
-- [ ] query parameter `content` 계약을 유지한다.
-- [ ] 실제 LLM streaming chunk를 SSE로 전달한다.
-- [ ] chunk 이벤트 payload는 프론트가 처리 가능한 형식으로 유지한다.
-- [ ] 전체 assistant content를 서버에서 누적한다.
-- [ ] stream 완료 후 assistant 메시지를 DB에 저장한다.
-- [ ] 완료 이벤트로 `done=true`와 `message_id`를 전달한다.
-- [ ] streaming timeout을 설정한다.
-- [ ] client disconnect 상황을 안전하게 처리한다.
+- [x] `GET /api/v1/chat/stream` endpoint를 유지한다.
+- [x] query parameter `content` 계약을 유지한다.
+- [x] 실제 LLM streaming chunk를 SSE로 전달한다.
+- [x] chunk 이벤트 payload는 프론트가 처리 가능한 형식으로 유지한다.
+- [x] 전체 assistant content를 서버에서 누적한다.
+- [x] stream 완료 후 assistant 메시지를 DB에 저장한다.
+- [x] 완료 이벤트로 `done=true`와 `message_id`를 전달한다.
+- [x] streaming timeout을 설정한다.
+- [x] client disconnect 상황을 안전하게 처리한다.
 
 ### Phase 10 확인 메모
 
 - 프론트 `ChatRemoteDataSource.streamMessage`는 `data: ` prefix를 제거한 문자열을 전달하므로, payload 구조 변경 시 프론트 파서 영향이 있다.
 - Phase 0에서는 기존 chunk/done 흐름을 유지한다.
+- `LlmProvider.stream`을 추가하고 `OllamaLlmProvider`에서 Spring AI `ChatModel.stream(Prompt)`를 사용하도록 전환했다.
+- `ChatService.streamChat`는 사용자 메시지를 먼저 저장하고, RAG 검색과 prompt 생성을 수행한 뒤 LLM streaming chunk를 `chunk` 이벤트로 그대로 전달한다.
+- `chunk` 이벤트 data는 기존 프론트가 누적 가능한 raw text를 유지한다.
+- 서버는 chunk를 `StringBuilder`에 누적하고 stream 완료 후 assistant 메시지를 DB에 저장한다.
+- 완료 이벤트는 `done` event name과 `{"done": true, "message_id": ...}` payload로 전달한다.
+- `notio.ai.streaming-timeout` 설정값을 `SseEmitter` timeout과 LLM stream timeout에 적용한다.
+- client disconnect, timeout, emitter error 발생 시 active flag로 추가 send/save를 중단하고 `CancellationException`으로 streaming 작업을 종료한다.
+- `GET /api/v1/chat/stream`의 `content` query parameter에 `@NotBlank` 검증을 적용했다.
+- 검증 보강: `ChatServiceTest.streamChatStreamsLlmChunksThenStoresAssistantMessage`를 추가해 LLM stream 호출, chunk 누적, assistant 저장을 확인했다.
+- 검증: `/mnt/c` 작업트리에서는 Gradle `FileHasher`가 `Input/output error`로 시작하지 못해, `.gradle`/`build`를 제외하고 `backend`를 `/tmp/notio-backend-phase10-run`으로 복사한 뒤 `GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew --no-daemon test` 실행 통과.
 
 ## Phase 11. DailySummaryService LLM 전환
 

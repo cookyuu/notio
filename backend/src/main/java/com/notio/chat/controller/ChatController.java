@@ -7,18 +7,21 @@ import com.notio.chat.service.ChatService;
 import com.notio.chat.service.DailySummaryService;
 import com.notio.common.response.ApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/v1/chat")
+@Validated
 public class ChatController {
 
     private final ChatService chatService;
@@ -38,7 +41,7 @@ public class ChatController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@RequestParam(name = "content") final String content) {
+    public SseEmitter stream(@RequestParam(name = "content") @NotBlank final String content) {
         return chatService.streamChat(new ChatRequest(content));
     }
 
