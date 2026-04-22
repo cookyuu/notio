@@ -80,17 +80,29 @@
 
 ## Phase 3. 로컬 캐시 및 히스토리 검증
 
-- [ ] Drift `chat_messages` 로컬 테이블 구조를 유지한다.
-- [ ] remote history 응답을 local cache에 저장하는 흐름을 확인한다.
-- [ ] assistant 메시지 저장 시 중복 표시가 없는지 확인한다.
-- [ ] streaming 완료 후 최종 assistant 메시지가 local cache에 반영되는지 확인한다.
-- [ ] refresh 시 remote history와 local cache가 충돌하지 않는지 확인한다.
-- [ ] old chat cleanup 정책이 RAG 전환과 무관하게 유지되는지 확인한다.
+- [x] Drift `chat_messages` 로컬 테이블 구조를 유지한다.
+- [x] remote history 응답을 local cache에 저장하는 흐름을 확인한다.
+- [x] assistant 메시지 저장 시 중복 표시가 없는지 확인한다.
+- [x] streaming 완료 후 최종 assistant 메시지가 local cache에 반영되는지 확인한다.
+- [x] refresh 시 remote history와 local cache가 충돌하지 않는지 확인한다.
+- [x] old chat cleanup 정책이 RAG 전환과 무관하게 유지되는지 확인한다.
 
 ### Phase 3 확인 메모
 
 - 서버가 DB 기반 history로 전환되면 프론트 local cache와 remote history의 정렬/중복 기준이 중요해진다.
 - 서버 message id가 안정적으로 내려오면 local 중복 제거 기준으로 활용할 수 있다.
+- **검증 완료 (2026-04-22)**:
+  - **테이블 구조**: `chat_messages` 테이블은 `id`, `role`, `content`, `createdAt` 4개 컬럼으로 구성 (`chat_message_table.dart:8-11`)
+  - **인덱스**: `idx_chat_messages_created_at` (ASC) 생성으로 시간순 조회 최적화 (`app_database.dart:55`)
+  - **Remote → Local 저장**: `fetchHistory(page: 0)` 성공 시 `cacheMessages()` 호출하여 최신 50개 저장 (`chat_repository_impl.dart:70-72`)
+  - **중복 방지**: `cacheMessages()`는 전체 삭제 후 재저장 방식으로 중복 없이 동기화 (`chat_local_datasource.dart:32`)
+  - **단일 메시지 추가**: `addMessage()`는 1개 삽입 후 자동 cleanup 호출 (`chat_local_datasource.dart:60-64`)
+  - **Streaming 완료 저장**: `sendMessageWithStreaming()`에서 streaming 완료 후 `addMessageToCache()` 호출하여 assistant 메시지 저장 (`chat_notifier.dart:128`)
+  - **비-Streaming 저장**: `sendMessage()`는 repository에서 user/assistant 메시지 모두 `addMessage()` 호출하여 저장 (`chat_repository_impl.dart:33-34, 42`)
+  - **Refresh 충돌 방지**: `refresh()`는 `fetchHistory(page: 0)` → `cacheMessages()` 전체 교체 방식으로 충돌 없음 (`chat_notifier.dart:151`, `chat_repository_impl.dart:72`)
+  - **에러 시 Fallback**: Remote fetch 실패 시 page 0이면 cache에서 반환 (`chat_repository_impl.dart:81-83`)
+  - **Cleanup 정책**: TTL 72시간 + Max 50개, `cleanupChatMessages()`에서 expired 먼저 삭제 후 max count 제한 (`app_database.dart:209-217`)
+  - **RAG 독립성**: 로컬 캐시 구조와 정책은 백엔드 RAG 전환과 완전히 독립적으로 유지됨
 
 ## Phase 4. Daily Summary 화면 검증
 

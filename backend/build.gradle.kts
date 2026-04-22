@@ -27,6 +27,12 @@ repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.ai:spring-ai-bom:2.0.0-M4")
+    }
+}
+
 dependencies {
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -39,6 +45,9 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
+
+    // AI
+    implementation("org.springframework.ai:spring-ai-starter-model-ollama")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")

@@ -16,7 +16,16 @@ public class NotioException extends RuntimeException {
     }
 
     public NotioException(final ErrorCode errorCode, final String message, final Map<String, Object> details) {
-        super(message);
+        this(errorCode, message, details, null);
+    }
+
+    public NotioException(
+            final ErrorCode errorCode,
+            final String message,
+            final Map<String, Object> details,
+            final Throwable cause
+    ) {
+        super(message, cause);
         this.errorCode = errorCode;
         this.details = details == null ? Map.of() : Map.copyOf(details);
     }

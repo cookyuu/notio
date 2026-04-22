@@ -105,18 +105,25 @@
 
 ## Phase 4. Backend 의존성 및 설정 클래스 추가
 
-- [ ] Spring AI Ollama 의존성을 추가한다.
-- [ ] Spring AI 버전과 Spring Boot 4.0.0 호환성을 확인한다.
-- [ ] Ollama chat model 설정을 구성한다.
-- [ ] Ollama embedding model 설정을 구성한다.
-- [ ] `SpringAiConfig` 또는 동등한 설정 클래스를 추가한다.
-- [ ] model name, base URL, timeout을 환경 변수로 주입한다.
-- [ ] LLM 연결 실패를 표준 예외로 변환하는 공통 처리 지점을 둔다.
+- [x] Spring AI Ollama 의존성을 추가한다.
+- [x] Spring AI 버전과 Spring Boot 4.0.0 호환성을 확인한다.
+- [x] Ollama chat model 설정을 구성한다.
+- [x] Ollama embedding model 설정을 구성한다.
+- [x] `SpringAiConfig` 또는 동등한 설정 클래스를 추가한다.
+- [x] model name, base URL, timeout을 환경 변수로 주입한다.
+- [x] LLM 연결 실패를 표준 예외로 변환하는 공통 처리 지점을 둔다.
 
 ### Phase 4 확인 메모
 
 - 새 프레임워크를 추가하지 않고 Spring AI + Ollama 범위로 제한한다.
 - Phase 1에서 provider 구현만 remote AI Service client로 교체할 수 있어야 한다.
+- Spring AI 공식 릴리스 정보 기준 2.x 라인이 Spring Boot 4.0 / Spring Framework 7.0 기반이므로 `spring-ai-bom:2.0.0-M4`를 사용한다.
+- `spring-ai-starter-model-ollama`를 추가해 Spring Boot auto-configuration으로 Ollama chat/embedding model bean을 구성한다.
+- `application.yml`의 `spring.ai.ollama.base-url`, `spring.ai.ollama.chat.options.model`, `spring.ai.ollama.embedding.options.model`은 각각 `NOTIO_OLLAMA_URL`, `NOTIO_LLM_MODEL`, `NOTIO_EMBED_MODEL`로 주입된다.
+- `notio.ai.llm-timeout`, `notio.ai.embedding-timeout`, `notio.ai.streaming-timeout`은 `NotioAiProperties`로 바인딩한다.
+- `notio.rag.top-k`, `notio.rag.embedding-dimension`은 `NotioRagProperties`로 바인딩한다.
+- `SpringAiConfig`에서 Notio AI/RAG 설정 properties를 활성화한다.
+- `AiExceptionTranslator`를 추가해 provider 구현 단계에서 Ollama/LLM 연결 실패를 `LLM_UNAVAILABLE`, embedding 실패를 `EMBEDDING_FAILED`로 표준화할 수 있게 했다.
 
 ## Phase 5. ChatMessage 영속화
 
