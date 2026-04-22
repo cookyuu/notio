@@ -7,14 +7,14 @@
 
 ## Phase 0. 범위 확정 및 현재 계약 검증
 
-- [ ] `docs/plans/plan_fix.md`를 기준 문서로 확정한다.
-- [ ] Phase 0에서는 Spring Boot 모놀리스 내부에서 RAG + LLM을 구현한다.
-- [ ] Phase 1의 Python FastAPI/LangChain AI Service 분리를 고려해 `LlmProvider`, `EmbeddingProvider`, `RagRetriever`, `PromptBuilder` 경계를 둔다.
-- [ ] 기존 Chat API 엔드포인트를 유지한다.
-- [ ] 기존 `ApiResponse` 응답 형식을 유지한다.
-- [ ] SSE 이벤트 흐름은 기존 프론트가 처리 가능한 `chunk`, `done` 구조로 유지한다.
-- [ ] 기존 `docker-compose/docker-compose.yml`의 PostgreSQL, Redis 설정은 변경하지 않는다.
-- [ ] DB 스키마 변경은 Flyway 신규 migration 파일로만 관리한다.
+- [x] `docs/plans/plan_fix.md`를 기준 문서로 확정한다.
+- [x] Phase 0에서는 Spring Boot 모놀리스 내부에서 RAG + LLM을 구현한다.
+- [x] Phase 1의 Python FastAPI/LangChain AI Service 분리를 고려해 `LlmProvider`, `EmbeddingProvider`, `RagRetriever`, `PromptBuilder` 경계를 둔다.
+- [x] 기존 Chat API 엔드포인트를 유지한다.
+- [x] 기존 `ApiResponse` 응답 형식을 유지한다.
+- [x] SSE 이벤트 흐름은 기존 프론트가 처리 가능한 `chunk`, `done` 구조로 유지한다.
+- [x] 기존 `docker-compose/docker-compose.yml`의 PostgreSQL, Redis 설정은 변경하지 않는다.
+- [x] DB 스키마 변경은 Flyway 신규 migration 파일로만 관리한다.
 
 ### Phase 0 확인 메모
 
@@ -22,6 +22,17 @@
 - 현재 `ChatService`는 인메모리 history와 더미/규칙 기반 응답을 사용하므로 실제 구현 단계에서 제거 대상이다.
 - 현재 `DailySummaryService`는 규칙 기반 요약이므로 LLM 기반 요약으로 전환한다.
 - 현재 프론트는 `created_at`, `total_messages` 같은 `snake_case` JSON 필드를 기대하며, 백엔드 Jackson 설정도 `SNAKE_CASE`를 사용한다.
+
+### Phase 0 검증 결과
+
+- 기준 문서는 `docs/plans/plan_fix.md`로 확정하고, API 계약은 `docs/api/spec_fix.md`를 따른다.
+- 현재 유지 대상 엔드포인트는 `ChatController`에 모두 존재한다: `POST /api/v1/chat`, `GET /api/v1/chat/stream`, `GET /api/v1/chat/daily-summary`, `GET /api/v1/chat/history`.
+- 현재 공통 응답은 `ApiResponse<T>`의 `success`, `data`, `error` 구조를 사용한다.
+- 현재 백엔드 Jackson 설정은 `SNAKE_CASE`이며, `ChatMessageResponse.createdAt`과 `DailySummaryResponse.totalMessages`는 각각 `created_at`, `total_messages`로 직렬화된다.
+- 현재 Docker Compose의 PostgreSQL, Redis 설정은 유지되어 있고 Ollama는 아직 주석 처리 상태다.
+- 현재 DB schema 변경은 `backend/src/main/resources/db/migration`의 Flyway migration으로 관리되고 있다.
+- 현재 SSE 구현은 event name `chunk`, `done`과 raw data를 사용한다. `spec_fix.md`의 JSON payload 예시(`{"chunk": ...}`, `{"done": true, "message_id": ...}`)와는 차이가 있으므로 Phase 10 구현 시 프론트 파서와 함께 최종 정합성을 맞춘다.
+- 현재 Chat role 응답은 프론트 기존 파서 기준 `user`, `assistant` 소문자 문자열이다. `spec_fix.md`의 `USER`, `ASSISTANT` 표기와 차이가 있으므로 실제 영속화 전환 단계에서 계약을 재확인한다.
 
 ## Phase 1. Docker Compose 인프라 준비
 
