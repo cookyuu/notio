@@ -1,9 +1,9 @@
 # Notio API 명세서
 
-> **버전**: v1.3
+> **버전**: v2.0
 > **Base URL**: `http://localhost:8080` (로컬 개발)
 > **API 버전**: `/api/v1`
-> **최종 수정**: 2026-04-13
+> **최종 수정**: 2026-04-22
 
 ---
 
@@ -78,9 +78,13 @@
 | 200 | 성공 |
 | 201 | 생성 성공 |
 | 204 | 성공 (응답 본문 없음) |
+| 302 | 리다이렉트 (OAuth callback 등) |
 | 400 | 잘못된 요청 |
 | 401 | 인증 실패 |
+| 403 | 접근 권한 없음 |
 | 404 | 리소스 없음 |
+| 409 | 중복 또는 상태 충돌 |
+| 429 | Rate limit 초과 |
 | 500 | 서버 내부 오류 |
 | 503 | 서비스 사용 불가 (LLM 장애 등) |
 
@@ -132,6 +136,16 @@ PENDING, IN_PROGRESS, DONE
 USER, ASSISTANT
 ```
 
+**AuthProvider (enum)**
+```
+LOCAL, GOOGLE, APPLE, KAKAO, NAVER
+```
+
+**AuthPlatform (enum)**
+```
+WEB, MOBILE
+```
+
 ### 1.5 필드 명세 규칙
 
 이 문서에서 사용하는 필드 표기법:
@@ -150,8 +164,7 @@ USER, ASSISTANT
 
 ### 2.1 개요
 
-인증 API는 JWT 기반 토큰 인증을 기준으로 정의합니다.
-Frontend는 아래 `login`, `refresh`, `logout` 엔드포인트를 사용합니다.
+인증 API는 JWT 기반 토큰 인증을 기준으로 정의합니다. 기존 로그인/토큰 재발급/로그아웃 계약에 더해 이메일 기반 회원가입, 아이디 찾기, 비밀번호 재설정, OAuth 확장 계약을 포함합니다.
 
 **인증 헤더:**
 ```
@@ -159,15 +172,104 @@ Authorization: Bearer {JWT_TOKEN}
 ```
 
 **참고:**
-- 2026-04-13 기준 backend에는 인증 API 구현이 아직 없습니다.
-- 본 섹션은 frontend와 backend 간 계약 명세입니다.
-- 회원가입 API는 현재 정의되어 있지 않습니다.
+- 로그인 식별자는 `이메일 = 아이디`로 봅니다.
+- 아이디 찾기와 비밀번호 재설정 요청은 계정 존재 여부를 노출하지 않습니다.
+- OAuth는 provider adapter + registry 기반 확장 구조를 전제로 합니다.
+- provider access token, id token, raw reset token은 로그에 남기지 않습니다.
 
-### 2.2 로그인
+### 2.2 인증 공통 타입
+
+**AuthProvider**
+
+| 값 | 설명 |
+|----|------|
+| `LOCAL` | 이메일/비밀번호 |
+| `GOOGLE` | Google OAuth |
+| `APPLE` | Apple Sign In |
+| `KAKAO` | Kakao OAuth |
+| `NAVER` | Naver OAuth |
+
+**AuthPlatform**
+
+| 값 | 설명 |
+|----|------|
+| `WEB` | 웹 브라우저 |
+| `MOBILE` | 모바일 앱 |
+
+**OAuthNormalizedProfile**
+
+OAuth provider 연동 시 서버 내부에서 정규화하는 사용자 프로필 구조입니다.
+
+| 필드 | 타입 | Nullable | 설명 |
+|------|------|----------|------|
+| `provider` | string | N | provider 식별자 |
+| `provider_user_id` | string | N | provider 내부 사용자 식별자 |
+| `email` | string | Y | provider가 제공한 이메일 |
+| `email_verified` | boolean | N | 이메일 검증 여부 |
+| `display_name` | string | Y | provider가 제공한 표시명 |
+
+**AuthSession**
+
+로그인/OAuth 교환 성공 시 사용하는 공통 세션 응답 구조입니다.
+
+| 필드 | 타입 | Nullable | 설명 |
+|------|------|----------|------|
+| `access_token` | string | N | JWT access token |
+| `refresh_token` | string | N | JWT refresh token |
+| `token_type` | string | N | 기본값 `Bearer` |
+| `expires_in` | int | N | access token 만료 시간(초) |
+| `user` | object | N | 현재 사용자 요약 정보 |
+
+`user` 객체:
+
+| 필드 | 타입 | Nullable | 설명 |
+|------|------|----------|------|
+| `id` | int | N | 사용자 ID |
+| `primary_email` | string | N | 기본 이메일 |
+| `display_name` | string | Y | 표시명 |
+| `status` | string | N | 사용자 상태 |
+
+### 2.3 회원가입
+
+**Endpoint:** `POST /api/v1/auth/signup`
+
+**설명:** 이메일과 비밀번호로 계정을 생성합니다. 내부적으로 `User + LOCAL AuthIdentity`를 생성하며, 중복 이메일은 허용하지 않습니다.
+
+**Request Body - 필드 명세:**
+
+| 필드 | 타입 | 필수 | 제약사항 | 설명 |
+|------|------|------|----------|------|
+| `email` | string | * | email format, max: 255 | 로그인 이메일 |
+| `password` | string | * | min: 8, max: 100 | 로그인 비밀번호 |
+
+**Request Example:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password1234"
+}
+```
+
+**Response 201 Created Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "회원가입이 완료되었습니다."
+  },
+  "error": null
+}
+```
+
+**Error Cases:**
+- `400 INVALID_INPUT_VALUE`: 이메일/비밀번호 형식 오류
+- `409 EMAIL_ALREADY_EXISTS`: 이미 가입된 이메일
+
+### 2.4 로그인
 
 **Endpoint:** `POST /api/v1/auth/login`
 
-**설명:** 이메일과 비밀번호로 로그인하고 access/refresh token을 발급합니다.
+**설명:** LOCAL identity 기준으로 로그인하고 access/refresh token을 발급합니다.
 
 **Request Body - 필드 명세:**
 
@@ -186,36 +288,33 @@ Authorization: Bearer {JWT_TOKEN}
 
 **Response 200 OK - 필드 명세:**
 
-`data` 객체:
-
-| 필드 | 타입 | Nullable | 제약사항 | 설명 |
-|------|------|----------|----------|------|
-| `user_id` | string | N | max: 100 | 사용자 식별자 |
-| `email` | string | N | email format | 사용자 이메일 |
-| `access_token` | string | N | JWT | API 인증용 액세스 토큰 |
-| `refresh_token` | string | N | opaque/JWT | 토큰 재발급용 리프레시 토큰 |
-| `expires_in` | int | N | seconds, min: 1 | 액세스 토큰 만료 시간(초) |
+`data` 객체는 `AuthSession` 구조를 따릅니다.
 
 **Response Example:**
 ```json
 {
   "success": true,
   "data": {
-    "user_id": "user-123",
-    "email": "user@example.com",
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refresh_token": "refresh-token-value",
-    "expires_in": 3600
+    "access_token": "eyJhbGciOi...",
+    "refresh_token": "eyJhbGciOi...",
+    "token_type": "Bearer",
+    "expires_in": 3600,
+    "user": {
+      "id": 1,
+      "primary_email": "user@example.com",
+      "display_name": null,
+      "status": "ACTIVE"
+    }
   },
   "error": null
 }
 ```
 
 **Error Cases:**
-- `400 INVALID_REQUEST`: 요청 필드 누락 또는 형식 오류
-- `401 UNAUTHORIZED`: 이메일 또는 비밀번호 불일치
+- `400 INVALID_INPUT_VALUE`: 요청 필드 누락 또는 형식 오류
+- `401 INVALID_CREDENTIALS`: 이메일 또는 비밀번호 불일치
 
-### 2.3 토큰 재발급
+### 2.5 토큰 재발급
 
 **Endpoint:** `POST /api/v1/auth/refresh`
 
@@ -258,10 +357,10 @@ Authorization: Bearer {JWT_TOKEN}
 ```
 
 **Error Cases:**
-- `400 INVALID_REQUEST`: refresh token 누락
+- `400 INVALID_INPUT_VALUE`: refresh token 누락
 - `401 UNAUTHORIZED`: refresh token 만료 또는 무효
 
-### 2.4 로그아웃
+### 2.6 로그아웃
 
 **Endpoint:** `POST /api/v1/auth/logout`
 
@@ -288,6 +387,290 @@ Authorization: Bearer {JWT_TOKEN}
 
 **Error Cases:**
 - `401 UNAUTHORIZED`: 액세스 토큰이 없거나 유효하지 않음
+
+### 2.7 아이디 찾기
+
+**Endpoint:** `POST /api/v1/auth/find-id`
+
+**설명:** 입력한 이메일을 기준으로 가입 정보 안내 메일을 발송합니다. 계정 존재 여부와 무관하게 동일한 성공 응답을 반환합니다.
+
+**Request Body - 필드 명세:**
+
+| 필드 | 타입 | 필수 | 제약사항 | 설명 |
+|------|------|------|----------|------|
+| `email` | string | * | email format, max: 255 | 안내를 받을 이메일 |
+
+**Request Example:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response 200 OK Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "입력한 이메일로 가입 정보 안내를 전송했습니다."
+  },
+  "error": null
+}
+```
+
+**보안 정책:**
+- 존재하는 계정이어도, 존재하지 않는 계정이어도 같은 응답을 반환합니다.
+- 응답 본문에 가입 여부를 직접 노출하지 않습니다.
+
+**Error Cases:**
+- `400 INVALID_INPUT_VALUE`: 이메일 형식 오류
+- `429 RATE_LIMIT_EXCEEDED`: 허용 요청 수 초과
+
+### 2.8 비밀번호 재설정 요청
+
+**Endpoint:** `POST /api/v1/auth/password-reset/request`
+
+**설명:** 비밀번호 재설정 메일을 요청합니다. 계정 존재 여부와 무관하게 동일한 성공 응답을 반환합니다. 서버는 raw token을 메일 링크에 담고 DB에는 `token_hash`만 저장합니다.
+
+**Request Body - 필드 명세:**
+
+| 필드 | 타입 | 필수 | 제약사항 | 설명 |
+|------|------|------|----------|------|
+| `email` | string | * | email format, max: 255 | 재설정 메일 수신 이메일 |
+
+**Request Example:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response 200 OK Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "비밀번호 재설정 안내를 전송했습니다."
+  },
+  "error": null
+}
+```
+
+**보안 정책:**
+- 계정 존재 여부와 무관하게 동일 응답을 반환합니다.
+- reset token은 raw 값 그대로 저장하지 않습니다.
+- DB에는 `token_hash`만 저장합니다.
+
+**Error Cases:**
+- `400 INVALID_INPUT_VALUE`: 이메일 형식 오류
+- `429 RATE_LIMIT_EXCEEDED`: 허용 요청 수 초과
+
+### 2.9 비밀번호 재설정 확정
+
+**Endpoint:** `POST /api/v1/auth/password-reset/confirm`
+
+**설명:** reset token과 새 비밀번호를 받아 비밀번호를 변경합니다. 성공 시 사용된 token을 소진 처리하고 기존 refresh token을 모두 revoke합니다.
+
+**Request Body - 필드 명세:**
+
+| 필드 | 타입 | 필수 | 제약사항 | 설명 |
+|------|------|------|----------|------|
+| `token` | string | * | min: 1 | 메일 링크에 포함된 raw token |
+| `new_password` | string | * | min: 8, max: 100 | 새 비밀번호 |
+
+**Request Example:**
+```json
+{
+  "token": "raw-reset-token",
+  "new_password": "newPassword1234"
+}
+```
+
+**Response 200 OK Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "비밀번호가 재설정되었습니다."
+  },
+  "error": null
+}
+```
+
+**Error Cases:**
+- `400 PASSWORD_RESET_TOKEN_INVALID`: 잘못된 token
+- `400 PASSWORD_RESET_TOKEN_EXPIRED`: 만료된 token
+- `400 INVALID_INPUT_VALUE`: 새 비밀번호 형식 오류
+- `429 RATE_LIMIT_EXCEEDED`: 허용 요청 수 초과
+
+### 2.10 OAuth 시작
+
+**Endpoint:** `POST /api/v1/auth/oauth/start`
+
+**설명:** provider 인증 페이지로 이동하기 위한 URL과 state를 발급합니다. `redirect_uri`와 `platform` 정보를 저장해 callback 시 검증합니다.
+
+**Request Body - 필드 명세:**
+
+| 필드 | 타입 | 필수 | 제약사항 | 설명 |
+|------|------|------|----------|------|
+| `provider` | string | * | enum: GOOGLE, APPLE, KAKAO, NAVER | OAuth provider |
+| `platform` | string | * | enum: WEB, MOBILE | 요청 플랫폼 |
+| `redirect_uri` | string | * | uri format | callback 완료 후 돌아올 프론트 주소 |
+
+**Request Example:**
+```json
+{
+  "provider": "GOOGLE",
+  "platform": "WEB",
+  "redirect_uri": "https://app.notio.dev/auth/oauth/callback"
+}
+```
+
+**Response 200 OK Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?...",
+    "state": "oauth-state-value"
+  },
+  "error": null
+}
+```
+
+**Error Cases:**
+- `400 AUTH_PROVIDER_UNSUPPORTED`: 미지원 provider
+- `400 INVALID_INPUT_VALUE`: 요청 필드 누락 또는 형식 오류
+- `429 RATE_LIMIT_EXCEEDED`: 허용 요청 수 초과
+
+### 2.11 OAuth Callback
+
+**Endpoint:** `GET /api/v1/auth/oauth/callback/{provider}`
+
+**설명:** provider callback을 수신합니다. 서버는 `state`를 검증한 뒤 프론트 callback route 또는 플랫폼 redirect URI로 redirect합니다. 이 엔드포인트는 일반 JSON 응답 대신 redirect 응답을 사용합니다.
+
+**Path Parameters:**
+
+| 파라미터 | 타입 | 필수 | 제약사항 | 설명 |
+|---------|------|------|----------|------|
+| `provider` | string | * | enum: GOOGLE, APPLE, KAKAO, NAVER | OAuth provider |
+
+**Query Parameters:**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| `code` | string | - | provider authorization code |
+| `state` | string | - | 요청 시 저장된 state |
+| `error` | string | - | provider가 반환한 오류 코드 |
+
+**성공 동작:**
+- 상태 코드: `302 Found`
+- 대상: 프론트 `/auth/oauth/callback` 또는 플랫폼 redirect URI
+- 전달 파라미터 예시: `provider`, `code`, `state`, `error`
+
+**Error Cases:**
+- `400 OAUTH_STATE_INVALID`: state 검증 실패
+- `400 OAUTH_CALLBACK_FAILED`: provider callback 오류
+- `400 AUTH_PROVIDER_UNSUPPORTED`: 미지원 provider
+
+### 2.12 OAuth 교환
+
+**Endpoint:** `POST /api/v1/auth/oauth/exchange`
+
+**설명:** 프론트 callback 화면 또는 모바일 앱이 provider 결과를 서버에 전달합니다. 서버는 provider code를 access token으로 교환하고 사용자 프로필을 정규화한 뒤 앱 세션 토큰을 발급합니다.
+
+**Request Body - 필드 명세:**
+
+| 필드 | 타입 | 필수 | 제약사항 | 설명 |
+|------|------|------|----------|------|
+| `provider` | string | * | enum: GOOGLE, APPLE, KAKAO, NAVER | OAuth provider |
+| `platform` | string | * | enum: WEB, MOBILE | 요청 플랫폼 |
+| `code` | string | * | min: 1 | provider authorization code |
+| `state` | string | * | min: 1 | callback state |
+| `redirect_uri` | string | * | uri format | 시작 시 사용한 redirect URI |
+
+**Request Example:**
+```json
+{
+  "provider": "GOOGLE",
+  "platform": "WEB",
+  "code": "provider-auth-code",
+  "state": "oauth-state-value",
+  "redirect_uri": "https://app.notio.dev/auth/oauth/callback"
+}
+```
+
+**Response 200 OK - 필드 명세:**
+
+`data` 객체는 `AuthSession` 구조를 따릅니다.
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "access_token": "eyJhbGciOi...",
+    "refresh_token": "eyJhbGciOi...",
+    "token_type": "Bearer",
+    "expires_in": 3600,
+    "user": {
+      "id": 1,
+      "primary_email": "user@example.com",
+      "display_name": "Notio User",
+      "status": "ACTIVE"
+    }
+  },
+  "error": null
+}
+```
+
+**Error Cases:**
+- `400 AUTH_PROVIDER_UNSUPPORTED`: 미지원 provider
+- `400 OAUTH_STATE_INVALID`: state 검증 실패
+- `400 OAUTH_CALLBACK_FAILED`: code 교환 또는 프로필 조회 실패
+- `400 AUTH_PROVIDER_EMAIL_REQUIRED`: provider 정책상 이메일이 필요하지만 누락된 경우
+- `429 RATE_LIMIT_EXCEEDED`: 허용 요청 수 초과
+
+### 2.13 인증 Rate Limit 및 보안 정책
+
+**Rate Limit 대상:**
+
+- `POST /api/v1/auth/signup`
+- `POST /api/v1/auth/find-id`
+- `POST /api/v1/auth/password-reset/request`
+- `POST /api/v1/auth/password-reset/confirm`
+- `POST /api/v1/auth/oauth/start`
+- `POST /api/v1/auth/oauth/exchange`
+
+**Rate Limit 초과 응답:**
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "요청 횟수를 초과했습니다."
+  }
+}
+```
+
+**계정 존재 여부 비노출 대상:**
+
+- `POST /api/v1/auth/find-id`
+- `POST /api/v1/auth/password-reset/request`
+
+**비밀번호 재설정 보안 정책:**
+
+- reset token은 raw 값 그대로 저장하지 않습니다.
+- DB에는 `token_hash`만 저장합니다.
+- token은 1회만 사용할 수 있습니다.
+- 비밀번호 재설정 성공 시 기존 refresh token은 모두 revoke합니다.
+
+**OAuth 보안 정책:**
+
+- `state`는 반드시 서버 저장소와 대조 검증합니다.
+- callback 처리 시 `redirect_uri`와 `platform`을 함께 검증합니다.
+- provider access token, id token, raw reset token은 로그에 남기지 않습니다.
 
 ---
 
@@ -1366,6 +1749,18 @@ data: {"done": true, "message_id": 124}
 | `WEBHOOK_VERIFICATION_FAILED` | 401 | Webhook 서명 검증에 실패했습니다 |
 | `UNSUPPORTED_SOURCE` | 400 | 지원하지 않는 알림 소스입니다 |
 | `INVALID_REQUEST` | 400 | 잘못된 요청입니다 |
+| `INVALID_INPUT_VALUE` | 400 | 요청 값 형식이 잘못되었습니다 |
+| `INVALID_CREDENTIALS` | 401 | 로그인 자격 증명이 올바르지 않습니다 |
+| `UNAUTHORIZED` | 401 | 인증되지 않은 요청입니다 |
+| `FORBIDDEN` | 403 | 접근 권한이 없습니다 |
+| `EMAIL_ALREADY_EXISTS` | 409 | 이미 가입된 이메일입니다 |
+| `PASSWORD_RESET_TOKEN_INVALID` | 400 | 비밀번호 재설정 token이 올바르지 않습니다 |
+| `PASSWORD_RESET_TOKEN_EXPIRED` | 400 | 비밀번호 재설정 token이 만료되었습니다 |
+| `AUTH_PROVIDER_UNSUPPORTED` | 400 | 지원하지 않는 OAuth provider입니다 |
+| `AUTH_PROVIDER_EMAIL_REQUIRED` | 400 | provider 연동에 필요한 이메일이 없습니다 |
+| `OAUTH_STATE_INVALID` | 400 | OAuth state 검증에 실패했습니다 |
+| `OAUTH_CALLBACK_FAILED` | 400 | OAuth callback 또는 code 교환에 실패했습니다 |
+| `RATE_LIMIT_EXCEEDED` | 429 | 허용 요청 수를 초과했습니다 |
 | `LLM_UNAVAILABLE` | 503 | LLM 서비스를 사용할 수 없습니다 |
 | `EMBEDDING_FAILED` | 500 | 임베딩 생성에 실패했습니다 |
 | `INTERNAL_SERVER_ERROR` | 500 | 서버 내부 오류가 발생했습니다 |
@@ -1442,6 +1837,33 @@ data: {"done": true, "message_id": 124}
   is_active: boolean;        // 활성화 여부
   created_at: string;        // ISO 8601 format
   updated_at: string;        // ISO 8601 format
+}
+```
+
+**AuthSession 객체:**
+```typescript
+{
+  access_token: string;      // JWT access token
+  refresh_token: string;     // JWT refresh token
+  token_type: "Bearer";
+  expires_in: number;        // seconds
+  user: {
+    id: number;
+    primary_email: string;
+    display_name: string | null;
+    status: string;
+  };
+}
+```
+
+**OAuthNormalizedProfile 객체:**
+```typescript
+{
+  provider: AuthProvider;
+  provider_user_id: string;
+  email: string | null;
+  email_verified: boolean;
+  display_name: string | null;
 }
 ```
 
