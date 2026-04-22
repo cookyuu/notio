@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:notio_app/features/chat/data/models/chat_message_model.dart';
 import 'package:notio_app/features/chat/data/models/chat_request.dart';
@@ -5,6 +7,9 @@ import 'package:notio_app/features/chat/data/models/daily_summary_model.dart';
 
 /// Remote data source for chat messages
 class ChatRemoteDataSource {
+  static const chatReceiveTimeout = Duration(minutes: 2);
+  static const streamReceiveTimeout = Duration(minutes: 5);
+
   final Dio _dio;
 
   ChatRemoteDataSource(this._dio);
@@ -16,8 +21,7 @@ class ChatRemoteDataSource {
         '/api/v1/chat',
         data: request.toJson(),
         options: Options(
-          // Set timeout longer than backend LLM timeout (30s) to avoid race condition
-          receiveTimeout: const Duration(seconds: 35),
+          receiveTimeout: chatReceiveTimeout,
         ),
       );
 
@@ -40,17 +44,14 @@ class ChatRemoteDataSource {
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'text/event-stream'},
-          // Set longer timeout for SSE streaming (backend LLM timeout is 30s)
-          receiveTimeout: const Duration(seconds: 60),
+          receiveTimeout: streamReceiveTimeout,
         ),
       );
 
-      final stream = response.data.stream;
       var pending = '';
-      await for (final chunk in stream) {
-        pending += String.fromCharCodes(chunk)
-            .replaceAll('\r\n', '\n')
-            .replaceAll('\r', '\n');
+      final byteStream = response.data.stream.cast<List<int>>();
+      await for (final text in utf8.decoder.bind(byteStream)) {
+        pending += text.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
         var separatorIndex = pending.indexOf('\n\n');
         while (separatorIndex >= 0) {
           final eventBlock = pending.substring(0, separatorIndex);

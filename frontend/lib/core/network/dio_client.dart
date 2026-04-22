@@ -9,12 +9,16 @@ class DioClient {
   static Dio create({
     required String baseUrl,
     bool enableLogging = true,
+    Duration connectTimeout = const Duration(seconds: 30),
+    Duration receiveTimeout = const Duration(seconds: 30),
+    Duration? sendTimeout,
   }) {
     final dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        connectTimeout: connectTimeout,
+        receiveTimeout: receiveTimeout,
+        sendTimeout: sendTimeout,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

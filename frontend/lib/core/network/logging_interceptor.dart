@@ -9,6 +9,10 @@ class LoggingInterceptor extends Interceptor {
       print('┌─────────────────────────────────────────────────────────────');
       print('│ REQUEST: ${options.method} ${options.uri}');
       print('│ Headers: ${options.headers}');
+      print(
+        '│ Timeouts: connect=${options.connectTimeout}, '
+        'send=${options.sendTimeout}, receive=${options.receiveTimeout}',
+      );
       if (options.data != null) {
         print('│ Body: ${options.data}');
       }
@@ -34,6 +38,11 @@ class LoggingInterceptor extends Interceptor {
       print('┌─────────────────────────────────────────────────────────────');
       print('│ ERROR: ${err.requestOptions.method} ${err.requestOptions.uri}');
       print('│ Message: ${err.message}');
+      print(
+        '│ Timeouts: connect=${err.requestOptions.connectTimeout}, '
+        'send=${err.requestOptions.sendTimeout}, '
+        'receive=${err.requestOptions.receiveTimeout}',
+      );
       print('│ Response: ${err.response?.data}');
       print('└─────────────────────────────────────────────────────────────');
     }

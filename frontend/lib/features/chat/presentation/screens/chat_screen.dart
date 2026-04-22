@@ -22,19 +22,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _isSummaryExpanded = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scrollToBottom(jump: true),
+    );
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({bool jump = false}) {
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      final offset = _scrollController.position.maxScrollExtent;
+      if (jump) {
+        _scrollController.jumpTo(offset);
+      } else {
+        _scrollController.animateTo(
+          offset,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     }
+  }
+
+  void _scheduleScrollToBottom({bool jump = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _scrollToBottom(jump: jump);
+    });
   }
 
   void _handleSendMessage(String content) {
@@ -42,11 +64,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     notifier.sendMessageWithStreaming(content);
 
     // Scroll to bottom after message is sent
-    Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+    Future.delayed(
+      const Duration(milliseconds: 100),
+      () => _scheduleScrollToBottom(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(chatProvider, (previous, next) {
+      final previousMessageCount = previous?.messages.length ?? 0;
+      final didInitialLoad = previous?.isLoading == true && !next.isLoading;
+      final didMessageCountChange = previousMessageCount != next.messages.length;
+      final didStreamingContentChange =
+          previous?.streamingContent != next.streamingContent &&
+              next.streamingContent != null;
+
+      if (didInitialLoad || didMessageCountChange || didStreamingContentChange) {
+        _scheduleScrollToBottom(jump: didInitialLoad);
+      }
+    });
+
     final chatState = ref.watch(chatProvider);
 
     return Scaffold(

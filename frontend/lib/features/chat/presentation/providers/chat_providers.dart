@@ -17,6 +17,9 @@ final dioProvider = Provider<Dio>((ref) {
   return DioClient.create(
     baseUrl: ApiConstants.baseUrl,
     enableLogging: true,
+    connectTimeout: ChatRemoteDataSource.streamReceiveTimeout,
+    receiveTimeout: ChatRemoteDataSource.streamReceiveTimeout,
+    sendTimeout: ChatRemoteDataSource.streamReceiveTimeout,
   );
 });
 

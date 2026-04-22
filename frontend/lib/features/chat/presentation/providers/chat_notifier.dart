@@ -22,7 +22,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         final cachedMessages = await _repository.getCachedMessages();
         if (cachedMessages.isNotEmpty) {
           state = state.copyWith(
-            messages: cachedMessages,
+            messages: _oldestFirst(cachedMessages),
             isLoading: false,
           );
           return;
@@ -34,7 +34,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // If cache is empty, fetch from remote
       final messages = await _repository.fetchHistory(page: 0, size: 50);
       state = state.copyWith(
-        messages: messages,
+        messages: _oldestFirst(messages),
         isLoading: false,
       );
     } catch (e) {
@@ -184,7 +184,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       final messages = await _repository.fetchHistory(page: 0, size: 50);
       state = state.copyWith(
-        messages: messages,
+        messages: _oldestFirst(messages),
         isLoading: false,
       );
     } catch (e) {
@@ -199,5 +199,16 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void clearMessages() {
     _repository.clearCache();
     state = const ChatState();
+  }
+
+  List<ChatMessageEntity> _oldestFirst(List<ChatMessageEntity> messages) {
+    return List<ChatMessageEntity>.from(messages)
+      ..sort((a, b) {
+        final createdAtComparison = a.createdAt.compareTo(b.createdAt);
+        if (createdAtComparison != 0) {
+          return createdAtComparison;
+        }
+        return a.id.compareTo(b.id);
+      });
   }
 }
