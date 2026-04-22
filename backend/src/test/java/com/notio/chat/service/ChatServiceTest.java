@@ -7,11 +7,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.notio.ai.llm.LlmProvider;
+import com.notio.ai.prompt.LlmPrompt;
+import com.notio.ai.prompt.PromptBuilder;
+import com.notio.ai.rag.RagDocument;
+import com.notio.ai.rag.RagRetriever;
 import com.notio.chat.domain.ChatMessage;
 import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
+import com.notio.chat.dto.ChatRequest;
 import com.notio.chat.repository.ChatMessageRepository;
-import com.notio.notification.service.NotificationService;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -23,10 +29,76 @@ import org.springframework.test.util.ReflectionTestUtils;
 class ChatServiceTest {
 
     @Test
+    void chatUsesRagPromptAndLlmThenStoresAssistantResponse() {
+        final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
+        final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final PromptBuilder promptBuilder = mock(PromptBuilder.class);
+        final LlmProvider llmProvider = mock(LlmProvider.class);
+        final ChatService chatService = new ChatService(
+                chatMessageRepository,
+                ragRetriever,
+                promptBuilder,
+                llmProvider
+        );
+        final ChatMessage userMessage = message(
+                1L,
+                ChatMessageRole.USER,
+                "오늘 중요한 알림 알려줘",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 0, 0, ZoneOffset.UTC)
+        );
+        final ChatMessage assistantMessage = message(
+                2L,
+                ChatMessageRole.ASSISTANT,
+                "GitHub PR 리뷰 요청이 중요합니다.",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 1, 0, ZoneOffset.UTC)
+        );
+        final RagDocument document = new RagDocument(
+                100L,
+                "GITHUB",
+                "PR review requested",
+                "리뷰 요청",
+                "HIGH",
+                Instant.parse("2026-04-22T09:59:00Z"),
+                0.91
+        );
+        final LlmPrompt prompt = new LlmPrompt("system", "user");
+        final ArgumentCaptor<ChatMessage> savedMessageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
+
+        when(chatMessageRepository.save(any(ChatMessage.class)))
+                .thenReturn(userMessage)
+                .thenReturn(assistantMessage);
+        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘")).thenReturn(List.of(document));
+        when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
+        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage)))
+                .thenReturn(prompt);
+        when(llmProvider.chat(prompt)).thenReturn("GitHub PR 리뷰 요청이 중요합니다.");
+
+        final ChatMessageResponse response = chatService.chat(new ChatRequest("오늘 중요한 알림 알려줘"));
+
+        assertThat(response.id()).isEqualTo(2L);
+        assertThat(response.role()).isEqualTo("ASSISTANT");
+        assertThat(response.content()).isEqualTo("GitHub PR 리뷰 요청이 중요합니다.");
+        verify(ragRetriever).retrieve(1L, "오늘 중요한 알림 알려줘");
+        verify(promptBuilder).buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage));
+        verify(llmProvider).chat(prompt);
+        verify(chatMessageRepository, org.mockito.Mockito.times(2)).save(savedMessageCaptor.capture());
+        assertThat(savedMessageCaptor.getAllValues())
+                .extracting(ChatMessage::getRole)
+                .containsExactly(ChatMessageRole.USER, ChatMessageRole.ASSISTANT);
+    }
+
+    @Test
     void historyReadsRecentMessagesFromRepository() {
         final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
-        final NotificationService notificationService = mock(NotificationService.class);
-        final ChatService chatService = new ChatService(chatMessageRepository, notificationService);
+        final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final PromptBuilder promptBuilder = mock(PromptBuilder.class);
+        final LlmProvider llmProvider = mock(LlmProvider.class);
+        final ChatService chatService = new ChatService(
+                chatMessageRepository,
+                ragRetriever,
+                promptBuilder,
+                llmProvider
+        );
         final ChatMessage message = message(
                 10L,
                 ChatMessageRole.ASSISTANT,

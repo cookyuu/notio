@@ -1,22 +1,18 @@
 package com.notio.chat.service;
 
+import com.notio.ai.llm.LlmProvider;
+import com.notio.ai.prompt.LlmPrompt;
+import com.notio.ai.prompt.PromptBuilder;
+import com.notio.ai.rag.RagDocument;
+import com.notio.ai.rag.RagRetriever;
 import com.notio.chat.domain.ChatMessage;
 import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
 import com.notio.chat.dto.ChatRequest;
 import com.notio.chat.repository.ChatMessageRepository;
-import com.notio.notification.service.NotificationService;
-import com.notio.notification.domain.Notification;
-import com.notio.notification.domain.NotificationPriority;
-import com.notio.notification.domain.NotificationSource;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -28,26 +24,31 @@ public class ChatService {
     private static final int HISTORY_LIMIT = 50;
 
     private final ChatMessageRepository chatMessageRepository;
-    private final NotificationService notificationService;
+    private final RagRetriever ragRetriever;
+    private final PromptBuilder promptBuilder;
+    private final LlmProvider llmProvider;
 
     public ChatService(
             final ChatMessageRepository chatMessageRepository,
-            final NotificationService notificationService
+            final RagRetriever ragRetriever,
+            final PromptBuilder promptBuilder,
+            final LlmProvider llmProvider
     ) {
         this.chatMessageRepository = chatMessageRepository;
-        this.notificationService = notificationService;
+        this.ragRetriever = ragRetriever;
+        this.promptBuilder = promptBuilder;
+        this.llmProvider = llmProvider;
     }
 
-    @Transactional
     public ChatMessageResponse chat(final ChatRequest request) {
-        append(ChatMessageRole.USER, request.content());
-        final String responseText = generateDummyAiResponse(request.content());
+        final ChatMessage userMessage = appendMessage(ChatMessageRole.USER, request.content());
+        final String responseText = generateAiResponse(request.content(), userMessage.getUserId());
         return append(ChatMessageRole.ASSISTANT, responseText);
     }
 
     public SseEmitter streamChat(final ChatRequest request) {
-        append(ChatMessageRole.USER, request.content());
-        final String responseText = generateDummyAiResponse(request.content());
+        final ChatMessage userMessage = appendMessage(ChatMessageRole.USER, request.content());
+        final String responseText = generateAiResponse(request.content(), userMessage.getUserId());
         final SseEmitter emitter = new SseEmitter(30_000L);
 
         new Thread(() -> {
@@ -79,91 +80,22 @@ public class ChatService {
     }
 
     private ChatMessageResponse append(final ChatMessageRole role, final String content) {
-        final ChatMessage message = new ChatMessage(DEFAULT_PHASE0_USER_ID, role, content);
-        return ChatMessageResponse.from(chatMessageRepository.save(message));
+        return ChatMessageResponse.from(appendMessage(role, content));
     }
 
-    private String generateDummyAiResponse(final String userMessage) {
-        final List<Notification> notifications = notificationService.findAll(
-                null, // source
-                null, // isRead
-                PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"))
-        ).getContent();
+    private ChatMessage appendMessage(final ChatMessageRole role, final String content) {
+        final ChatMessage message = new ChatMessage(DEFAULT_PHASE0_USER_ID, role, content);
+        return chatMessageRepository.save(message);
+    }
 
-        if (notifications.isEmpty()) {
-            return "현재 수집된 알림이 없습니다. Webhook을 통해 알림이 들어오면 분석해드리겠습니다.";
-        }
-
-        final Map<NotificationSource, Long> sourceCount = notifications.stream()
-                .collect(Collectors.groupingBy(Notification::getSource, Collectors.counting()));
-
-        final Map<NotificationPriority, Long> priorityCount = notifications.stream()
-                .collect(Collectors.groupingBy(Notification::getPriority, Collectors.counting()));
-
-        final long unreadCount = notifications.stream()
-                .filter(notification -> !notification.isRead())
-                .count();
-
-        final StringBuilder response = new StringBuilder();
-
-        if (userMessage.contains("요약") || userMessage.contains("summary")) {
-            response.append("최근 알림 분석 결과를 요약해드립니다.\n\n");
-            response.append(String.format("총 %d건의 알림이 있으며, 그 중 %d건이 미읽음 상태입니다.\n\n",
-                    notifications.size(), unreadCount));
-
-            response.append("소스별 분포:\n");
-            sourceCount.forEach((source, count) ->
-                    response.append(String.format("- %s: %d건\n", source.name(), count)));
-
-            response.append("\n우선순위별 분포:\n");
-            priorityCount.forEach((priority, count) ->
-                    response.append(String.format("- %s: %d건\n", priority.name(), count)));
-
-            if (priorityCount.getOrDefault(NotificationPriority.HIGH, 0L) > 0) {
-                response.append("\n⚠️ 높은 우선순위 알림이 있습니다. 확인해주세요!");
-            }
-        } else if (userMessage.contains("중요") || userMessage.contains("우선순위")) {
-            final List<Notification> highPriority = notifications.stream()
-                    .filter(notification -> notification.getPriority() == NotificationPriority.HIGH)
-                    .limit(3)
-                    .toList();
-
-            if (highPriority.isEmpty()) {
-                response.append("현재 높은 우선순위 알림이 없습니다.");
-            } else {
-                response.append(String.format("높은 우선순위 알림 %d건:\n\n", highPriority.size()));
-                highPriority.forEach(notification ->
-                        response.append(String.format("- [%s] %s\n",
-                                notification.getSource().name(), notification.getTitle())));
-            }
-        } else if (userMessage.contains("오늘") || userMessage.contains("today")) {
-            final LocalDate today = LocalDate.now(ZoneOffset.UTC);
-            final long todayCount = notifications.stream()
-                    .filter(notification -> notification.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate()
-                            .equals(today))
-                    .count();
-
-            response.append(String.format("오늘 수집된 알림은 총 %d건입니다.\n\n", todayCount));
-
-            if (todayCount > 0) {
-                response.append("주요 내용:\n");
-                notifications.stream()
-                        .filter(notification -> notification.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate()
-                                .equals(today))
-                        .limit(3)
-                        .forEach(notification ->
-                                response.append(String.format("- %s\n", notification.getTitle())));
-            }
-        } else {
-            response.append("안녕하세요! 알림 관리를 도와드리는 AI 어시스턴트입니다.\n\n");
-            response.append(String.format("현재 총 %d건의 알림이 있습니다.\n", notifications.size()));
-            response.append("다음과 같은 질문을 해보세요:\n");
-            response.append("- \"오늘 알림 요약해줘\"\n");
-            response.append("- \"중요한 알림 보여줘\"\n");
-            response.append("- \"전체 요약해줘\"\n");
-        }
-
-        return response.toString();
+    private String generateAiResponse(final String userMessage, final Long userId) {
+        final List<RagDocument> documents = ragRetriever.retrieve(userId, userMessage);
+        final List<ChatMessage> recentMessages = chatMessageRepository.findRecentByUserId(
+                userId,
+                PageRequest.of(0, 10)
+        );
+        final LlmPrompt prompt = promptBuilder.buildChatPrompt(userMessage, documents, recentMessages);
+        return llmProvider.chat(prompt);
     }
 
     private String[] splitIntoChunks(final String text) {

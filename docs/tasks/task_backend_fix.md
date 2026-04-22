@@ -229,22 +229,29 @@
 
 ## Phase 9. ChatService RAG + LLM 전환
 
-- [ ] `generateDummyAiResponse`를 제거한다.
-- [ ] 단건 chat 흐름을 실제 RAG + LLM 호출로 교체한다.
-- [ ] 사용자 메시지를 먼저 저장한다.
-- [ ] 질문 embedding을 생성한다.
-- [ ] pgvector top-k 검색을 수행한다.
-- [ ] prompt를 생성한다.
-- [ ] `LlmProvider.chat`을 호출한다.
-- [ ] assistant 메시지를 저장한다.
-- [ ] 기존 `ChatMessageResponse` 형식으로 반환한다.
-- [ ] LLM 장애 시 `LLM_UNAVAILABLE`로 매핑한다.
-- [ ] RAG 검색 결과가 없으면 명확한 fallback 응답을 제공한다.
+- [x] `generateDummyAiResponse`를 제거한다.
+- [x] 단건 chat 흐름을 실제 RAG + LLM 호출로 교체한다.
+- [x] 사용자 메시지를 먼저 저장한다.
+- [x] 질문 embedding을 생성한다.
+- [x] pgvector top-k 검색을 수행한다.
+- [x] prompt를 생성한다.
+- [x] `LlmProvider.chat`을 호출한다.
+- [x] assistant 메시지를 저장한다.
+- [x] 기존 `ChatMessageResponse` 형식으로 반환한다.
+- [x] LLM 장애 시 `LLM_UNAVAILABLE`로 매핑한다.
+- [x] RAG 검색 결과가 없으면 명확한 fallback 응답을 제공한다.
 
 ### Phase 9 확인 메모
 
 - API path, request body, response wrapper는 변경하지 않는다.
 - 사용자 인증 연동 전환 시 `DEFAULT_PHASE0_USER_ID` 제거 또는 축소 범위를 별도 검토한다.
+- `LlmProvider`와 `OllamaLlmProvider`를 `com.notio.ai.llm`에 추가해 Spring AI `ChatModel` 호출을 ChatService에서 분리했다.
+- `OllamaLlmProvider`는 system/user prompt를 Spring AI `Prompt`로 변환하고, 호출 실패 또는 빈 응답을 `LLM_UNAVAILABLE`로 표준화한다.
+- `ChatService.chat`는 사용자 메시지를 먼저 DB에 저장한 뒤 `RagRetriever.retrieve`를 호출한다. 질문 embedding 생성과 pgvector top-k 검색은 `PgvectorRagRetriever` 책임으로 유지한다.
+- `ChatService.chat`는 RAG context와 최근 대화 히스토리로 `PromptBuilder.buildChatPrompt`를 호출하고, `LlmProvider.chat` 결과를 assistant 메시지로 저장한 뒤 기존 `ChatMessageResponse`로 반환한다.
+- RAG 검색 결과가 없을 때의 fallback 문구는 Phase 8에서 중앙화한 `PromptBuilder` instruction으로 제공한다.
+- 검증 보강: `ChatServiceTest.chatUsesRagPromptAndLlmThenStoresAssistantResponse`를 추가해 user 저장, RAG 검색, prompt 생성, LLM 호출, assistant 저장 순서를 확인했다.
+- 검증: `/mnt/c` 작업트리에서는 Gradle `FileHasher`가 `Input/output error`로 시작하지 못해, `.gradle`/`build`를 제외하고 `backend`를 `/tmp/notio-backend-phase9-run`으로 복사한 뒤 `GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew --no-daemon test` 실행 통과.
 
 ## Phase 10. SSE Streaming 전환
 
