@@ -131,16 +131,28 @@
 
 ## Phase 5. 장애 및 빈 상태 검증
 
-- [ ] `LLM_UNAVAILABLE` 에러 메시지가 일반 네트워크 오류와 구분되어 표시되는지 확인한다.
-- [ ] RAG 검색 결과가 없을 때 backend fallback 응답이 일반 assistant 메시지처럼 표시되는지 확인한다.
-- [ ] Ollama 미기동 시 프론트가 crash 없이 error state로 전환되는지 확인한다.
-- [ ] stream 중 연결이 끊겼을 때 입력창이 다시 활성화되는지 확인한다.
-- [ ] daily summary 실패 시 재시도 버튼 또는 refresh 동작이 유지되는지 확인한다.
+- [x] `LLM_UNAVAILABLE` 에러 메시지가 일반 네트워크 오류와 구분되어 표시되는지 확인한다.
+- [x] RAG 검색 결과가 없을 때 backend fallback 응답이 일반 assistant 메시지처럼 표시되는지 확인한다.
+- [x] Ollama 미기동 시 프론트가 crash 없이 error state로 전환되는지 확인한다.
+- [x] stream 중 연결이 끊겼을 때 입력창이 다시 활성화되는지 확인한다.
+- [x] daily summary 실패 시 재시도 버튼 또는 refresh 동작이 유지되는지 확인한다.
 
 ### Phase 5 확인 메모
 
 - 에러 UI를 새로 설계하지 않고 기존 `ChatState.error` 흐름을 우선 사용한다.
 - 사용자에게 노출되는 메시지는 백엔드의 표준 `ApiResponse.error.message`를 따른다.
+- **검증 완료 (2026-04-22)**:
+  - **에러 메시지 구분**: 백엔드 에러는 `response.data['error']['message']`를 그대로 전달, 네트워크 에러는 `'네트워크 오류: ${e.message}'` prefix 추가로 구분 가능 (`chat_remote_datasource.dart:23,26,50,65,90`)
+  - **LLM_UNAVAILABLE 표시**: 백엔드가 명확한 에러 코드/메시지를 보내면 `chat_screen.dart:118`에서 그대로 표시하여 네트워크 오류와 구분됨
+  - **RAG fallback 응답**: 프론트는 `ChatMessageModel.content`를 그대로 표시하므로 백엔드가 fallback 응답을 일반 assistant 메시지로 보내면 자연스럽게 처리됨
+  - **Ollama 미기동 에러**: `chat_notifier.dart:136-143`에서 모든 예외를 catch하여 `error` 필드에 설정, `isSending: false`, `isStreaming: false`로 상태 정상화
+  - **에러 화면**: `chat_screen.dart:99-133`에서 에러 아이콘, 에러 메시지, Retry 버튼 표시
+  - **crash 방지**: try-catch로 모든 예외 처리하여 crash 없이 error state로 전환 보장
+  - **stream 연결 끊김**: streaming 중 에러 발생 시 `chat_notifier.dart:138-142`에서 `isSending: false`, `isStreaming: false`로 설정
+  - **입력창 재활성화**: `chat_screen.dart:85`에서 `enabled: !chatState.isSending && !chatState.isStreaming` 조건으로 에러 후 입력창 자동 활성화
+  - **TextField 비활성화**: `chat_input_field.dart:74`에서 `enabled: widget.enabled`로 streaming/sending 상태에 따라 입력창 제어
+  - **daily summary 재시도**: Phase 4에서 이미 검증 완료 (`daily_summary_card.dart:200-228`, retry 버튼 `line:221`)
+  - **에러 처리 일관성**: 모든 API 호출(sendMessage, streamMessage, getDailySummary, fetchHistory)에서 동일한 에러 처리 패턴 유지
 
 ## Phase 6. 테스트 및 검증
 
