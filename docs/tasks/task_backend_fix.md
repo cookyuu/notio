@@ -36,21 +36,24 @@
 
 ## Phase 1. Docker Compose 인프라 준비
 
-- [ ] 기존 PostgreSQL 서비스 설정을 변경하지 않는다.
-- [ ] 기존 Redis 서비스 설정을 변경하지 않는다.
-- [ ] 주석 처리된 `ollama` 서비스를 활성화한다.
-- [ ] `ollama_data` 볼륨을 활성화한다.
-- [ ] `ollama` 서비스는 기존 `notio-network`에 연결한다.
-- [ ] 로컬 실행 기준 `11434:11434` 포트를 노출한다.
-- [ ] `scripts/setup.sh` 또는 별도 문서에 모델 pull 절차를 반영한다.
-- [ ] `llama3.2:3b` 모델 pull 절차를 검증한다.
-- [ ] `nomic-embed-text` 모델 pull 절차를 검증한다.
+- [x] 기존 PostgreSQL 서비스 설정을 변경하지 않는다.
+- [x] 기존 Redis 서비스 설정을 변경하지 않는다.
+- [x] 주석 처리된 `ollama` 서비스를 활성화한다.
+- [x] `ollama_data` 볼륨을 활성화한다.
+- [x] `ollama` 서비스는 기존 `notio-network`에 연결한다.
+- [x] 로컬 실행 기준 `11434:11434` 포트를 노출한다.
+- [x] `scripts/setup.sh` 또는 별도 문서에 모델 pull 절차를 반영한다.
+- [x] `llama3.2:3b` 모델 pull 절차를 검증한다.
+- [x] `nomic-embed-text` 모델 pull 절차를 검증한다.
 
 ### Phase 1 확인 메모
 
 - 16GB RAM 로컬 테스트 기준 기본 LLM은 `llama3.2:3b`로 둔다.
 - 기본 embedding 모델은 `nomic-embed-text`로 둔다.
 - 메모리 부족 시 `llama3.2:1b`를 임시 대안으로 사용할 수 있지만 기본값은 변경하지 않는다.
+- `docker-compose/docker-compose.yml`에서 PostgreSQL/Redis 설정은 그대로 유지하고 Ollama 서비스와 `ollama_data` 볼륨만 활성화했다.
+- `scripts/setup.sh`는 루트 실행 기준 `docker compose -f docker-compose/docker-compose.yml up -d postgres redis ollama`를 사용하고, `llama3.2:3b`, `nomic-embed-text` pull 명령을 포함한다.
+- 검증: `bash -n scripts/setup.sh` 통과. 현재 WSL 환경에는 Docker CLI가 없어 `docker compose config` 및 실제 `ollama pull` 실행은 수행하지 못했다.
 
 ## Phase 2. 환경 변수 및 설정 추가
 

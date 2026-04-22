@@ -2,6 +2,8 @@
 
 set -e
 
+COMPOSE_FILE="docker-compose/docker-compose.yml"
+
 echo "🚀 Notio 개발 환경 설정 시작..."
 
 # 1. 환경 변수 파일 생성
@@ -13,7 +15,7 @@ fi
 
 # 2. Docker Compose 실행
 echo "🐳 Docker Compose 서비스 시작 중..."
-docker-compose up -d postgres redis ollama
+docker compose -f "$COMPOSE_FILE" up -d postgres redis ollama
 
 # 3. PostgreSQL 연결 대기
 echo "⏳ PostgreSQL 준비 대기 중..."
@@ -61,8 +63,8 @@ Frontend:
   cd frontend && flutter run
 
 Docker 서비스 확인:
-  docker-compose ps
+  docker compose -f docker-compose/docker-compose.yml ps
 
 Docker 서비스 종료:
-  docker-compose down
+  docker compose -f docker-compose/docker-compose.yml down
 "
