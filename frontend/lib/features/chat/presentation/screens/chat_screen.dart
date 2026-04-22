@@ -39,7 +39,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _handleSendMessage(String content) {
     final notifier = ref.read(chatProvider.notifier);
-    notifier.sendMessage(content);
+    notifier.sendMessageWithStreaming(content);
 
     // Scroll to bottom after message is sent
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
@@ -96,7 +96,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
     }
 
-    if (chatState.error != null) {
+    // Only show full-screen error if initial load failed and no messages
+    if (chatState.error != null && chatState.messages.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

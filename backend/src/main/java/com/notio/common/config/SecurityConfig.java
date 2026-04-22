@@ -3,6 +3,7 @@ package com.notio.common.config;
 import com.notio.auth.filter.JwtAuthenticationFilter;
 import com.notio.common.ratelimit.RateLimitFilter;
 import com.notio.common.ratelimit.RateLimitProperties;
+import jakarta.servlet.DispatcherType;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -34,6 +35,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         // Swagger UI 및 API 문서
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs/**").permitAll()
                         // 인증 API (로그인, 토큰 재발급)

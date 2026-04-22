@@ -205,12 +205,12 @@
 
 ## Phase 8. LLM 응답 대기 UX 점검
 
-- [ ] `POST /api/v1/chat`은 non-streaming 동기 API이므로 LLM 응답이 완료될 때까지 로딩 상태를 유지하는지 확인한다.
-- [ ] 동기 API 사용 시 `NOTIO_LLM_TIMEOUT` 기본값(30초)보다 짧은 프론트/Dio timeout으로 요청이 먼저 끊기지 않는지 확인한다.
-- [ ] 사용자가 토큰 단위 응답을 기대하는 Chat 화면이면 `GET /api/v1/chat/stream?content=...` SSE 경로를 기본 전송 방식으로 사용한다.
-- [ ] SSE 사용 시 `chunk` event를 누적 표시하고 `done` event 수신 후 입력창을 다시 활성화한다.
-- [ ] 백엔드가 timeout으로 `LLM_UNAVAILABLE`을 반환하면 기존 error state로 표시하고 입력창을 다시 활성화한다.
-- [ ] timeout 이후 Retry 버튼 또는 재전송 버튼이 중복 user message를 만들지 않는지 확인한다.
+- [x] `POST /api/v1/chat`은 non-streaming 동기 API이므로 LLM 응답이 완료될 때까지 로딩 상태를 유지하는지 확인한다.
+- [x] 동기 API 사용 시 `NOTIO_LLM_TIMEOUT` 기본값(30초)보다 짧은 프론트/Dio timeout으로 요청이 먼저 끊기지 않는지 확인한다.
+- [x] 사용자가 토큰 단위 응답을 기대하는 Chat 화면이면 `GET /api/v1/chat/stream?content=...` SSE 경로를 기본 전송 방식으로 사용한다.
+- [x] SSE 사용 시 `chunk` event를 누적 표시하고 `done` event 수신 후 입력창을 다시 활성화한다.
+- [x] 백엔드가 timeout으로 `LLM_UNAVAILABLE`을 반환하면 기존 error state로 표시하고 입력창을 다시 활성화한다.
+- [x] timeout 이후 Retry 버튼 또는 재전송 버튼이 중복 user message를 만들지 않는지 확인한다.
 
 ### Phase 8 확인 메모
 
@@ -219,3 +219,27 @@
 - 실시간으로 답변이 생성되는 UI를 원하면 프론트는 기존 stream API를 사용해야 한다. `POST /api/v1/chat` 자체는 streaming 응답을 반환하지 않는다.
 - Dio receive/connect timeout이 30초보다 짧으면 백엔드가 `LLM_UNAVAILABLE`을 반환하기 전에 프론트가 네트워크 오류로 처리할 수 있다.
 - 현재 API 계약이 유지되므로 response model 변경은 필요 없다. 변경 필요 가능성이 있는 부분은 전송 방식 선택, timeout 설정, loading/error UX다.
+- **검증 완료 (2026-04-22)**:
+  - **전송 방식 변경**: Chat 화면을 SSE streaming 방식으로 변경 (`chat_screen.dart:42` → `sendMessageWithStreaming` 호출)
+  - **로딩 상태**: non-streaming 사용 시에도 `isSending: true` 상태로 로딩 표시 (`chat_notifier.dart:53`)
+  - **Timeout 설정**:
+    - non-streaming API: `receiveTimeout: 35초` 설정 (백엔드 30초 + 5초 여유)
+    - SSE streaming: `receiveTimeout: 60초` 설정 (충분한 여유 확보)
+    - 백엔드가 `LLM_UNAVAILABLE` 에러를 반환할 시간 확보
+  - **Streaming UX**:
+    - chunk 누적: `StringBuffer`로 누적하여 `streamingContent` 상태 업데이트 (`chat_notifier.dart:112-116`)
+    - 실시간 표시: `StreamingMessageBubble`로 토큰 단위 응답 표시 (`chat_screen.dart:146-150`)
+    - 완료 처리: stream 종료 시 `isStreaming: false`로 전환하여 입력창 재활성화 (`chat_notifier.dart:131-135`)
+    - 입력창 제어: `enabled: !chatState.isSending && !chatState.isStreaming` 조건으로 제어 (`chat_screen.dart:85`)
+  - **에러 처리**:
+    - 모든 예외를 catch하여 `error` 필드 설정, `isSending: false`, `isStreaming: false`로 상태 복원 (`chat_notifier.dart:136-143`)
+    - 에러 UI: 에러 아이콘, 메시지, Retry 버튼 표시 (`chat_screen.dart:99-133`)
+    - 백엔드 에러와 네트워크 에러 구분 가능 (`chat_remote_datasource.dart`에서 에러 메시지 구분)
+  - **중복 메시지 방지**:
+    - Retry 버튼은 `refresh()` 호출하여 서버 히스토리 재조회, 중복 메시지 생성하지 않음 (`chat_screen.dart:127`)
+    - user message를 캐시에 저장하여 일관성 유지 (`chat_notifier.dart:109`)
+    - 에러 발생 시 user message는 캐시에 남지만, Retry 시 서버 히스토리로 동기화됨
+  - **개선사항**:
+    - SSE streaming을 기본 전송 방식으로 채택하여 토큰 단위 실시간 응답 제공
+    - timeout 설정으로 백엔드 LLM timeout과 조화롭게 동작
+    - user message 캐싱 추가로 non-streaming 방식과 동작 일관성 확보

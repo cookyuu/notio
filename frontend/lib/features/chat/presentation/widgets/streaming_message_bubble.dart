@@ -5,13 +5,36 @@ import 'package:notio_app/core/theme/app_text_styles.dart';
 import 'package:notio_app/shared/widgets/glass_card.dart';
 
 /// Streaming message bubble (for SSE responses)
-class StreamingMessageBubble extends StatelessWidget {
+class StreamingMessageBubble extends StatefulWidget {
   final String content;
 
   const StreamingMessageBubble({
     required this.content,
     super.key,
   });
+
+  @override
+  State<StreamingMessageBubble> createState() => _StreamingMessageBubbleState();
+}
+
+class _StreamingMessageBubbleState extends State<StreamingMessageBubble>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +59,15 @@ class StreamingMessageBubble extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          content,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textPrimary,
+                        if (widget.content.isNotEmpty) ...[
+                          Text(
+                            widget.content,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.s8),
+                          const SizedBox(height: AppSpacing.s8),
+                        ],
                         _buildTypingIndicator(),
                       ],
                     ),
@@ -78,22 +103,25 @@ class StreamingMessageBubble extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildDot(delay: 0),
+        _buildDot(delay: 0.0),
         const SizedBox(width: 4),
-        _buildDot(delay: 200),
+        _buildDot(delay: 0.2),
         const SizedBox(width: 4),
-        _buildDot(delay: 400),
+        _buildDot(delay: 0.4),
       ],
     );
   }
 
-  Widget _buildDot({required int delay}) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      builder: (context, value, child) {
+  Widget _buildDot({required double delay}) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        // Calculate opacity with delay
+        final value = (_animationController.value - delay) % 1.0;
+        final opacity = (value < 0.5) ? value * 2 : (1.0 - value) * 2;
+
         return Opacity(
-          opacity: (value * 2).clamp(0.0, 1.0),
+          opacity: opacity.clamp(0.3, 1.0),
           child: Container(
             width: 6,
             height: 6,
@@ -103,12 +131,6 @@ class StreamingMessageBubble extends StatelessWidget {
             ),
           ),
         );
-      },
-      onEnd: () {
-        // Loop animation
-        Future.delayed(Duration(milliseconds: delay), () {
-          // Trigger rebuild
-        });
       },
     );
   }

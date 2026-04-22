@@ -15,6 +15,10 @@ class ChatRemoteDataSource {
       final response = await _dio.post(
         '/api/v1/chat',
         data: request.toJson(),
+        options: Options(
+          // Set timeout longer than backend LLM timeout (30s) to avoid race condition
+          receiveTimeout: const Duration(seconds: 35),
+        ),
       );
 
       if (response.data['success'] == true) {
@@ -36,19 +40,50 @@ class ChatRemoteDataSource {
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'text/event-stream'},
+          // Set longer timeout for SSE streaming (backend LLM timeout is 30s)
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
       final stream = response.data.stream;
+      var pending = '';
       await for (final chunk in stream) {
-        final text = String.fromCharCodes(chunk);
-        if (text.startsWith('data: ')) {
-          yield text.substring(6).trim();
+        pending += String.fromCharCodes(chunk)
+            .replaceAll('\r\n', '\n')
+            .replaceAll('\r', '\n');
+        var separatorIndex = pending.indexOf('\n\n');
+        while (separatorIndex >= 0) {
+          final eventBlock = pending.substring(0, separatorIndex);
+          pending = pending.substring(separatorIndex + 2);
+          final data = _extractChunkData(eventBlock);
+          if (data != null && data.isNotEmpty) {
+            yield data;
+          }
+          separatorIndex = pending.indexOf('\n\n');
         }
       }
     } on DioException catch (e) {
       throw Exception('네트워크 오류: ${e.message}');
     }
+  }
+
+  String? _extractChunkData(String eventBlock) {
+    String? eventName;
+    final dataLines = <String>[];
+
+    for (final line in eventBlock.split('\n')) {
+      if (line.startsWith('event:')) {
+        eventName = line.substring(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.add(line.substring(5).trim());
+      }
+    }
+
+    if (eventName != 'chunk') {
+      return null;
+    }
+
+    return dataLines.join('\n');
   }
 
   /// Get daily summary

@@ -65,7 +65,17 @@ class ChatNotifier extends StateNotifier<ChatState> {
       );
 
       // Send to repository and get AI response
-      final aiMessage = await _repository.sendMessage(content.trim());
+      var aiMessage = await _repository.sendMessage(content.trim());
+
+      // Check if response is empty
+      if (aiMessage.content.trim().isEmpty) {
+        aiMessage = ChatMessageEntity(
+          id: aiMessage.id,
+          role: MessageRole.assistant,
+          content: '⚠️ 응답이 비어있습니다.\n\n서버에서 응답을 받지 못했습니다.',
+          createdAt: aiMessage.createdAt,
+        );
+      }
 
       // Add AI response to UI
       state = state.copyWith(
@@ -73,9 +83,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isSending: false,
       );
     } catch (e) {
+      // Add error message as assistant message
+      final errorMessage = ChatMessageEntity(
+        id: DateTime.now().millisecondsSinceEpoch,
+        role: MessageRole.assistant,
+        content: '❌ 응답을 받을 수 없습니다.\n\n${e.toString()}',
+        createdAt: DateTime.now(),
+      );
+
       state = state.copyWith(
+        messages: [...state.messages, errorMessage],
         isSending: false,
-        error: e.toString(),
+        error: null,
       );
     }
   }
@@ -105,6 +124,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isSending: false,
       );
 
+      // Add user message to cache
+      _repository.addMessageToCache(userMessage);
+
       // Start streaming
       final stream = _repository.streamMessage(content.trim());
       final buffer = StringBuffer();
@@ -117,10 +139,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
       }
 
       // When streaming is complete, create AI message
+      final responseContent = buffer.toString().trim();
       final aiMessage = ChatMessageEntity(
         id: DateTime.now().millisecondsSinceEpoch,
         role: MessageRole.assistant,
-        content: buffer.toString(),
+        content: responseContent.isEmpty
+            ? '⚠️ 응답이 비어있습니다.\n\n서버에서 응답을 받지 못했습니다.'
+            : responseContent,
         createdAt: DateTime.now(),
       );
 
@@ -134,11 +159,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
         streamingContent: null,
       );
     } catch (e) {
+      // Add error message as assistant message
+      final errorMessage = ChatMessageEntity(
+        id: DateTime.now().millisecondsSinceEpoch,
+        role: MessageRole.assistant,
+        content: '❌ 응답을 받을 수 없습니다.\n\n${e.toString()}',
+        createdAt: DateTime.now(),
+      );
+
       state = state.copyWith(
+        messages: [...state.messages, errorMessage],
         isSending: false,
         isStreaming: false,
         streamingContent: null,
-        error: e.toString(),
+        error: null,
       );
     }
   }
