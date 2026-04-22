@@ -30,19 +30,26 @@
 
 ## Phase 1. API 계약 검증
 
-- [ ] `ChatRequest`가 `content` 필드만 전송하는지 확인한다.
-- [ ] `ChatMessageModel.fromJson`이 `id`, `role`, `content`, `created_at`을 파싱하는지 확인한다.
-- [ ] `DailySummaryModel.fromJson`이 `summary`, `date`, `total_messages`, `topics`를 파싱하는지 확인한다.
-- [ ] `ChatRemoteDataSource.sendMessage`가 `ApiResponse.data`에서 assistant 메시지를 파싱하는지 확인한다.
-- [ ] `ChatRemoteDataSource.getDailySummary`가 기존 wrapper 구조를 유지하는지 확인한다.
-- [ ] `ChatRemoteDataSource.fetchHistory`가 list data를 정상 파싱하는지 확인한다.
-- [ ] role 값이 `USER`, `ASSISTANT`와 호환되는지 확인한다.
-- [ ] 날짜 필드가 ISO 8601 문자열로 내려오는지 확인한다.
+- [x] `ChatRequest`가 `content` 필드만 전송하는지 확인한다.
+- [x] `ChatMessageModel.fromJson`이 `id`, `role`, `content`, `created_at`을 파싱하는지 확인한다.
+- [x] `DailySummaryModel.fromJson`이 `summary`, `date`, `total_messages`, `topics`를 파싱하는지 확인한다.
+- [x] `ChatRemoteDataSource.sendMessage`가 `ApiResponse.data`에서 assistant 메시지를 파싱하는지 확인한다.
+- [x] `ChatRemoteDataSource.getDailySummary`가 기존 wrapper 구조를 유지하는지 확인한다.
+- [x] `ChatRemoteDataSource.fetchHistory`가 list data를 정상 파싱하는지 확인한다.
+- [x] role 값이 `user`, `assistant` (소문자)로 백엔드와 호환되는지 확인한다.
+- [x] 날짜 필드가 ISO 8601 문자열로 내려오는지 확인한다.
 
 ### Phase 1 확인 메모
 
 - 백엔드가 `snake_case` JSON을 유지해야 프론트 model 변경이 필요 없다.
 - `createdAt`, `totalMessages` 같은 camelCase 응답이 내려오면 프론트 파싱이 실패하므로 백엔드 직렬화 테스트에 포함한다.
+- **검증 완료 (2026-04-22)**:
+  - `ChatRequest`: `content` 필드만 전송 확인 (`chat_request.dart:10-12`)
+  - `ChatMessageModel`: `id`, `role`, `content`, `created_at` 파싱 확인 (`chat_message_model.dart:18-24`)
+  - `DailySummaryModel`: `summary`, `date`, `total_messages`, `topics` 파싱 확인 (`daily_summary_model.dart:15-22`)
+  - `ChatRemoteDataSource`: `sendMessage`, `getDailySummary`, `fetchHistory` 모두 `ApiResponse` wrapper 구조 유지 확인 (`chat_remote_datasource.dart`)
+  - role 값: 백엔드(`ChatService.java`)와 프론트(`message_role.dart`) 모두 소문자 `"user"`, `"assistant"` 사용으로 완전 호환
+  - 날짜: 백엔드 `OffsetDateTime` (ISO 8601) → 프론트 `DateTime.parse()` 호환 확인
 
 ## Phase 2. SSE Streaming 계약 검증
 
