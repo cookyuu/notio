@@ -343,14 +343,21 @@
 
 ## Phase 13. Phase 1 분리 대비 정리
 
-- [ ] `LlmProvider` 구현을 local Ollama와 remote AI Service client로 교체 가능하게 유지한다.
-- [ ] `EmbeddingProvider` 구현을 local Ollama와 remote AI Service client로 교체 가능하게 유지한다.
-- [ ] `RagRetriever` 책임이 ChatService 내부에 흡수되지 않도록 유지한다.
-- [ ] prompt 구성 책임이 각 service에 흩어지지 않도록 유지한다.
-- [ ] Python FastAPI, LangChain, Celery, Kafka는 이번 Phase 0 구현 범위에서 제외한다.
-- [ ] Backend 컨테이너화는 이번 Phase 0 필수 범위에서 제외한다.
+- [x] `LlmProvider` 구현을 local Ollama와 remote AI Service client로 교체 가능하게 유지한다.
+- [x] `EmbeddingProvider` 구현을 local Ollama와 remote AI Service client로 교체 가능하게 유지한다.
+- [x] `RagRetriever` 책임이 ChatService 내부에 흡수되지 않도록 유지한다.
+- [x] prompt 구성 책임이 각 service에 흩어지지 않도록 유지한다.
+- [x] Python FastAPI, LangChain, Celery, Kafka는 이번 Phase 0 구현 범위에서 제외한다.
+- [x] Backend 컨테이너화는 이번 Phase 0 필수 범위에서 제외한다.
 
 ### Phase 13 확인 메모
 
 - Phase 0의 완료 기준은 Spring Boot 모놀리스 내부에서 실제 RAG + LLM 응답이 동작하는 것이다.
 - Phase 1의 완료 기준은 같은 Chat API를 유지하면서 내부 provider를 별도 AI Service로 교체하는 것이다.
+- Chat API 계약은 `docs/api/spec_fix.md` 기준으로 유지한다. `POST /api/v1/chat`, `GET /api/v1/chat/stream`, `GET /api/v1/chat/daily-summary`, `GET /api/v1/chat/history` endpoint와 `ApiResponse` wrapper, `snake_case` 응답 필드는 변경하지 않는다.
+- `LlmProvider`는 `chat(LlmPrompt)`, `stream(LlmPrompt, Consumer<String>)`만 노출하므로 Phase 1에서 `OllamaLlmProvider` 대신 remote AI Service client 구현체를 추가/교체할 수 있다.
+- `EmbeddingProvider`는 `embed(String)`만 노출하므로 Phase 1에서 `OllamaEmbeddingProvider` 대신 remote AI Service embedding client 구현체를 추가/교체할 수 있다.
+- `RagRetriever`는 `ChatService` 외부 경계로 유지되어 있고, 현재 pgvector 검색 구현은 `PgvectorRagRetriever`에 격리되어 있다. Phase 1에서 RAG 검색을 Python AI Service 또는 별도 검색 서비스로 이전하더라도 `ChatService`는 `RagRetriever.retrieve(userId, question)` 계약만 사용하면 된다.
+- prompt 구성은 `PromptBuilder`에 중앙화되어 있고, `ChatService`와 `DailySummaryService`는 prompt 문자열을 직접 조립하지 않는다. Phase 1에서 prompt orchestration을 AI Service로 이전할 경우 우선 교체 대상은 `PromptBuilder` 사용 지점과 provider 구현체다.
+- 이번 Phase 0 구현에는 Python FastAPI, LangChain, Celery, Kafka 의존성 또는 실행 구성을 추가하지 않았다. 해당 구성은 Phase 1 이후 별도 서비스 분리 작업에서 다룬다.
+- 이번 Phase 0 구현에는 backend Dockerfile 또는 backend compose service를 필수 변경으로 추가하지 않았다. 로컬 인프라는 기존 PostgreSQL, Redis, Ollama compose 구성만 사용한다.
