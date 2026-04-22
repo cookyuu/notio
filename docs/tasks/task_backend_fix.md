@@ -203,20 +203,29 @@
 
 ## Phase 8. PromptBuilder 구현
 
-- [ ] `PromptBuilder`를 추가한다.
-- [ ] chat prompt 생성 메서드를 구현한다.
-- [ ] daily summary prompt 생성 메서드를 구현한다.
-- [ ] system prompt를 중앙화한다.
-- [ ] RAG context를 source, title, body summary, priority, created_at, similarity score 형식으로 포함한다.
-- [ ] 최근 대화 히스토리를 prompt에 포함한다.
-- [ ] 기본 응답 언어를 한국어로 고정한다.
-- [ ] context에 없는 사실을 단정하지 않도록 system instruction을 포함한다.
-- [ ] 응답 길이는 API `content` 저장 한도를 넘지 않도록 제약한다.
+- [x] `PromptBuilder`를 추가한다.
+- [x] chat prompt 생성 메서드를 구현한다.
+- [x] daily summary prompt 생성 메서드를 구현한다.
+- [x] system prompt를 중앙화한다.
+- [x] RAG context를 source, title, body summary, priority, created_at, similarity score 형식으로 포함한다.
+- [x] 최근 대화 히스토리를 prompt에 포함한다.
+- [x] 기본 응답 언어를 한국어로 고정한다.
+- [x] context에 없는 사실을 단정하지 않도록 system instruction을 포함한다.
+- [x] 응답 길이는 API `content` 저장 한도를 넘지 않도록 제약한다.
 
 ### Phase 8 확인 메모
 
 - prompt는 서비스 메서드 내부에 반복 hardcode하지 않는다.
 - 향후 Todo/Analytics LLM 기능도 같은 prompt 경계를 재사용한다.
+- `PromptBuilder`와 `LlmPrompt`를 `com.notio.ai.prompt`에 추가해 Phase 9/11의 LLM provider 호출 입력으로 사용할 수 있게 했다.
+- Chat prompt는 system instruction, RAG context, 최근 대화 히스토리, 사용자 질문을 분리해 구성한다.
+- RAG context는 `source`, `title`, `body_summary`, `priority`, `created_at`, `similarity_score` 필드를 명시적으로 포함한다.
+- RAG context가 비어 있으면 관련 알림이 없다는 fallback 안내를 하도록 prompt에 포함했다.
+- 최근 대화 히스토리는 최대 10개까지 오래된 순서로 포함한다.
+- Daily summary prompt는 날짜별 알림 목록과 전체 요약, 중요한 알림, 즉시 처리 항목, 주요 topic 요구사항을 포함한다.
+- Chat 응답은 4000자 이하, daily summary 본문은 2000자 이하로 제한하도록 prompt에 명시했다.
+- 검증 보강: `PromptBuilderTest`를 추가해 system instruction, RAG context 형식, history 포함, 빈 context fallback, daily summary prompt 구성을 확인한다.
+- 검증: `/mnt/c` 작업트리에서는 Gradle `FileHasher`가 `Input/output error`로 시작하지 못해, `backend`를 `/tmp/notio-backend-phase8`로 복사한 뒤 `GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew --no-daemon test` 실행 통과.
 
 ## Phase 9. ChatService RAG + LLM 전환
 
