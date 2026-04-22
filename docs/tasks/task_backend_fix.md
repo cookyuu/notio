@@ -78,24 +78,30 @@
 
 ## Phase 3. Flyway + pgvector 스키마 구축
 
-- [ ] 현재 마지막 Flyway migration 번호를 확인한다.
-- [ ] 이미 적용된 기존 migration 파일은 수정하지 않는다.
-- [ ] 신규 migration 파일을 추가한다.
-- [ ] `CREATE EXTENSION IF NOT EXISTS vector`를 추가한다.
-- [ ] `chat_messages` 테이블을 생성한다.
-- [ ] `chat_messages`에 `id`, `user_id`, `role`, `content`, `created_at`, `updated_at`, `deleted_at` 컬럼을 둔다.
-- [ ] `idx_chat_messages_user_id_created_at` 인덱스를 생성한다.
-- [ ] `notification_embeddings` 테이블을 생성한다.
-- [ ] `notification_embeddings.embedding` 컬럼은 `vector(768)`로 생성한다.
-- [ ] `notification_embeddings`에 `notification_id`, `user_id`, `source`, `content_hash`, `embedded_at`, timestamp, soft delete 컬럼을 둔다.
-- [ ] `notification_id + content_hash` unique partial index를 생성한다.
-- [ ] user scope 검색용 인덱스를 생성한다.
-- [ ] pgvector 유사도 검색용 index 적용 여부를 데이터 규모 기준으로 검증한다.
+- [x] 현재 마지막 Flyway migration 번호를 확인한다.
+- [x] 이미 적용된 기존 migration 파일은 수정하지 않는다.
+- [x] 신규 migration 파일을 추가한다.
+- [x] `CREATE EXTENSION IF NOT EXISTS vector`를 추가한다.
+- [x] `chat_messages` 테이블을 생성한다.
+- [x] `chat_messages`에 `id`, `user_id`, `role`, `content`, `created_at`, `updated_at`, `deleted_at` 컬럼을 둔다.
+- [x] `idx_chat_messages_user_id_created_at` 인덱스를 생성한다.
+- [x] `notification_embeddings` 테이블을 생성한다.
+- [x] `notification_embeddings.embedding` 컬럼은 `vector(768)`로 생성한다.
+- [x] `notification_embeddings`에 `notification_id`, `user_id`, `source`, `content_hash`, `embedded_at`, timestamp, soft delete 컬럼을 둔다.
+- [x] `notification_id + content_hash` unique partial index를 생성한다.
+- [x] user scope 검색용 인덱스를 생성한다.
+- [x] pgvector 유사도 검색용 index 적용 여부를 데이터 규모 기준으로 검증한다.
 
 ### Phase 3 확인 메모
 
 - pgvector 사용 자체에 Flyway가 기술적으로 필수는 아니지만, Notio 프로젝트 규칙상 DB 변경은 Flyway로만 관리한다.
 - 초기 데이터가 적으면 `ivfflat` index 품질이 기대와 다를 수 있으므로 정확 검색 검증 후 index 적용을 판단한다.
+- 현재 마지막 migration은 `V10__restructure_auth_domain.sql`이며, 기존 migration은 수정하지 않았다.
+- 신규 migration은 `V11__create_chat_messages_and_notification_embeddings.sql`로 추가했다.
+- `chat_messages.role`은 API 명세의 `USER`, `ASSISTANT`만 허용하도록 check constraint를 둔다.
+- `notification_embeddings.embedding`은 `NOTIO_EMBED_DIM=768` 기본값에 맞춰 `vector(768)`로 생성한다.
+- user scope 검색은 `idx_notification_embeddings_user_source_embedded_at`, `idx_notification_embeddings_user_embedded_at`로 우선 지원한다.
+- Phase 0의 초기/소규모 데이터에서는 정확 검색을 우선 사용하고, IVFFlat/HNSW 인덱스는 대표 데이터로 recall/performance를 측정한 뒤 별도 migration으로 추가한다.
 
 ## Phase 4. Backend 의존성 및 설정 클래스 추가
 
