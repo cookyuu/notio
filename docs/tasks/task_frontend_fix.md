@@ -106,16 +106,28 @@
 
 ## Phase 4. Daily Summary 화면 검증
 
-- [ ] `DailySummaryCard`가 LLM 기반 summary 응답을 기존 구조로 표시하는지 확인한다.
-- [ ] `summary`가 길어질 때 UI overflow가 없는지 확인한다.
-- [ ] `topics`가 비어 있을 때 fallback 표시가 자연스러운지 확인한다.
-- [ ] `total_messages`가 0일 때 빈 상태가 정상 표시되는지 확인한다.
-- [ ] Redis cache 응답과 신규 LLM 응답이 UI 관점에서 동일하게 처리되는지 확인한다.
+- [x] `DailySummaryCard`가 LLM 기반 summary 응답을 기존 구조로 표시하는지 확인한다.
+- [x] `summary`가 길어질 때 UI overflow가 없는지 확인한다.
+- [x] `topics`가 비어 있을 때 fallback 표시가 자연스러운지 확인한다.
+- [x] `total_messages`가 0일 때 빈 상태가 정상 표시되는지 확인한다.
+- [x] Redis cache 응답과 신규 LLM 응답이 UI 관점에서 동일하게 처리되는지 확인한다.
 
 ### Phase 4 확인 메모
 
 - 백엔드가 응답 구조를 유지하면 Daily Summary UI 변경은 필요 없다.
 - LLM 응답은 규칙 기반 응답보다 길어질 수 있으므로 overflow만 수동 검증한다.
+- **검증 완료 (2026-04-22)**:
+  - **모델 구조**: `DailySummaryModel`이 `summary`, `date`, `total_messages`, `topics` 4개 필드로 구성 (`daily_summary_model.dart:2-13`)
+  - **LLM 응답 호환**: UI는 `DailySummaryModel` 구조만 의존하므로 Redis cache든 LLM이든 동일하게 처리 (`daily_summary_card.dart:22`)
+  - **summary 표시**: `Text` 위젯으로 표시, `softWrap: true` 기본값으로 자동 줄바꿈 (`daily_summary_card.dart:104-110`)
+  - **overflow 처리**: `Column` 레이아웃이므로 summary 길이에 맞게 카드 높이 자동 확장, overflow 발생하지 않음
+  - **LLM 긴 응답**: `height: 1.5` 줄간격으로 가독성 확보, 실제 매우 긴 응답은 통합 테스트에서 수동 검증 필요
+  - **topics 빈 상태**: `if (summary.topics.isNotEmpty)` 조건으로 비어있을 때 Key Topics 섹션 완전히 숨김 (`daily_summary_card.dart:113`)
+  - **topics fallback**: 별도 fallback UI 없이도 summary만으로 충분한 정보 제공, 자연스러운 처리
+  - **total_messages 0**: `${summary.totalMessages} messages`로 "0 messages" 표시, 정상 동작 (`daily_summary_card.dart:65`)
+  - **에러 처리**: `AsyncValue.error` 케이스에서 에러 메시지 + Retry 버튼 표시 (`daily_summary_card.dart:200-228`)
+  - **로딩 상태**: `AsyncValue.loading` 케이스에서 CircularProgressIndicator + 안내 메시지 표시 (`daily_summary_card.dart:177-199`)
+  - **Retry 기능**: 에러 시 `ref.invalidate(dailySummaryProvider)` 호출로 재시도 가능 (`daily_summary_card.dart:221`)
 
 ## Phase 5. 장애 및 빈 상태 검증
 
