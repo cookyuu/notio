@@ -57,20 +57,24 @@
 
 ## Phase 2. 환경 변수 및 설정 추가
 
-- [ ] `.env.example`에 `NOTIO_` prefix를 지키는 AI/RAG 환경 변수를 추가한다.
-- [ ] `NOTIO_OLLAMA_URL` 기본값을 로컬 실행 기준 `http://localhost:11434`로 문서화한다.
-- [ ] `NOTIO_LLM_MODEL` 기본값을 `llama3.2:3b`로 둔다.
-- [ ] `NOTIO_EMBED_MODEL` 기본값을 `nomic-embed-text`로 둔다.
-- [ ] `NOTIO_EMBED_DIM` 기본값을 `768`로 둔다.
-- [ ] `NOTIO_RAG_TOP_K` 기본값을 `5`로 둔다.
-- [ ] `application.yml`에 Spring AI/Ollama 연결 설정을 추가한다.
-- [ ] `application.yml`에 Notio RAG 설정 바인딩을 추가한다.
-- [ ] timeout, retry, streaming timeout 값을 환경별로 조정 가능하게 둔다.
+- [x] `.env.example`에 `NOTIO_` prefix를 지키는 AI/RAG 환경 변수를 추가한다.
+- [x] `NOTIO_OLLAMA_URL` 기본값을 로컬 실행 기준 `http://localhost:11434`로 문서화한다.
+- [x] `NOTIO_LLM_MODEL` 기본값을 `llama3.2:3b`로 둔다.
+- [x] `NOTIO_EMBED_MODEL` 기본값을 `nomic-embed-text`로 둔다.
+- [x] `NOTIO_EMBED_DIM` 기본값을 `768`로 둔다.
+- [x] `NOTIO_RAG_TOP_K` 기본값을 `5`로 둔다.
+- [x] `application.yml`에 Spring AI/Ollama 연결 설정을 추가한다.
+- [x] `application.yml`에 Notio RAG 설정 바인딩을 추가한다.
+- [x] timeout, retry, streaming timeout 값을 환경별로 조정 가능하게 둔다.
 
 ### Phase 2 확인 메모
 
 - Docker 내부에서 backend를 실행하는 후속 단계에서는 `NOTIO_OLLAMA_URL=http://ollama:11434`를 사용한다.
 - Phase 0에서는 backend 컨테이너 추가를 필수 범위로 두지 않는다.
+- `.env.example`에 `NOTIO_LLM_MODEL=llama3.2:3b`, `NOTIO_EMBED_MODEL=nomic-embed-text`, `NOTIO_EMBED_DIM=768`, `NOTIO_RAG_TOP_K=5`를 추가했다.
+- `application.yml`에는 Spring AI 공식 Ollama property인 `spring.ai.ollama.base-url`, `spring.ai.ollama.chat.options.model`, `spring.ai.ollama.embedding.options.model`을 환경 변수로 바인딩했다.
+- Notio 내부 구현에서 사용할 `notio.rag.top-k`, `notio.rag.embedding-dimension`, `notio.ai.llm-timeout`, `notio.ai.embedding-timeout`, `notio.ai.streaming-timeout`을 추가했다.
+- Spring AI retry는 `spring.ai.retry.*`에 바인딩하고 `NOTIO_LLM_RETRY_*` 환경 변수로 조정 가능하게 했다.
 
 ## Phase 3. Flyway + pgvector 스키마 구축
 
