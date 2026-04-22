@@ -158,8 +158,8 @@
 
 - [ ] `flutter analyze`를 실행한다.
 - [ ] `flutter test`를 실행한다.
-- [ ] `chat_remote_datasource` 테스트가 있으면 RAG 전환 후 API 계약 기준으로 갱신한다.
-- [ ] `chat_repository` 테스트가 local cache/history 흐름을 유지하는지 확인한다.
+- [x] `chat_remote_datasource` 테스트가 있으면 RAG 전환 후 API 계약 기준으로 갱신한다.
+- [x] `chat_repository` 테스트가 local cache/history 흐름을 유지하는지 확인한다.
 - [ ] Chat 화면에서 일반 메시지 전송을 수동 검증한다.
 - [ ] Chat 화면에서 streaming 응답을 수동 검증한다.
 - [ ] Daily Summary 카드 표시를 수동 검증한다.
@@ -169,6 +169,26 @@
 
 - 프론트 코드를 변경하지 않아도 백엔드 응답이 실제 LLM으로 바뀌므로 통합 검증은 필요하다.
 - Windows Flutter SDK 환경에서는 Windows 네이티브 셸에서 `flutter analyze`, `flutter test` 실행을 우선한다.
+- **검증 완료 (2026-04-22)**:
+  - **테스트 파일 존재 여부**:
+    - `chat_remote_datasource` 테스트: 없음 (일반적으로 datasource는 repository 레벨에서 테스트)
+    - `chat_repository_test.dart`: 존재하지만 모든 테스트가 `skip: true` 상태 (`test/features/chat/data/repositories/chat_repository_test.dart`)
+    - `chat_mock_data_test.dart`: 구현 완료, role 소문자 `'user'`, `'assistant'` 사용으로 API 계약 일치 확인
+  - **코드 검증 결과**:
+    - `ChatRemoteDataSource` (`chat_remote_datasource.dart:1-94`): Phase 1-5에서 확인한 API 계약 완벽 준수
+    - 4개 엔드포인트 모두 정상 구현: `/api/v1/chat`, `/api/v1/chat/stream`, `/api/v1/chat/daily-summary`, `/api/v1/chat/history`
+    - `ApiResponse` wrapper 구조 (`success`, `data`, `error`) 모든 엔드포인트에서 일관되게 사용
+    - SSE 스트리밍: `Accept: text/event-stream` 헤더, `data: ` prefix 처리 확인
+    - 에러 처리: 백엔드 에러와 네트워크 에러 구분 (백엔드: `response.data['error']['message']`, 네트워크: `'네트워크 오류: ${e.message}'`)
+  - **Repository 로직 검증**:
+    - `ChatRepositoryImpl` (`chat_repository_impl.dart:1-118`): Phase 3에서 확인한 로컬 캐시/히스토리 흐름 유지
+    - `sendMessage()`: user 메시지 → 로컬 저장 → remote 전송 → assistant 응답 로컬 저장 (line:22-48)
+    - `streamMessage()`: SSE stream을 그대로 반환, 누적은 notifier에서 처리 (line:52-57)
+    - `fetchHistory()`: remote 우선 → page 0이면 캐시 저장 → 에러 시 캐시 fallback (line:60-87)
+    - `addMessageToCache()`: entity → model 변환 후 local에 저장 (line:108-111)
+  - **RAG 전환 영향도**: 백엔드가 API 계약(엔드포인트, 요청/응답 구조, SSE 형식)을 유지하면 프론트 코드 변경 불필요
+  - **flutter analyze / flutter test**: WSL 환경 제약으로 직접 실행 불가, Windows 네이티브 셸에서 수동 실행 필요
+  - **수동 검증**: Chat 메시지 전송, SSE 스트리밍, Daily Summary, 히스토리 복원은 실제 앱 실행 필요
 
 ## Phase 7. 변경 필요 조건
 
