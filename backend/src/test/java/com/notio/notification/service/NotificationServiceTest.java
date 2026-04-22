@@ -14,6 +14,7 @@ import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
 import com.notio.notification.dto.NotificationSummaryResponse;
+import com.notio.notification.embedding.NotificationEmbeddingService;
 import com.notio.notification.repository.NotificationRepository;
 import com.notio.notification.repository.NotificationSummaryProjection;
 import com.notio.push.service.PushService;
@@ -50,11 +51,20 @@ class NotificationServiceTest {
     @Mock
     private Cache unreadCountCache;
 
+    @Mock
+    private NotificationEmbeddingService notificationEmbeddingService;
+
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
-        notificationService = new NotificationService(notificationRepository, new ObjectMapper(), pushService, cacheManager);
+        notificationService = new NotificationService(
+                notificationRepository,
+                new ObjectMapper(),
+                pushService,
+                cacheManager,
+                notificationEmbeddingService
+        );
         lenient().when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
     }
 
@@ -89,6 +99,44 @@ class NotificationServiceTest {
 
         assertThat(savedNotification.getId()).isEqualTo(saved.getId());
         verify(notificationRepository).save(any(Notification.class));
+        verify(notificationEmbeddingService).embedNotification(saved);
+        verify(pushService).sendPush(saved.getId(), saved.getUserId());
+    }
+
+    @Test
+    void saveFromEventKeepsNotificationWhenEmbeddingFails() {
+        final NotificationEvent event = new NotificationEvent(
+                NotificationSource.SLACK,
+                "title",
+                "body",
+                NotificationPriority.HIGH,
+                "ext-1",
+                "https://notio.dev",
+                Map.of("channel", "dev"),
+                10L,
+                20L
+        );
+        final Notification saved = Notification.builder()
+                .id(1L)
+                .userId(event.userId())
+                .connectionId(event.connectionId())
+                .source(event.source())
+                .title(event.title())
+                .body(event.body())
+                .priority(event.priority())
+                .externalId(event.externalId())
+                .externalUrl(event.externalUrl())
+                .metadata("{\"channel\":\"dev\"}")
+                .build();
+        when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
+        org.mockito.Mockito.doThrow(new IllegalStateException("embedding down"))
+                .when(notificationEmbeddingService).embedNotification(saved);
+
+        final Notification savedNotification = notificationService.saveFromEvent(event);
+
+        assertThat(savedNotification).isSameAs(saved);
+        verify(notificationRepository).save(any(Notification.class));
+        verify(notificationEmbeddingService).embedNotification(saved);
         verify(pushService).sendPush(saved.getId(), saved.getUserId());
     }
 

@@ -152,21 +152,28 @@
 
 ## Phase 6. Embedding 파이프라인 구현
 
-- [ ] `EmbeddingProvider` 인터페이스를 추가한다.
-- [ ] `OllamaEmbeddingProvider`를 구현한다.
-- [ ] notification embedding input 구성 규칙을 정의한다.
-- [ ] `title + body + metadata 일부`를 임베딩 입력으로 사용한다.
-- [ ] `content_hash`를 생성한다.
-- [ ] 동일 `notification_id + content_hash`가 있으면 임베딩 생성을 skip한다.
-- [ ] `NotificationEmbeddingRepository`를 native SQL 또는 `JdbcTemplate` 기반으로 구현한다.
-- [ ] 알림 저장 후 임베딩 생성 연동 지점을 추가한다.
-- [ ] 임베딩 실패 시 알림 저장을 롤백하지 않는다.
-- [ ] 임베딩 실패 로그에는 민감 데이터를 남기지 않는다.
+- [x] `EmbeddingProvider` 인터페이스를 추가한다.
+- [x] `OllamaEmbeddingProvider`를 구현한다.
+- [x] notification embedding input 구성 규칙을 정의한다.
+- [x] `title + body + metadata 일부`를 임베딩 입력으로 사용한다.
+- [x] `content_hash`를 생성한다.
+- [x] 동일 `notification_id + content_hash`가 있으면 임베딩 생성을 skip한다.
+- [x] `NotificationEmbeddingRepository`를 native SQL 또는 `JdbcTemplate` 기반으로 구현한다.
+- [x] 알림 저장 후 임베딩 생성 연동 지점을 추가한다.
+- [x] 임베딩 실패 시 알림 저장을 롤백하지 않는다.
+- [x] 임베딩 실패 로그에는 민감 데이터를 남기지 않는다.
 
 ### Phase 6 확인 메모
 
 - Phase 0에서는 별도 queue 없이 동기 처리 후 실패 로그를 남긴다.
 - Phase 1에서는 Celery 또는 별도 async worker로 이전할 수 있게 책임을 분리한다.
+- `EmbeddingProvider`와 `OllamaEmbeddingProvider`를 `com.notio.ai.embedding`에 추가해 Spring AI `EmbeddingModel.embed(String)` 호출을 감쌌다.
+- `NotificationEmbeddingInputBuilder`는 source, priority, title, body, metadata 일부를 입력으로 구성하고 SHA-256 `content_hash`를 생성한다.
+- `NotificationEmbeddingRepository`는 `JdbcTemplate` native SQL을 사용해 pgvector literal을 `?::vector`로 저장하고, 동일 `notification_id + content_hash`가 있으면 생성을 건너뛴다.
+- `NotificationService.saveNotification`에서 알림 저장 후 `NotificationEmbeddingService.embedNotification`을 호출한다.
+- 임베딩 실패는 `notificationId`, `userId`, `source`, `errorType`만 warn 로그로 남기고 예외를 삼켜 알림 저장과 push 흐름을 계속한다.
+- 검증 보강: `NotificationEmbeddingInputBuilderTest`, `NotificationEmbeddingServiceTest`, `NotificationServiceTest.saveFromEventKeepsNotificationWhenEmbeddingFails`를 추가했다.
+- 검증 시도: WSL 환경에 `JAVA_HOME`/`java`가 없어 `./gradlew test`는 실행되지 않았고, `cmd.exe /c gradlew.bat test`는 현재 셸에서 Windows binary 실행 오류로 수행하지 못했다.
 
 ## Phase 7. RAG 검색 구현
 

@@ -8,6 +8,7 @@ import com.notio.common.exception.NotioException;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationSource;
 import com.notio.notification.dto.NotificationSummaryResponse;
+import com.notio.notification.embedding.NotificationEmbeddingService;
 import com.notio.notification.repository.NotificationRepository;
 import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
@@ -36,6 +37,7 @@ public class NotificationService {
     private final ObjectMapper objectMapper;
     private final PushService pushService;
     private final CacheManager cacheManager;
+    private final NotificationEmbeddingService notificationEmbeddingService;
 
     /**
      * Webhook 이벤트로부터 알림 생성.
@@ -88,6 +90,13 @@ public class NotificationService {
         Notification saved = notificationRepository.save(notification);
         log.info("Notification created: id={}, userId={}, connectionId={}, source={}, title={}",
             saved.getId(), saved.getUserId(), saved.getConnectionId(), saved.getSource(), saved.getTitle());
+
+        try {
+            notificationEmbeddingService.embedNotification(saved);
+        } catch (Exception e) {
+            log.warn("Failed to create notification embedding: notificationId={}, userId={}, source={}, errorType={}",
+                saved.getId(), saved.getUserId(), saved.getSource(), e.getClass().getSimpleName());
+        }
 
         // 푸시 알림 발송 (동기 - Phase 0)
         try {
