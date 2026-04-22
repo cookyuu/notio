@@ -13,7 +13,7 @@ enum MessageRole {
   }
 
   static MessageRole fromApiValue(String value) {
-    switch (value) {
+    switch (value.toLowerCase()) {
       case 'user':
         return MessageRole.user;
       case 'assistant':

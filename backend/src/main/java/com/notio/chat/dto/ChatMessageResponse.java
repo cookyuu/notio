@@ -12,7 +12,7 @@ public record ChatMessageResponse(
     public static ChatMessageResponse from(final ChatMessage message) {
         return new ChatMessageResponse(
                 message.getId(),
-                message.getRole().name(),
+                message.getRole().name().toLowerCase(),
                 message.getContent(),
                 message.getCreatedAt()
         );
