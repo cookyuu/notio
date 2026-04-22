@@ -12,7 +12,7 @@ public class AiExceptionTranslator {
     }
 
     public NotioException embeddingFailed(final Throwable cause) {
-        if (isConnectionFailure(cause)) {
+        if (isConnectionFailure(cause) || isModelUnavailable(cause)) {
             return llmUnavailable(cause);
         }
         return new NotioException(ErrorCode.EMBEDDING_FAILED, ErrorCode.EMBEDDING_FAILED.getMessage(), null, cause);
@@ -22,6 +22,18 @@ public class AiExceptionTranslator {
         Throwable current = throwable;
         while (current != null) {
             if (current instanceof ResourceAccessException || current instanceof TimeoutException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private boolean isModelUnavailable(final Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            final String message = current.getMessage();
+            if (message != null && message.contains("model") && message.contains("not found")) {
                 return true;
             }
             current = current.getCause();

@@ -21,7 +21,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotioException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotioException(final NotioException exception) {
         final ErrorCode errorCode = exception.getErrorCode();
-        log.error("Exception[{}]: ", errorCode, exception);
+        log.warn(
+                "Exception[{}]: message={}, cause={}",
+                errorCode.getCode(),
+                exception.getMessage(),
+                rootCauseMessage(exception)
+        );
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(ApiResponse.error(new ApiError(
                         errorCode.getCode(),
@@ -69,5 +74,15 @@ public class GlobalExceptionHandler {
                         errorCode.getCode(),
                         errorCode.getMessage()
                 )));
+    }
+
+    private String rootCauseMessage(final Throwable throwable) {
+        Throwable current = throwable;
+        Throwable root = throwable;
+        while (current != null) {
+            root = current;
+            current = current.getCause();
+        }
+        return root.getMessage();
     }
 }

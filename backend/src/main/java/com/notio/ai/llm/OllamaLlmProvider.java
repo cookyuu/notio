@@ -4,6 +4,12 @@ import com.notio.ai.prompt.LlmPrompt;
 import com.notio.common.config.properties.NotioAiProperties;
 import com.notio.common.exception.AiExceptionTranslator;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -24,7 +30,7 @@ public class OllamaLlmProvider implements LlmProvider {
     @Override
     public String chat(final LlmPrompt prompt) {
         try {
-            final ChatResponse response = chatModel.call(toSpringPrompt(prompt));
+            final ChatResponse response = callWithTimeout(prompt);
             return extractContent(response);
         } catch (RuntimeException exception) {
             throw exceptionTranslator.llmUnavailable(exception);
@@ -52,6 +58,32 @@ public class OllamaLlmProvider implements LlmProvider {
                 new SystemMessage(prompt.system()),
                 new UserMessage(prompt.user())
         );
+    }
+
+    private ChatResponse callWithTimeout(final LlmPrompt prompt) {
+        try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            final Future<ChatResponse> future = executorService.submit(() -> chatModel.call(toSpringPrompt(prompt)));
+            try {
+                return future.get(aiProperties.llmTimeout().toMillis(), TimeUnit.MILLISECONDS);
+            } catch (TimeoutException exception) {
+                future.cancel(true);
+                throw new IllegalStateException("LLM request timed out", exception);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                future.cancel(true);
+                throw new IllegalStateException("LLM request interrupted", exception);
+            } catch (ExecutionException exception) {
+                throw unwrapExecutionException(exception);
+            }
+        }
+    }
+
+    private RuntimeException unwrapExecutionException(final ExecutionException exception) {
+        final Throwable cause = exception.getCause();
+        if (cause instanceof RuntimeException runtimeException) {
+            return runtimeException;
+        }
+        return new IllegalStateException("LLM request failed", cause);
     }
 
     private String extractContent(final ChatResponse response) {
