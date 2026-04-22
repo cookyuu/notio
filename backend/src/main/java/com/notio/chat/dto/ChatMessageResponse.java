@@ -12,10 +12,9 @@ public record ChatMessageResponse(
     public static ChatMessageResponse from(final ChatMessage message) {
         return new ChatMessageResponse(
                 message.getId(),
-                message.getRole().name().toLowerCase(),
+                message.getRole().name(),
                 message.getContent(),
                 message.getCreatedAt()
         );
     }
 }
-

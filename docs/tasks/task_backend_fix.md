@@ -309,26 +309,37 @@
 
 ## Phase 12. 테스트 및 검증
 
-- [ ] `PromptBuilderTest`를 추가한다.
-- [ ] `ChatServiceTest`를 RAG + LLM 흐름 기준으로 갱신한다.
-- [ ] `DailySummaryServiceTest`를 LLM/cache/fallback 기준으로 갱신한다.
-- [ ] `NotificationEmbeddingServiceTest`를 추가한다.
-- [ ] `RagRetrieverTest`를 추가한다.
-- [ ] pgvector extension 활성화 통합 테스트를 추가한다.
-- [ ] embedding insert 통합 테스트를 추가한다.
-- [ ] cosine similarity search 통합 테스트를 추가한다.
-- [ ] user scope isolation 테스트를 추가한다.
-- [ ] `ChatControllerTest`에서 기존 API 응답 형식을 검증한다.
-- [ ] SSE `chunk`/`done` 이벤트 형식을 검증한다.
-- [ ] `./gradlew test`를 실행한다.
-- [ ] 필요 시 `./gradlew checkstyleMain spotbugsMain`을 실행한다.
-- [ ] 로컬 Ollama 모델 설치 상태를 확인한다.
+- [x] `PromptBuilderTest`를 추가한다.
+- [x] `ChatServiceTest`를 RAG + LLM 흐름 기준으로 갱신한다.
+- [x] `DailySummaryServiceTest`를 LLM/cache/fallback 기준으로 갱신한다.
+- [x] `NotificationEmbeddingServiceTest`를 추가한다.
+- [x] `RagRetrieverTest`를 추가한다.
+- [x] pgvector extension 활성화 통합 테스트를 추가한다.
+- [x] embedding insert 통합 테스트를 추가한다.
+- [x] cosine similarity search 통합 테스트를 추가한다.
+- [x] user scope isolation 테스트를 추가한다.
+- [x] `ChatControllerTest`에서 기존 API 응답 형식을 검증한다.
+- [x] SSE `chunk`/`done` 이벤트 형식을 검증한다.
+- [x] `./gradlew test`를 실행한다.
+- [x] 필요 시 `./gradlew checkstyleMain spotbugsMain`을 실행한다.
+- [x] 로컬 Ollama 모델 설치 상태를 확인한다.
 - [ ] `curl`로 Chat API smoke test를 수행한다.
 
 ### Phase 12 확인 메모
 
 - 외부 LLM 호출은 단위 테스트에서 mock provider로 대체한다.
 - pgvector 통합 테스트는 Testcontainers PostgreSQL 이미지가 pgvector extension을 지원하는지 먼저 확인한다.
+- `PromptBuilderTest`, `ChatServiceTest`, `DailySummaryServiceTest`, `NotificationEmbeddingServiceTest`, `PgvectorRagRetrieverTest`는 이전 단계에서 추가/갱신된 상태를 유지한다.
+- `PgvectorRagRetrieverIntegrationTest`를 추가해 `pgvector/pgvector:pg16` Testcontainers 환경에서 extension 활성화, `NotificationEmbeddingRepository` vector insert, cosine similarity 정렬, user scope isolation을 검증한다.
+- Docker가 없는 로컬/CI 환경에서 전체 테스트가 실패하지 않도록 pgvector 통합 테스트는 `@Testcontainers(disabledWithoutDocker = true)`로 구성했다.
+- `ChatControllerTest`를 MockMvc 기반으로 확장해 `ApiResponse` wrapper, `created_at`/`total_messages` snake_case, `USER`/`ASSISTANT` role, history list 응답을 검증한다.
+- `spec_fix.md` 기준에 맞춰 `ChatMessageResponse.role`은 대문자 enum 문자열로 반환하도록 수정했다.
+- `spec_fix.md` 기준에 맞춰 SSE는 event name 없이 `data: {"chunk": ...}`와 `data: {"done": true, "message_id": ...}` JSON payload를 전송하도록 수정했고, 테스트로 고정했다.
+- 외부 LLM 호출은 모든 단위/컨트롤러 테스트에서 mock provider로 대체했다.
+- `/mnt/c` 작업트리에서는 Gradle `FileHasher`가 `Input/output error`로 시작하지 못해, `backend`를 `/tmp/notio-backend-phase12-run`으로 복사한 뒤 `GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew --no-daemon test` 실행 통과.
+- 현재 `build.gradle.kts`에는 Checkstyle/SpotBugs plugin이 설정되어 있지 않아 별도 quality task 실행 대상은 없다.
+- 로컬 환경에서 `ollama` CLI가 발견되지 않았고 `http://localhost:11434/api/tags` 연결도 실패해 Ollama 모델 설치 상태는 미설치/미실행으로 확인했다.
+- `http://localhost:8080/api/v1/chat/daily-summary` 연결이 실패해 backend 서버가 실행 중이 아님을 확인했다. Ollama/PostgreSQL/backend 실행 환경이 준비된 뒤 Chat API smoke test를 수행해야 한다.
 
 ## Phase 13. Phase 1 분리 대비 정리
 

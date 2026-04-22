@@ -1,5 +1,7 @@
 package com.notio.chat.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.ai.llm.LlmProvider;
 import com.notio.ai.prompt.LlmPrompt;
 import com.notio.ai.prompt.PromptBuilder;
@@ -38,19 +40,22 @@ public class ChatService {
     private final PromptBuilder promptBuilder;
     private final LlmProvider llmProvider;
     private final NotioAiProperties aiProperties;
+    private final ObjectMapper objectMapper;
 
     public ChatService(
             final ChatMessageRepository chatMessageRepository,
             final RagRetriever ragRetriever,
             final PromptBuilder promptBuilder,
             final LlmProvider llmProvider,
-            final NotioAiProperties aiProperties
+            final NotioAiProperties aiProperties,
+            final ObjectMapper objectMapper
     ) {
         this.chatMessageRepository = chatMessageRepository;
         this.ragRetriever = ragRetriever;
         this.promptBuilder = promptBuilder;
         this.llmProvider = llmProvider;
         this.aiProperties = aiProperties;
+        this.objectMapper = objectMapper;
     }
 
     public ChatMessageResponse chat(final ChatRequest request) {
@@ -166,8 +171,7 @@ public class ChatService {
                         assistantContent.toString().trim()
                 );
                 emitter.send(SseEmitter.event()
-                        .name("done")
-                        .data(Map.of("done", true, "message_id", assistantMessage.getId())));
+                        .data(toJson(Map.of("done", true, "message_id", assistantMessage.getId()))));
                 log.info(
                         "Chat stream done sent: streamId={}, assistantMessageId={}, chunks={}, responseChars={}, firstChunkElapsedMs={}, elapsedMs={}",
                         streamId,
@@ -264,9 +268,17 @@ public class ChatService {
 
     private void sendChunk(final SseEmitter emitter, final String chunk) {
         try {
-            emitter.send(SseEmitter.event().name("chunk").data(chunk));
+            emitter.send(SseEmitter.event().data(toJson(Map.of("chunk", chunk))));
         } catch (Exception exception) {
             throw new CancellationException("SSE client disconnected");
+        }
+    }
+
+    private String toJson(final Map<String, ?> payload) {
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Failed to serialize SSE payload", exception);
         }
     }
 }

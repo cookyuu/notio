@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.ai.llm.LlmProvider;
 import com.notio.ai.prompt.LlmPrompt;
 import com.notio.ai.prompt.PromptBuilder;
@@ -17,6 +18,7 @@ import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
 import com.notio.chat.dto.ChatRequest;
 import com.notio.chat.repository.ChatMessageRepository;
+import com.notio.common.config.JacksonConfig;
 import com.notio.common.config.properties.NotioAiProperties;
 import java.time.Duration;
 import java.time.Instant;
@@ -42,7 +44,8 @@ class ChatServiceTest {
                 ragRetriever,
                 promptBuilder,
                 llmProvider,
-                aiProperties()
+                aiProperties(),
+                objectMapper()
         );
         final ChatMessage userMessage = message(
                 1L,
@@ -103,7 +106,8 @@ class ChatServiceTest {
                 ragRetriever,
                 promptBuilder,
                 llmProvider,
-                aiProperties()
+                aiProperties(),
+                objectMapper()
         );
         final ChatMessage userMessage = message(
                 1L,
@@ -155,7 +159,8 @@ class ChatServiceTest {
                 ragRetriever,
                 promptBuilder,
                 llmProvider,
-                aiProperties()
+                aiProperties(),
+                objectMapper()
         );
         final ChatMessage message = message(
                 10L,
@@ -198,5 +203,9 @@ class ChatServiceTest {
                 Duration.ofSeconds(15),
                 Duration.ofSeconds(5)
         );
+    }
+
+    private ObjectMapper objectMapper() {
+        return new JacksonConfig().objectMapper();
     }
 }
