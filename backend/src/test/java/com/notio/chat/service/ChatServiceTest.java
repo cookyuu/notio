@@ -1,6 +1,7 @@
 package com.notio.chat.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,7 +35,7 @@ class ChatServiceTest {
         );
         final ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 
-        when(chatMessageRepository.findRecentByUserId(eq(1L), pageableCaptor.capture()))
+        when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class)))
                 .thenReturn(List.of(message));
 
         final List<ChatMessageResponse> history = chatService.history();
@@ -43,9 +44,9 @@ class ChatServiceTest {
         assertThat(history.getFirst().id()).isEqualTo(10L);
         assertThat(history.getFirst().role()).isEqualTo("ASSISTANT");
         assertThat(history.getFirst().content()).isEqualTo("최근 알림 요약입니다.");
+        verify(chatMessageRepository).findRecentByUserId(eq(1L), pageableCaptor.capture());
         assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(50);
-        verify(chatMessageRepository).findRecentByUserId(eq(1L), pageableCaptor.getValue());
     }
 
     private ChatMessage message(

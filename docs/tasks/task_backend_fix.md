@@ -148,7 +148,7 @@
 - Phase 0 기존 계약 유지를 위해 현재 chat user scope는 legacy default user id `1L`을 사용한다.
 - `ChatMessageResponse.from(ChatMessage)` 변환 로직을 추가해 `created_at` snake_case Jackson 설정과 대문자 role 응답 계약을 유지한다.
 - 검증 보강: `ChatServiceTest.historyReadsRecentMessagesFromRepository`를 추가했다.
-- 검증 시도: WSL 환경에 `JAVA_HOME`/`java`가 없어 `./gradlew test`는 실행되지 않았고, `cmd.exe /c gradlew.bat test`는 현재 셸에서 Windows binary 실행 오류로 수행하지 못했다.
+- 검증: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test` 통과.
 
 ## Phase 6. Embedding 파이프라인 구현
 
@@ -173,25 +173,33 @@
 - `NotificationService.saveNotification`에서 알림 저장 후 `NotificationEmbeddingService.embedNotification`을 호출한다.
 - 임베딩 실패는 `notificationId`, `userId`, `source`, `errorType`만 warn 로그로 남기고 예외를 삼켜 알림 저장과 push 흐름을 계속한다.
 - 검증 보강: `NotificationEmbeddingInputBuilderTest`, `NotificationEmbeddingServiceTest`, `NotificationServiceTest.saveFromEventKeepsNotificationWhenEmbeddingFails`를 추가했다.
-- 검증 시도: WSL 환경에 `JAVA_HOME`/`java`가 없어 `./gradlew test`는 실행되지 않았고, `cmd.exe /c gradlew.bat test`는 현재 셸에서 Windows binary 실행 오류로 수행하지 못했다.
+- 검증: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test` 통과.
 
 ## Phase 7. RAG 검색 구현
 
-- [ ] `RagRetriever` 인터페이스를 추가한다.
-- [ ] `RagDocument` DTO를 추가한다.
-- [ ] `PgvectorRagRetriever`를 구현한다.
-- [ ] 사용자 질문을 embedding으로 변환한다.
-- [ ] `embedding <=> query_vector` 기반 cosine distance 검색을 구현한다.
-- [ ] 기본 top-k는 `5`로 둔다.
-- [ ] user scope isolation을 SQL 조건으로 강제한다.
-- [ ] soft delete된 embedding은 검색에서 제외한다.
-- [ ] 검색 결과가 없을 때 fallback 흐름을 구현한다.
-- [ ] pgvector 쿼리는 QueryDSL 대신 native SQL 또는 `JdbcTemplate`으로 분리한다.
+- [x] `RagRetriever` 인터페이스를 추가한다.
+- [x] `RagDocument` DTO를 추가한다.
+- [x] `PgvectorRagRetriever`를 구현한다.
+- [x] 사용자 질문을 embedding으로 변환한다.
+- [x] `embedding <=> query_vector` 기반 cosine distance 검색을 구현한다.
+- [x] 기본 top-k는 `5`로 둔다.
+- [x] user scope isolation을 SQL 조건으로 강제한다.
+- [x] soft delete된 embedding은 검색에서 제외한다.
+- [x] 검색 결과가 없을 때 fallback 흐름을 구현한다.
+- [x] pgvector 쿼리는 QueryDSL 대신 native SQL 또는 `JdbcTemplate`으로 분리한다.
 
 ### Phase 7 확인 메모
 
 - QueryDSL은 일반 필터/정렬/조인에 사용할 수 있다.
 - pgvector 전용 연산자는 native SQL로 유지하는 것이 Phase 0에서 가장 단순하고 안정적이다.
+- `RagRetriever`와 `RagDocument`를 `com.notio.ai.rag`에 추가해 ChatService/PromptBuilder가 검색 구현에 직접 의존하지 않도록 했다.
+- `PgvectorRagRetriever`는 사용자 질문을 `EmbeddingProvider`로 임베딩한 뒤 `notification_embeddings`와 `notifications`를 조인해 `ne.embedding <=> ?::vector` 기준으로 정렬한다.
+- 기본 top-k는 `NotioRagProperties.topK()`를 사용하며 `.env.example`/`application.yml` 기본값인 `5`를 따른다.
+- SQL 조건에서 `ne.user_id = ?`, `n.user_id = ?`, `ne.deleted_at IS NULL`, `n.deleted_at IS NULL`을 강제해 user scope와 soft delete를 함께 보장한다.
+- 검색 결과가 없으면 빈 `List<RagDocument>`를 반환해 Phase 9의 ChatService fallback 응답에서 명확히 처리할 수 있게 했다.
+- RAG context용 필드는 `source`, `title`, `body_summary`, `priority`, `created_at`, `similarity_score`를 포함한다.
+- 검증 보강: `PgvectorRagRetrieverTest`를 추가해 질문 임베딩, pgvector SQL 조건, 빈 검색 결과 fallback, embedding dimension 검증을 확인한다.
+- 검증: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test` 통과.
 
 ## Phase 8. PromptBuilder 구현
 

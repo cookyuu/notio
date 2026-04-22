@@ -119,7 +119,7 @@ class AuthPublicEndpointSecurityTest {
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {
-                                  "display_name": "Notio User",
+                                  "displayName": "Notio User",
                                   "email": "user@example.com",
                                   "password": "password123"
                                 }
