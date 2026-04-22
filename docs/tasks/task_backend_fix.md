@@ -282,19 +282,30 @@
 
 ## Phase 11. DailySummaryService LLM 전환
 
-- [ ] Redis cache key를 user/date 기준으로 분리한다.
-- [ ] cache hit이면 LLM을 호출하지 않는다.
-- [ ] 오늘 알림 목록을 조회한다.
-- [ ] daily summary prompt를 생성한다.
-- [ ] `LlmProvider.chat`을 호출한다.
-- [ ] `summary`, `date`, `total_messages`, `topics`를 기존 응답 구조로 반환한다.
-- [ ] Redis 24시간 캐시를 적용한다.
-- [ ] LLM 장애 시 캐시가 있으면 캐시 응답을 반환한다.
-- [ ] LLM 장애 시 캐시가 없으면 `LLM_UNAVAILABLE`로 응답한다.
+- [x] Redis cache key를 user/date 기준으로 분리한다.
+- [x] cache hit이면 LLM을 호출하지 않는다.
+- [x] 오늘 알림 목록을 조회한다.
+- [x] daily summary prompt를 생성한다.
+- [x] `LlmProvider.chat`을 호출한다.
+- [x] `summary`, `date`, `total_messages`, `topics`를 기존 응답 구조로 반환한다.
+- [x] Redis 24시간 캐시를 적용한다.
+- [x] LLM 장애 시 캐시가 있으면 캐시 응답을 반환한다.
+- [x] LLM 장애 시 캐시가 없으면 `LLM_UNAVAILABLE`로 응답한다.
 
 ### Phase 11 확인 메모
 
 - 기존 `DailySummaryResponse` 구조를 유지해야 프론트 변경 없이 전환할 수 있다.
+- `DailySummaryService`를 LLM 기반으로 전환했다.
+- Redis cache key를 `userId:date` 형식으로 변경해 user scope isolation을 적용했다.
+- `CacheManager`를 수동으로 사용해 cache hit 시 LLM을 호출하지 않고 캐시 반환한다.
+- `PromptBuilder.buildDailySummaryPrompt`로 daily summary prompt를 생성한다.
+- `LlmProvider.chat`을 호출해 LLM 기반 요약을 생성한다.
+- topics는 기존 규칙 기반 로직(source별 빈도수)을 유지해 안정성을 확보했다.
+- 알림이 없을 때는 fallback 메시지를 반환한다.
+- LLM 실패 시 `AiExceptionTranslator.llmUnavailable`로 `LLM_UNAVAILABLE` 예외를 발생시킨다.
+- Phase 0 기존 계약 유지를 위해 현재 daily summary user scope는 `DEFAULT_PHASE0_USER_ID = 1L`을 사용한다.
+- 검증 보강: `DailySummaryServiceTest`를 추가해 캐시 hit/miss, LLM 호출, fallback, 예외 처리를 확인했다.
+- 검증: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test --tests DailySummaryServiceTest` 통과.
 
 ## Phase 12. 테스트 및 검증
 
