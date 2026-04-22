@@ -127,20 +127,28 @@
 
 ## Phase 5. ChatMessage 영속화
 
-- [ ] `ChatMessage` entity를 추가한다.
-- [ ] `ChatMessageRole` enum을 추가한다.
-- [ ] role 값은 `USER`, `ASSISTANT`를 기본으로 둔다.
-- [ ] `ChatMessageRepository`를 추가한다.
-- [ ] 사용자별 최근 메시지 조회 메서드를 추가한다.
-- [ ] soft delete 조건을 일관되게 적용한다.
-- [ ] 기존 인메모리 `history`를 제거한다.
-- [ ] `ChatMessageResponse` 변환 로직을 추가한다.
-- [ ] `GET /api/v1/chat/history`가 DB 기반으로 응답하도록 전환한다.
+- [x] `ChatMessage` entity를 추가한다.
+- [x] `ChatMessageRole` enum을 추가한다.
+- [x] role 값은 `USER`, `ASSISTANT`를 기본으로 둔다.
+- [x] `ChatMessageRepository`를 추가한다.
+- [x] 사용자별 최근 메시지 조회 메서드를 추가한다.
+- [x] soft delete 조건을 일관되게 적용한다.
+- [x] 기존 인메모리 `history`를 제거한다.
+- [x] `ChatMessageResponse` 변환 로직을 추가한다.
+- [x] `GET /api/v1/chat/history`가 DB 기반으로 응답하도록 전환한다.
 
 ### Phase 5 확인 메모
 
 - JPA는 `chat_messages` 같은 일반 도메인 테이블에 사용한다.
 - pgvector 전용 컬럼은 JPA entity에 억지로 매핑하지 않는다.
+- `ChatMessage` entity와 `ChatMessageRole` enum을 추가하고, role은 API 명세의 `USER`, `ASSISTANT` 값으로 저장/응답한다.
+- `ChatMessageRepository.findRecentByUserId`는 user scope와 soft delete 조건을 적용해 최신순으로 조회한다.
+- `ChatMessage`에는 Hibernate `@SQLRestriction("deleted_at IS NULL")`을 적용해 기본 조회에서도 soft delete row를 제외한다.
+- `ChatService`의 인메모리 `history`와 `AtomicLong` sequence를 제거하고, `POST /api/v1/chat`, `GET /api/v1/chat/stream`, `GET /api/v1/chat/history` 모두 `chat_messages` 저장소를 사용한다.
+- Phase 0 기존 계약 유지를 위해 현재 chat user scope는 legacy default user id `1L`을 사용한다.
+- `ChatMessageResponse.from(ChatMessage)` 변환 로직을 추가해 `created_at` snake_case Jackson 설정과 대문자 role 응답 계약을 유지한다.
+- 검증 보강: `ChatServiceTest.historyReadsRecentMessagesFromRepository`를 추가했다.
+- 검증 시도: WSL 환경에 `JAVA_HOME`/`java`가 없어 `./gradlew test`는 실행되지 않았고, `cmd.exe /c gradlew.bat test`는 현재 셸에서 Windows binary 실행 오류로 수행하지 못했다.
 
 ## Phase 6. Embedding 파이프라인 구현
 

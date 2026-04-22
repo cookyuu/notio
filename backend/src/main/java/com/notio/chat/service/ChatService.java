@@ -1,44 +1,52 @@
 package com.notio.chat.service;
 
+import com.notio.chat.domain.ChatMessage;
+import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
 import com.notio.chat.dto.ChatRequest;
-import com.notio.notification.dto.NotificationFilterRequest;
+import com.notio.chat.repository.ChatMessageRepository;
 import com.notio.notification.service.NotificationService;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Service
 public class ChatService {
 
-    private final List<ChatMessageResponse> history = new ArrayList<>();
-    private final AtomicLong sequence = new AtomicLong(0);
+    private static final Long DEFAULT_PHASE0_USER_ID = 1L;
+    private static final int HISTORY_LIMIT = 50;
+
+    private final ChatMessageRepository chatMessageRepository;
     private final NotificationService notificationService;
 
-    public ChatService(final NotificationService notificationService) {
+    public ChatService(
+            final ChatMessageRepository chatMessageRepository,
+            final NotificationService notificationService
+    ) {
+        this.chatMessageRepository = chatMessageRepository;
         this.notificationService = notificationService;
     }
 
+    @Transactional
     public ChatMessageResponse chat(final ChatRequest request) {
-        append("user", request.content());
+        append(ChatMessageRole.USER, request.content());
         final String responseText = generateDummyAiResponse(request.content());
-        return append("assistant", responseText);
+        return append(ChatMessageRole.ASSISTANT, responseText);
     }
 
     public SseEmitter streamChat(final ChatRequest request) {
-        append("user", request.content());
+        append(ChatMessageRole.USER, request.content());
         final String responseText = generateDummyAiResponse(request.content());
         final SseEmitter emitter = new SseEmitter(30_000L);
 
@@ -50,7 +58,7 @@ public class ChatService {
                     Thread.sleep(50);
                 }
                 emitter.send(SseEmitter.event().name("done").data("[DONE]"));
-                append("assistant", responseText);
+                append(ChatMessageRole.ASSISTANT, responseText);
                 emitter.complete();
             } catch (Exception exception) {
                 emitter.completeWithError(exception);
@@ -60,19 +68,19 @@ public class ChatService {
         return emitter;
     }
 
+    @Transactional(readOnly = true)
     public List<ChatMessageResponse> history() {
-        return List.copyOf(history);
+        return chatMessageRepository.findRecentByUserId(
+                        DEFAULT_PHASE0_USER_ID,
+                        PageRequest.of(0, HISTORY_LIMIT)
+                ).stream()
+                .map(ChatMessageResponse::from)
+                .toList();
     }
 
-    private ChatMessageResponse append(final String role, final String content) {
-        final ChatMessageResponse message = new ChatMessageResponse(
-                sequence.incrementAndGet(),
-                role,
-                content,
-                OffsetDateTime.now(ZoneOffset.UTC)
-        );
-        history.add(0, message);
-        return message;
+    private ChatMessageResponse append(final ChatMessageRole role, final String content) {
+        final ChatMessage message = new ChatMessage(DEFAULT_PHASE0_USER_ID, role, content);
+        return ChatMessageResponse.from(chatMessageRepository.save(message));
     }
 
     private String generateDummyAiResponse(final String userMessage) {

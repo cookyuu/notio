@@ -1,5 +1,6 @@
 package com.notio.chat.dto;
 
+import com.notio.chat.domain.ChatMessage;
 import java.time.OffsetDateTime;
 
 public record ChatMessageResponse(
@@ -8,5 +9,13 @@ public record ChatMessageResponse(
         String content,
         OffsetDateTime createdAt
 ) {
+    public static ChatMessageResponse from(final ChatMessage message) {
+        return new ChatMessageResponse(
+                message.getId(),
+                message.getRole().name(),
+                message.getContent(),
+                message.getCreatedAt()
+        );
+    }
 }
 
