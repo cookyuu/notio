@@ -202,3 +202,20 @@
 
 - 현재 계획 기준으로는 위 항목을 수행하지 않는 것이 목표다.
 - 변경이 필요해지는 경우 API 명세를 먼저 갱신하고 프론트 수정을 진행한다.
+
+## Phase 8. LLM 응답 대기 UX 점검
+
+- [ ] `POST /api/v1/chat`은 non-streaming 동기 API이므로 LLM 응답이 완료될 때까지 로딩 상태를 유지하는지 확인한다.
+- [ ] 동기 API 사용 시 `NOTIO_LLM_TIMEOUT` 기본값(30초)보다 짧은 프론트/Dio timeout으로 요청이 먼저 끊기지 않는지 확인한다.
+- [ ] 사용자가 토큰 단위 응답을 기대하는 Chat 화면이면 `GET /api/v1/chat/stream?content=...` SSE 경로를 기본 전송 방식으로 사용한다.
+- [ ] SSE 사용 시 `chunk` event를 누적 표시하고 `done` event 수신 후 입력창을 다시 활성화한다.
+- [ ] 백엔드가 timeout으로 `LLM_UNAVAILABLE`을 반환하면 기존 error state로 표시하고 입력창을 다시 활성화한다.
+- [ ] timeout 이후 Retry 버튼 또는 재전송 버튼이 중복 user message를 만들지 않는지 확인한다.
+
+### Phase 8 확인 메모
+
+- 이번 백엔드 변경으로 동기 LLM 호출과 embedding 호출에 timeout이 적용된다.
+- 프론트가 `POST /api/v1/chat`을 계속 사용하면 응답은 한 번에 도착한다. 이 경우 "응답 없음"처럼 보이지 않도록 sending/loading 상태가 명확해야 한다.
+- 실시간으로 답변이 생성되는 UI를 원하면 프론트는 기존 stream API를 사용해야 한다. `POST /api/v1/chat` 자체는 streaming 응답을 반환하지 않는다.
+- Dio receive/connect timeout이 30초보다 짧으면 백엔드가 `LLM_UNAVAILABLE`을 반환하기 전에 프론트가 네트워크 오류로 처리할 수 있다.
+- 현재 API 계약이 유지되므로 response model 변경은 필요 없다. 변경 필요 가능성이 있는 부분은 전송 방식 선택, timeout 설정, loading/error UX다.
