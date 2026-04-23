@@ -1,363 +1,133 @@
 # Backend Fix 개발 체크리스트
 
-> 대상: AI Chat 더미 응답을 실제 RAG + LLM 기반 응답으로 전환  
-> 범위: Spring Boot 4.x · Java 25 · PostgreSQL pgvector · Redis · Ollama · Flyway
+> 기준 문서: `docs/plans/plan_fix_llm.md`  
+> 대상: `GET /api/v1/chat/stream`, `POST /api/v1/chat`의 자연어 기간 표현을 RAG 검색 조건에 반영  
+> 범위: Spring Boot 모놀리스 내부 구현, 기존 Chat API 계약 유지, 기존 RAG + LLM 경계 유지
 
 ---
 
-## Phase 0. 범위 확정 및 현재 계약 검증
+## Phase 0. 범위 확정 및 기존 계약 보호
 
-- [x] `docs/plans/plan_fix.md`를 기준 문서로 확정한다.
-- [x] Phase 0에서는 Spring Boot 모놀리스 내부에서 RAG + LLM을 구현한다.
-- [x] Phase 1의 Python FastAPI/LangChain AI Service 분리를 고려해 `LlmProvider`, `EmbeddingProvider`, `RagRetriever`, `PromptBuilder` 경계를 둔다.
-- [x] 기존 Chat API 엔드포인트를 유지한다.
-- [x] 기존 `ApiResponse` 응답 형식을 유지한다.
-- [x] SSE 이벤트 흐름은 기존 프론트가 처리 가능한 `chunk`, `done` 구조로 유지한다.
-- [x] 기존 `docker-compose/docker-compose.yml`의 PostgreSQL, Redis 설정은 변경하지 않는다.
-- [x] DB 스키마 변경은 Flyway 신규 migration 파일로만 관리한다.
+- [x] `docs/plans/plan_fix_llm.md`를 기준 문서로 확정한다.
+- [x] 기존 `GET /api/v1/chat/stream?content=...` API 계약을 변경하지 않는다.
+- [x] 기존 `POST /api/v1/chat` request/response 계약을 변경하지 않는다.
+- [x] 기존 SSE event 형식인 `chunk`, `done`을 유지한다.
+- [x] 기간 필터는 알림 RAG 검색에만 적용하고 최근 대화 히스토리 조회에는 적용하지 않는다.
+- [x] 실제 인증 사용자 ID 적용은 이번 작업에서 제외하고 기존 `DEFAULT_PHASE0_USER_ID = 1L` 정책을 유지한다.
+- [x] 기간 파싱 실패 또는 미지원 표현은 에러가 아니라 기존 RAG 검색 fallback으로 처리한다.
+- [x] LLM이 직접 DB를 조회하는 구조로 변경하지 않는다.
 
-### Phase 0 확인 메모
+검증 메모:
+- 기준 문서: `docs/plans/plan_fix_llm.md`
+- `GET /api/v1/chat/stream?content=...`, `POST /api/v1/chat` 계약은 `backend/src/main/java/com/notio/chat/controller/ChatController.java`와 `backend/src/test/java/com/notio/chat/controller/ChatControllerTest.java` 기준으로 유지한다.
+- SSE payload의 `chunk`, `done` JSON 형식은 `backend/src/main/java/com/notio/chat/service/ChatService.java`와 `streamReturnsJsonChunkAndDoneDataEvents()` 테스트 기준으로 유지한다.
+- 최근 대화 히스토리 조회는 `ChatService.history()`와 `buildChatPrompt()`의 `chatMessageRepository.findRecentByUserId(...)` 경로를 유지하고, 기간 조건은 이후 단계에서 `ragRetriever.retrieve(...)` 쪽에만 연결한다.
+- Phase 0 사용자 정책은 `ChatService.DEFAULT_PHASE0_USER_ID = 1L`, `NotificationService.DEFAULT_PHASE0_USER_ID = 1L`를 그대로 유지한다.
+- fallback 정책과 LLM/RAG 경계는 `docs/plans/plan_fix_llm.md`의 완료 기준 및 주의사항을 구현 기준으로 고정한다.
 
-- 유지 대상 API는 `POST /api/v1/chat`, `GET /api/v1/chat/stream`, `GET /api/v1/chat/daily-summary`, `GET /api/v1/chat/history`이다.
-- 현재 `ChatService`는 인메모리 history와 더미/규칙 기반 응답을 사용하므로 실제 구현 단계에서 제거 대상이다.
-- 현재 `DailySummaryService`는 규칙 기반 요약이므로 LLM 기반 요약으로 전환한다.
-- 현재 프론트는 `created_at`, `total_messages` 같은 `snake_case` JSON 필드를 기대하며, 백엔드 Jackson 설정도 `SNAKE_CASE`를 사용한다.
+## Phase 1. 기간 필터 값 타입 추가
 
-### Phase 0 검증 결과
+- [ ] `com.notio.ai.rag` 또는 `com.notio.chat.service` 하위에 `TimeRange` record를 추가한다.
+- [ ] `TimeRange`는 `Instant startInclusive`, `Instant endExclusive`를 가진다.
+- [ ] `startInclusive`는 필수 값으로 다룬다.
+- [ ] 상대 기간에서도 `endExclusive`에는 추출 시점의 `now`를 명시적으로 넣는다.
+- [ ] SQL 조건 기준을 `created_at >= startInclusive AND created_at < endExclusive`로 통일한다.
+- [ ] 값 타입 위치가 RAG, Chat, Prompt 경계를 불필요하게 순환 참조하지 않는지 확인한다.
 
-- 기준 문서는 `docs/plans/plan_fix.md`로 확정하고, API 계약은 `docs/api/spec_fix.md`를 따른다.
-- 현재 유지 대상 엔드포인트는 `ChatController`에 모두 존재한다: `POST /api/v1/chat`, `GET /api/v1/chat/stream`, `GET /api/v1/chat/daily-summary`, `GET /api/v1/chat/history`.
-- 현재 공통 응답은 `ApiResponse<T>`의 `success`, `data`, `error` 구조를 사용한다.
-- 현재 백엔드 Jackson 설정은 `SNAKE_CASE`이며, `ChatMessageResponse.createdAt`과 `DailySummaryResponse.totalMessages`는 각각 `created_at`, `total_messages`로 직렬화된다.
-- 현재 Docker Compose의 PostgreSQL, Redis 설정은 유지되어 있고 Ollama는 아직 주석 처리 상태다.
-- 현재 DB schema 변경은 `backend/src/main/resources/db/migration`의 Flyway migration으로 관리되고 있다.
-- 현재 SSE 구현은 event name `chunk`, `done`과 raw data를 사용한다. `spec_fix.md`의 JSON payload 예시(`{"chunk": ...}`, `{"done": true, "message_id": ...}`)와는 차이가 있으므로 Phase 10 구현 시 프론트 파서와 함께 최종 정합성을 맞춘다.
-- 현재 Chat role 응답은 프론트 기존 파서 기준 `user`, `assistant` 소문자 문자열이다. `spec_fix.md`의 `USER`, `ASSISTANT` 표기와 차이가 있으므로 실제 영속화 전환 단계에서 계약을 재확인한다.
+## Phase 2. 자연어 기간 추출기 구현
 
-## Phase 1. Docker Compose 인프라 준비
+- [ ] `ChatTimeRangeExtractor`를 추가한다.
+- [ ] 사용자 질문 문자열에서 지원 기간 표현을 찾아 `Optional<TimeRange>`를 반환한다.
+- [ ] 기간 표현이 없으면 `Optional.empty()`를 반환한다.
+- [ ] 미지원 날짜 범위 표현은 `Optional.empty()`로 fallback한다.
+- [ ] 상대 기간 정규식 `(최근|지난)\s*(\d+)\s*(분|시간|일)`을 지원한다.
+- [ ] `최근 N분`, `지난 N분`을 `now - N분 <= created_at < now`로 변환한다.
+- [ ] `최근 N시간`, `지난 N시간`을 `now - N시간 <= created_at < now`로 변환한다.
+- [ ] `최근 N일`, `지난 N일`을 `now - N일 <= created_at < now`로 변환한다.
+- [ ] `오늘`을 서버 기본 timezone 기준 오늘 00:00 이상, 내일 00:00 미만으로 변환한다.
+- [ ] `어제`를 서버 기본 timezone 기준 어제 00:00 이상, 오늘 00:00 미만으로 변환한다.
+- [ ] 상대 기간과 날짜 키워드가 모두 있으면 상대 기간을 우선한다.
+- [ ] `Clock`을 생성자 주입받아 테스트에서 현재 시각을 고정할 수 있게 한다.
 
-- [x] 기존 PostgreSQL 서비스 설정을 변경하지 않는다.
-- [x] 기존 Redis 서비스 설정을 변경하지 않는다.
-- [x] 주석 처리된 `ollama` 서비스를 활성화한다.
-- [x] `ollama_data` 볼륨을 활성화한다.
-- [x] `ollama` 서비스는 기존 `notio-network`에 연결한다.
-- [x] 로컬 실행 기준 `11434:11434` 포트를 노출한다.
-- [x] `scripts/setup.sh` 또는 별도 문서에 모델 pull 절차를 반영한다.
-- [x] `llama3.2:3b` 모델 pull 절차를 검증한다.
-- [x] `nomic-embed-text` 모델 pull 절차를 검증한다.
+## Phase 3. RAG 검색 인터페이스 확장
 
-### Phase 1 확인 메모
+- [ ] `RagRetriever` 시그니처를 `retrieve(Long userId, String question, Optional<TimeRange> timeRange)`로 변경한다.
+- [ ] 기존 `RagRetriever` 호출부를 새 시그니처로 갱신한다.
+- [ ] 기간 조건이 없는 기존 호출은 `Optional.empty()`를 전달한다.
+- [ ] streaming chat과 non-streaming chat이 동일한 RAG 검색 경로를 사용하는지 확인한다.
+- [ ] 변경된 인터페이스로 인해 기존 테스트 mock/stub이 깨지는 지점을 정리한다.
 
-- 16GB RAM 로컬 테스트 기준 기본 LLM은 `llama3.2:3b`로 둔다.
-- 기본 embedding 모델은 `nomic-embed-text`로 둔다.
-- 메모리 부족 시 `llama3.2:1b`를 임시 대안으로 사용할 수 있지만 기본값은 변경하지 않는다.
-- `docker-compose/docker-compose.yml`에서 PostgreSQL/Redis 설정은 그대로 유지하고 Ollama 서비스와 `ollama_data` 볼륨만 활성화했다.
-- `scripts/setup.sh`는 루트 실행 기준 `docker compose -f docker-compose/docker-compose.yml up -d postgres redis ollama`를 사용하고, `llama3.2:3b`, `nomic-embed-text` pull 명령을 포함한다.
-- 검증: `bash -n scripts/setup.sh` 통과. 현재 WSL 환경에는 Docker CLI가 없어 `docker compose config` 및 실제 `ollama pull` 실행은 수행하지 못했다.
+## Phase 4. pgvector SQL 기간 조건 적용
 
-## Phase 2. 환경 변수 및 설정 추가
+- [ ] `PgvectorRagRetriever`에서 기간 조건이 있을 때만 `notifications.created_at` 조건을 추가한다.
+- [ ] 기간 조건이 있으면 SQL에 `AND n.created_at >= ?`를 포함한다.
+- [ ] 기간 조건이 있으면 SQL에 `AND n.created_at < ?`를 포함한다.
+- [ ] 기간 조건이 없으면 기존 SQL과 동일하게 시간 조건을 추가하지 않는다.
+- [ ] 기존 `ne.user_id = ?`, `n.user_id = ?` 조건을 유지한다.
+- [ ] 기존 `ne.deleted_at IS NULL`, `n.deleted_at IS NULL` 조건을 유지한다.
+- [ ] 기존 `ORDER BY ne.embedding <=> ?::vector` 정렬을 유지한다.
+- [ ] 기존 `LIMIT ?` 및 `notio.rag.top-k` 기본값을 유지한다.
+- [ ] SQL 문자열 조합 시 사용자 입력을 직접 붙이지 않는다.
+- [ ] 기간 필터 적용 후에도 결과 의미가 기간 내 전체 알림이 아니라 기간 내 유사도 top-k임을 유지한다.
+- [ ] `JdbcTemplate` 파라미터 순서가 기간 조건 유무에 따라 정확히 맞는지 확인한다.
 
-- [x] `.env.example`에 `NOTIO_` prefix를 지키는 AI/RAG 환경 변수를 추가한다.
-- [x] `NOTIO_OLLAMA_URL` 기본값을 로컬 실행 기준 `http://localhost:11434`로 문서화한다.
-- [x] `NOTIO_LLM_MODEL` 기본값을 `llama3.2:3b`로 둔다.
-- [x] `NOTIO_EMBED_MODEL` 기본값을 `nomic-embed-text`로 둔다.
-- [x] `NOTIO_EMBED_DIM` 기본값을 `768`로 둔다.
-- [x] `NOTIO_RAG_TOP_K` 기본값을 `5`로 둔다.
-- [x] `application.yml`에 Spring AI/Ollama 연결 설정을 추가한다.
-- [x] `application.yml`에 Notio RAG 설정 바인딩을 추가한다.
-- [x] timeout, retry, streaming timeout 값을 환경별로 조정 가능하게 둔다.
+## Phase 5. ChatService 연결
 
-### Phase 2 확인 메모
+- [ ] `ChatService`에 `ChatTimeRangeExtractor`를 생성자 주입한다.
+- [ ] `buildChatPrompt()`에서 RAG 검색 전에 기간을 추출한다.
+- [ ] 사용자 메시지 저장 후 `ChatTimeRangeExtractor.extract(userMessage)`를 호출한다.
+- [ ] 추출한 `Optional<TimeRange>`를 `RagRetriever.retrieve(...)`에 전달한다.
+- [ ] `streamChat()`이 기간 필터 로직을 동일하게 타는지 확인한다.
+- [ ] `chat()`이 기간 필터 로직을 동일하게 타는지 확인한다.
+- [ ] 최근 대화 10개 조회에는 기간 필터를 적용하지 않는다.
+- [ ] 기간 표현이 없는 기존 질문은 기존 RAG 검색과 동일하게 동작하게 한다.
 
-- Docker 내부에서 backend를 실행하는 후속 단계에서는 `NOTIO_OLLAMA_URL=http://ollama:11434`를 사용한다.
-- Phase 0에서는 backend 컨테이너 추가를 필수 범위로 두지 않는다.
-- `.env.example`에 `NOTIO_LLM_MODEL=llama3.2:3b`, `NOTIO_EMBED_MODEL=nomic-embed-text`, `NOTIO_EMBED_DIM=768`, `NOTIO_RAG_TOP_K=5`를 추가했다.
-- `application.yml`에는 Spring AI 공식 Ollama property인 `spring.ai.ollama.base-url`, `spring.ai.ollama.chat.options.model`, `spring.ai.ollama.embedding.options.model`을 환경 변수로 바인딩했다.
-- Notio 내부 구현에서 사용할 `notio.rag.top-k`, `notio.rag.embedding-dimension`, `notio.ai.llm-timeout`, `notio.ai.embedding-timeout`, `notio.ai.streaming-timeout`을 추가했다.
-- Spring AI retry는 `spring.ai.retry.*`에 바인딩하고 `NOTIO_LLM_RETRY_*` 환경 변수로 조정 가능하게 했다.
+## Phase 6. PromptBuilder 기간 정보 반영
 
-## Phase 3. Flyway + pgvector 스키마 구축
+- [ ] `PromptBuilder`의 chat prompt 생성 입력에 적용된 기간 조건을 전달할 수 있게 한다.
+- [ ] 기간 조건이 있으면 prompt에 `Applied time filter` 섹션을 포함한다.
+- [ ] 기간 조건이 있으면 `startInclusive <= notification.created_at < endExclusive` 범위를 명시한다.
+- [ ] 기간 조건이 없으면 prompt에 기간 필터 없음 상태를 명시한다.
+- [ ] RAG context의 기존 `created_at` 출력 형식은 유지한다.
+- [ ] RAG context가 비어 있으면 해당 기간 조건에 맞는 관련 알림을 찾지 못했다는 취지로 답하도록 유도한다.
+- [ ] 기본 응답 언어와 기존 system instruction을 유지한다.
 
-- [x] 현재 마지막 Flyway migration 번호를 확인한다.
-- [x] 이미 적용된 기존 migration 파일은 수정하지 않는다.
-- [x] 신규 migration 파일을 추가한다.
-- [x] `CREATE EXTENSION IF NOT EXISTS vector`를 추가한다.
-- [x] `chat_messages` 테이블을 생성한다.
-- [x] `chat_messages`에 `id`, `user_id`, `role`, `content`, `created_at`, `updated_at`, `deleted_at` 컬럼을 둔다.
-- [x] `idx_chat_messages_user_id_created_at` 인덱스를 생성한다.
-- [x] `notification_embeddings` 테이블을 생성한다.
-- [x] `notification_embeddings.embedding` 컬럼은 `vector(768)`로 생성한다.
-- [x] `notification_embeddings`에 `notification_id`, `user_id`, `source`, `content_hash`, `embedded_at`, timestamp, soft delete 컬럼을 둔다.
-- [x] `notification_id + content_hash` unique partial index를 생성한다.
-- [x] user scope 검색용 인덱스를 생성한다.
-- [x] pgvector 유사도 검색용 index 적용 여부를 데이터 규모 기준으로 검증한다.
+## Phase 7. 단위 테스트 보강
 
-### Phase 3 확인 메모
+- [ ] `ChatTimeRangeExtractorTest`를 추가한다.
+- [ ] `최근 5시간 내의 알림 내역을 요약해줘`가 `now - 5h <= created_at < now`로 변환되는지 검증한다.
+- [ ] `지난 30분 동안 중요한 알림 알려줘`가 `now - 30m <= created_at < now`로 변환되는지 검증한다.
+- [ ] `최근 3일 알림 요약해줘`가 `now - 3d <= created_at < now`로 변환되는지 검증한다.
+- [ ] `오늘 받은 알림 요약해줘`가 오늘 00:00 이상, 내일 00:00 미만으로 변환되는지 검증한다.
+- [ ] `어제 알림 정리해줘`가 어제 00:00 이상, 오늘 00:00 미만으로 변환되는지 검증한다.
+- [ ] 기간 표현이 없는 질문은 `Optional.empty()`를 반환하는지 검증한다.
+- [ ] 미지원 날짜 범위 표현은 `Optional.empty()`를 반환하는지 검증한다.
+- [ ] 상대 기간과 날짜 키워드가 모두 있으면 상대 기간을 우선하는지 검증한다.
 
-- pgvector 사용 자체에 Flyway가 기술적으로 필수는 아니지만, Notio 프로젝트 규칙상 DB 변경은 Flyway로만 관리한다.
-- 초기 데이터가 적으면 `ivfflat` index 품질이 기대와 다를 수 있으므로 정확 검색 검증 후 index 적용을 판단한다.
-- 현재 마지막 migration은 `V10__restructure_auth_domain.sql`이며, 기존 migration은 수정하지 않았다.
-- 신규 migration은 `V11__create_chat_messages_and_notification_embeddings.sql`로 추가했다.
-- `chat_messages.role`은 API 명세의 `USER`, `ASSISTANT`만 허용하도록 check constraint를 둔다.
-- `notification_embeddings.embedding`은 `NOTIO_EMBED_DIM=768` 기본값에 맞춰 `vector(768)`로 생성한다.
-- user scope 검색은 `idx_notification_embeddings_user_source_embedded_at`, `idx_notification_embeddings_user_embedded_at`로 우선 지원한다.
-- Phase 0의 초기/소규모 데이터에서는 정확 검색을 우선 사용하고, IVFFlat/HNSW 인덱스는 대표 데이터로 recall/performance를 측정한 뒤 별도 migration으로 추가한다.
+## Phase 8. RAG 및 ChatService 테스트 보강
 
-## Phase 4. Backend 의존성 및 설정 클래스 추가
+- [ ] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 SQL에 `n.created_at >= ?`가 포함되는지 검증한다.
+- [ ] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 SQL에 `n.created_at < ?`가 포함되는지 검증한다.
+- [ ] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 start/end 파라미터가 `JdbcTemplate`에 전달되는지 검증한다.
+- [ ] `PgvectorRagRetrieverTest`에서 기간 조건이 없으면 기존 SQL 조건과 파라미터 순서를 유지하는지 검증한다.
+- [ ] 기존 embedding dimension 검증 테스트를 유지한다.
+- [ ] `ChatServiceTest`에서 streaming chat 기간 표현 질문이 `RagRetriever.retrieve(..., timeRange)`를 호출하는지 검증한다.
+- [ ] `ChatServiceTest`에서 non-streaming chat도 동일하게 기간 조건을 전달하는지 검증한다.
+- [ ] `ChatServiceTest`에서 기간 표현이 없으면 `Optional.empty()`로 RAG 검색하는지 검증한다.
+- [ ] 기존 LLM streaming chunk 누적과 assistant message 저장 동작 테스트를 유지한다.
 
-- [x] Spring AI Ollama 의존성을 추가한다.
-- [x] Spring AI 버전과 Spring Boot 4.0.0 호환성을 확인한다.
-- [x] Ollama chat model 설정을 구성한다.
-- [x] Ollama embedding model 설정을 구성한다.
-- [x] `SpringAiConfig` 또는 동등한 설정 클래스를 추가한다.
-- [x] model name, base URL, timeout을 환경 변수로 주입한다.
-- [x] LLM 연결 실패를 표준 예외로 변환하는 공통 처리 지점을 둔다.
+## Phase 9. PromptBuilder 테스트 보강
 
-### Phase 4 확인 메모
+- [ ] `PromptBuilderTest`에서 기간 조건이 있을 때 prompt에 `Applied time filter`가 포함되는지 검증한다.
+- [ ] `PromptBuilderTest`에서 기간 조건이 없을 때 prompt에 기간 필터 없음이 포함되는지 검증한다.
+- [ ] `PromptBuilderTest`에서 RAG context의 `created_at` 출력 형식이 유지되는지 검증한다.
+- [ ] RAG context가 비어 있을 때 fallback 답변 지침이 prompt에 포함되는지 검증한다.
 
-- 새 프레임워크를 추가하지 않고 Spring AI + Ollama 범위로 제한한다.
-- Phase 1에서 provider 구현만 remote AI Service client로 교체할 수 있어야 한다.
-- Spring AI 공식 릴리스 정보 기준 2.x 라인이 Spring Boot 4.0 / Spring Framework 7.0 기반이므로 `spring-ai-bom:2.0.0-M4`를 사용한다.
-- `spring-ai-starter-model-ollama`를 추가해 Spring Boot auto-configuration으로 Ollama chat/embedding model bean을 구성한다.
-- `application.yml`의 `spring.ai.ollama.base-url`, `spring.ai.ollama.chat.options.model`, `spring.ai.ollama.embedding.options.model`은 각각 `NOTIO_OLLAMA_URL`, `NOTIO_LLM_MODEL`, `NOTIO_EMBED_MODEL`로 주입된다.
-- `notio.ai.llm-timeout`, `notio.ai.embedding-timeout`, `notio.ai.streaming-timeout`은 `NotioAiProperties`로 바인딩한다.
-- `notio.rag.top-k`, `notio.rag.embedding-dimension`은 `NotioRagProperties`로 바인딩한다.
-- `SpringAiConfig`에서 Notio AI/RAG 설정 properties를 활성화한다.
-- `AiExceptionTranslator`를 추가해 provider 구현 단계에서 Ollama/LLM 연결 실패를 `LLM_UNAVAILABLE`, embedding 실패를 `EMBEDDING_FAILED`로 표준화할 수 있게 했다.
+## Phase 10. 최종 검증
 
-## Phase 5. ChatMessage 영속화
-
-- [x] `ChatMessage` entity를 추가한다.
-- [x] `ChatMessageRole` enum을 추가한다.
-- [x] role 값은 `USER`, `ASSISTANT`를 기본으로 둔다.
-- [x] `ChatMessageRepository`를 추가한다.
-- [x] 사용자별 최근 메시지 조회 메서드를 추가한다.
-- [x] soft delete 조건을 일관되게 적용한다.
-- [x] 기존 인메모리 `history`를 제거한다.
-- [x] `ChatMessageResponse` 변환 로직을 추가한다.
-- [x] `GET /api/v1/chat/history`가 DB 기반으로 응답하도록 전환한다.
-
-### Phase 5 확인 메모
-
-- JPA는 `chat_messages` 같은 일반 도메인 테이블에 사용한다.
-- pgvector 전용 컬럼은 JPA entity에 억지로 매핑하지 않는다.
-- `ChatMessage` entity와 `ChatMessageRole` enum을 추가하고, role은 API 명세의 `USER`, `ASSISTANT` 값으로 저장/응답한다.
-- `ChatMessageRepository.findRecentByUserId`는 user scope와 soft delete 조건을 적용해 최신순으로 조회한다.
-- `ChatMessage`에는 Hibernate `@SQLRestriction("deleted_at IS NULL")`을 적용해 기본 조회에서도 soft delete row를 제외한다.
-- `ChatService`의 인메모리 `history`와 `AtomicLong` sequence를 제거하고, `POST /api/v1/chat`, `GET /api/v1/chat/stream`, `GET /api/v1/chat/history` 모두 `chat_messages` 저장소를 사용한다.
-- Phase 0 기존 계약 유지를 위해 현재 chat user scope는 legacy default user id `1L`을 사용한다.
-- `ChatMessageResponse.from(ChatMessage)` 변환 로직을 추가해 `created_at` snake_case Jackson 설정과 대문자 role 응답 계약을 유지한다.
-- 검증 보강: `ChatServiceTest.historyReadsRecentMessagesFromRepository`를 추가했다.
-- 검증: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test` 통과.
-
-## Phase 6. Embedding 파이프라인 구현
-
-- [x] `EmbeddingProvider` 인터페이스를 추가한다.
-- [x] `OllamaEmbeddingProvider`를 구현한다.
-- [x] notification embedding input 구성 규칙을 정의한다.
-- [x] `title + body + metadata 일부`를 임베딩 입력으로 사용한다.
-- [x] `content_hash`를 생성한다.
-- [x] 동일 `notification_id + content_hash`가 있으면 임베딩 생성을 skip한다.
-- [x] `NotificationEmbeddingRepository`를 native SQL 또는 `JdbcTemplate` 기반으로 구현한다.
-- [x] 알림 저장 후 임베딩 생성 연동 지점을 추가한다.
-- [x] 임베딩 실패 시 알림 저장을 롤백하지 않는다.
-- [x] 임베딩 실패 로그에는 민감 데이터를 남기지 않는다.
-
-### Phase 6 확인 메모
-
-- Phase 0에서는 별도 queue 없이 동기 처리 후 실패 로그를 남긴다.
-- Phase 1에서는 Celery 또는 별도 async worker로 이전할 수 있게 책임을 분리한다.
-- `EmbeddingProvider`와 `OllamaEmbeddingProvider`를 `com.notio.ai.embedding`에 추가해 Spring AI `EmbeddingModel.embed(String)` 호출을 감쌌다.
-- `NotificationEmbeddingInputBuilder`는 source, priority, title, body, metadata 일부를 입력으로 구성하고 SHA-256 `content_hash`를 생성한다.
-- `NotificationEmbeddingRepository`는 `JdbcTemplate` native SQL을 사용해 pgvector literal을 `?::vector`로 저장하고, 동일 `notification_id + content_hash`가 있으면 생성을 건너뛴다.
-- `NotificationService.saveNotification`에서 알림 저장 후 `NotificationEmbeddingService.embedNotification`을 호출한다.
-- 임베딩 실패는 `notificationId`, `userId`, `source`, `errorType`만 warn 로그로 남기고 예외를 삼켜 알림 저장과 push 흐름을 계속한다.
-- 검증 보강: `NotificationEmbeddingInputBuilderTest`, `NotificationEmbeddingServiceTest`, `NotificationServiceTest.saveFromEventKeepsNotificationWhenEmbeddingFails`를 추가했다.
-- 검증: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test` 통과.
-
-## Phase 7. RAG 검색 구현
-
-- [x] `RagRetriever` 인터페이스를 추가한다.
-- [x] `RagDocument` DTO를 추가한다.
-- [x] `PgvectorRagRetriever`를 구현한다.
-- [x] 사용자 질문을 embedding으로 변환한다.
-- [x] `embedding <=> query_vector` 기반 cosine distance 검색을 구현한다.
-- [x] 기본 top-k는 `5`로 둔다.
-- [x] user scope isolation을 SQL 조건으로 강제한다.
-- [x] soft delete된 embedding은 검색에서 제외한다.
-- [x] 검색 결과가 없을 때 fallback 흐름을 구현한다.
-- [x] pgvector 쿼리는 QueryDSL 대신 native SQL 또는 `JdbcTemplate`으로 분리한다.
-
-### Phase 7 확인 메모
-
-- QueryDSL은 일반 필터/정렬/조인에 사용할 수 있다.
-- pgvector 전용 연산자는 native SQL로 유지하는 것이 Phase 0에서 가장 단순하고 안정적이다.
-- `RagRetriever`와 `RagDocument`를 `com.notio.ai.rag`에 추가해 ChatService/PromptBuilder가 검색 구현에 직접 의존하지 않도록 했다.
-- `PgvectorRagRetriever`는 사용자 질문을 `EmbeddingProvider`로 임베딩한 뒤 `notification_embeddings`와 `notifications`를 조인해 `ne.embedding <=> ?::vector` 기준으로 정렬한다.
-- 기본 top-k는 `NotioRagProperties.topK()`를 사용하며 `.env.example`/`application.yml` 기본값인 `5`를 따른다.
-- SQL 조건에서 `ne.user_id = ?`, `n.user_id = ?`, `ne.deleted_at IS NULL`, `n.deleted_at IS NULL`을 강제해 user scope와 soft delete를 함께 보장한다.
-- 검색 결과가 없으면 빈 `List<RagDocument>`를 반환해 Phase 9의 ChatService fallback 응답에서 명확히 처리할 수 있게 했다.
-- RAG context용 필드는 `source`, `title`, `body_summary`, `priority`, `created_at`, `similarity_score`를 포함한다.
-- 검증 보강: `PgvectorRagRetrieverTest`를 추가해 질문 임베딩, pgvector SQL 조건, 빈 검색 결과 fallback, embedding dimension 검증을 확인한다.
-- 검증: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test` 통과.
-
-## Phase 8. PromptBuilder 구현
-
-- [x] `PromptBuilder`를 추가한다.
-- [x] chat prompt 생성 메서드를 구현한다.
-- [x] daily summary prompt 생성 메서드를 구현한다.
-- [x] system prompt를 중앙화한다.
-- [x] RAG context를 source, title, body summary, priority, created_at, similarity score 형식으로 포함한다.
-- [x] 최근 대화 히스토리를 prompt에 포함한다.
-- [x] 기본 응답 언어를 한국어로 고정한다.
-- [x] context에 없는 사실을 단정하지 않도록 system instruction을 포함한다.
-- [x] 응답 길이는 API `content` 저장 한도를 넘지 않도록 제약한다.
-
-### Phase 8 확인 메모
-
-- prompt는 서비스 메서드 내부에 반복 hardcode하지 않는다.
-- 향후 Todo/Analytics LLM 기능도 같은 prompt 경계를 재사용한다.
-- `PromptBuilder`와 `LlmPrompt`를 `com.notio.ai.prompt`에 추가해 Phase 9/11의 LLM provider 호출 입력으로 사용할 수 있게 했다.
-- Chat prompt는 system instruction, RAG context, 최근 대화 히스토리, 사용자 질문을 분리해 구성한다.
-- RAG context는 `source`, `title`, `body_summary`, `priority`, `created_at`, `similarity_score` 필드를 명시적으로 포함한다.
-- RAG context가 비어 있으면 관련 알림이 없다는 fallback 안내를 하도록 prompt에 포함했다.
-- 최근 대화 히스토리는 최대 10개까지 오래된 순서로 포함한다.
-- Daily summary prompt는 날짜별 알림 목록과 전체 요약, 중요한 알림, 즉시 처리 항목, 주요 topic 요구사항을 포함한다.
-- Chat 응답은 4000자 이하, daily summary 본문은 2000자 이하로 제한하도록 prompt에 명시했다.
-- 검증 보강: `PromptBuilderTest`를 추가해 system instruction, RAG context 형식, history 포함, 빈 context fallback, daily summary prompt 구성을 확인한다.
-- 검증: `/mnt/c` 작업트리에서는 Gradle `FileHasher`가 `Input/output error`로 시작하지 못해, `backend`를 `/tmp/notio-backend-phase8`로 복사한 뒤 `GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew --no-daemon test` 실행 통과.
-
-## Phase 9. ChatService RAG + LLM 전환
-
-- [x] `generateDummyAiResponse`를 제거한다.
-- [x] 단건 chat 흐름을 실제 RAG + LLM 호출로 교체한다.
-- [x] 사용자 메시지를 먼저 저장한다.
-- [x] 질문 embedding을 생성한다.
-- [x] pgvector top-k 검색을 수행한다.
-- [x] prompt를 생성한다.
-- [x] `LlmProvider.chat`을 호출한다.
-- [x] assistant 메시지를 저장한다.
-- [x] 기존 `ChatMessageResponse` 형식으로 반환한다.
-- [x] LLM 장애 시 `LLM_UNAVAILABLE`로 매핑한다.
-- [x] RAG 검색 결과가 없으면 명확한 fallback 응답을 제공한다.
-
-### Phase 9 확인 메모
-
-- API path, request body, response wrapper는 변경하지 않는다.
-- 사용자 인증 연동 전환 시 `DEFAULT_PHASE0_USER_ID` 제거 또는 축소 범위를 별도 검토한다.
-- `LlmProvider`와 `OllamaLlmProvider`를 `com.notio.ai.llm`에 추가해 Spring AI `ChatModel` 호출을 ChatService에서 분리했다.
-- `OllamaLlmProvider`는 system/user prompt를 Spring AI `Prompt`로 변환하고, 호출 실패 또는 빈 응답을 `LLM_UNAVAILABLE`로 표준화한다.
-- `ChatService.chat`는 사용자 메시지를 먼저 DB에 저장한 뒤 `RagRetriever.retrieve`를 호출한다. 질문 embedding 생성과 pgvector top-k 검색은 `PgvectorRagRetriever` 책임으로 유지한다.
-- `ChatService.chat`는 RAG context와 최근 대화 히스토리로 `PromptBuilder.buildChatPrompt`를 호출하고, `LlmProvider.chat` 결과를 assistant 메시지로 저장한 뒤 기존 `ChatMessageResponse`로 반환한다.
-- RAG 검색 결과가 없을 때의 fallback 문구는 Phase 8에서 중앙화한 `PromptBuilder` instruction으로 제공한다.
-- 검증 보강: `ChatServiceTest.chatUsesRagPromptAndLlmThenStoresAssistantResponse`를 추가해 user 저장, RAG 검색, prompt 생성, LLM 호출, assistant 저장 순서를 확인했다.
-- 검증: `/mnt/c` 작업트리에서는 Gradle `FileHasher`가 `Input/output error`로 시작하지 못해, `.gradle`/`build`를 제외하고 `backend`를 `/tmp/notio-backend-phase9-run`으로 복사한 뒤 `GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew --no-daemon test` 실행 통과.
-
-## Phase 10. SSE Streaming 전환
-
-- [x] `GET /api/v1/chat/stream` endpoint를 유지한다.
-- [x] query parameter `content` 계약을 유지한다.
-- [x] 실제 LLM streaming chunk를 SSE로 전달한다.
-- [x] chunk 이벤트 payload는 프론트가 처리 가능한 형식으로 유지한다.
-- [x] 전체 assistant content를 서버에서 누적한다.
-- [x] stream 완료 후 assistant 메시지를 DB에 저장한다.
-- [x] 완료 이벤트로 `done=true`와 `message_id`를 전달한다.
-- [x] streaming timeout을 설정한다.
-- [x] client disconnect 상황을 안전하게 처리한다.
-
-### Phase 10 확인 메모
-
-- 프론트 `ChatRemoteDataSource.streamMessage`는 `data: ` prefix를 제거한 문자열을 전달하므로, payload 구조 변경 시 프론트 파서 영향이 있다.
-- Phase 0에서는 기존 chunk/done 흐름을 유지한다.
-- `LlmProvider.stream`을 추가하고 `OllamaLlmProvider`에서 Spring AI `ChatModel.stream(Prompt)`를 사용하도록 전환했다.
-- `ChatService.streamChat`는 사용자 메시지를 먼저 저장하고, RAG 검색과 prompt 생성을 수행한 뒤 LLM streaming chunk를 `chunk` 이벤트로 그대로 전달한다.
-- `chunk` 이벤트 data는 기존 프론트가 누적 가능한 raw text를 유지한다.
-- 서버는 chunk를 `StringBuilder`에 누적하고 stream 완료 후 assistant 메시지를 DB에 저장한다.
-- 완료 이벤트는 `done` event name과 `{"done": true, "message_id": ...}` payload로 전달한다.
-- `notio.ai.streaming-timeout` 설정값을 `SseEmitter` timeout과 LLM stream timeout에 적용한다.
-- client disconnect, timeout, emitter error 발생 시 active flag로 추가 send/save를 중단하고 `CancellationException`으로 streaming 작업을 종료한다.
-- `GET /api/v1/chat/stream`의 `content` query parameter에 `@NotBlank` 검증을 적용했다.
-- 검증 보강: `ChatServiceTest.streamChatStreamsLlmChunksThenStoresAssistantMessage`를 추가해 LLM stream 호출, chunk 누적, assistant 저장을 확인했다.
-- 검증: `/mnt/c` 작업트리에서는 Gradle `FileHasher`가 `Input/output error`로 시작하지 못해, `.gradle`/`build`를 제외하고 `backend`를 `/tmp/notio-backend-phase10-run`으로 복사한 뒤 `GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew --no-daemon test` 실행 통과.
-
-## Phase 11. DailySummaryService LLM 전환
-
-- [x] Redis cache key를 user/date 기준으로 분리한다.
-- [x] cache hit이면 LLM을 호출하지 않는다.
-- [x] 오늘 알림 목록을 조회한다.
-- [x] daily summary prompt를 생성한다.
-- [x] `LlmProvider.chat`을 호출한다.
-- [x] `summary`, `date`, `total_messages`, `topics`를 기존 응답 구조로 반환한다.
-- [x] Redis 24시간 캐시를 적용한다.
-- [x] LLM 장애 시 캐시가 있으면 캐시 응답을 반환한다.
-- [x] LLM 장애 시 캐시가 없으면 `LLM_UNAVAILABLE`로 응답한다.
-
-### Phase 11 확인 메모
-
-- 기존 `DailySummaryResponse` 구조를 유지해야 프론트 변경 없이 전환할 수 있다.
-- `DailySummaryService`를 LLM 기반으로 전환했다.
-- Redis cache key를 `userId:date` 형식으로 변경해 user scope isolation을 적용했다.
-- `CacheManager`를 수동으로 사용해 cache hit 시 LLM을 호출하지 않고 캐시 반환한다.
-- `PromptBuilder.buildDailySummaryPrompt`로 daily summary prompt를 생성한다.
-- `LlmProvider.chat`을 호출해 LLM 기반 요약을 생성한다.
-- topics는 기존 규칙 기반 로직(source별 빈도수)을 유지해 안정성을 확보했다.
-- 알림이 없을 때는 fallback 메시지를 반환한다.
-- LLM 실패 시 `AiExceptionTranslator.llmUnavailable`로 `LLM_UNAVAILABLE` 예외를 발생시킨다.
-- Phase 0 기존 계약 유지를 위해 현재 daily summary user scope는 `DEFAULT_PHASE0_USER_ID = 1L`을 사용한다.
-- 검증 보강: `DailySummaryServiceTest`를 추가해 캐시 hit/miss, LLM 호출, fallback, 예외 처리를 확인했다.
-- 검증: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test --tests DailySummaryServiceTest` 통과.
-
-## Phase 12. 테스트 및 검증
-
-- [x] `PromptBuilderTest`를 추가한다.
-- [x] `ChatServiceTest`를 RAG + LLM 흐름 기준으로 갱신한다.
-- [x] `DailySummaryServiceTest`를 LLM/cache/fallback 기준으로 갱신한다.
-- [x] `NotificationEmbeddingServiceTest`를 추가한다.
-- [x] `RagRetrieverTest`를 추가한다.
-- [x] pgvector extension 활성화 통합 테스트를 추가한다.
-- [x] embedding insert 통합 테스트를 추가한다.
-- [x] cosine similarity search 통합 테스트를 추가한다.
-- [x] user scope isolation 테스트를 추가한다.
-- [x] `ChatControllerTest`에서 기존 API 응답 형식을 검증한다.
-- [x] SSE `chunk`/`done` 이벤트 형식을 검증한다.
-- [x] `./gradlew test`를 실행한다.
-- [x] 필요 시 `./gradlew checkstyleMain spotbugsMain`을 실행한다.
-- [x] 로컬 Ollama 모델 설치 상태를 확인한다.
-- [ ] `curl`로 Chat API smoke test를 수행한다.
-
-### Phase 12 확인 메모
-
-- 외부 LLM 호출은 단위 테스트에서 mock provider로 대체한다.
-- pgvector 통합 테스트는 Testcontainers PostgreSQL 이미지가 pgvector extension을 지원하는지 먼저 확인한다.
-- `PromptBuilderTest`, `ChatServiceTest`, `DailySummaryServiceTest`, `NotificationEmbeddingServiceTest`, `PgvectorRagRetrieverTest`는 이전 단계에서 추가/갱신된 상태를 유지한다.
-- `PgvectorRagRetrieverIntegrationTest`를 추가해 `pgvector/pgvector:pg16` Testcontainers 환경에서 extension 활성화, `NotificationEmbeddingRepository` vector insert, cosine similarity 정렬, user scope isolation을 검증한다.
-- Docker가 없는 로컬/CI 환경에서 전체 테스트가 실패하지 않도록 pgvector 통합 테스트는 `@Testcontainers(disabledWithoutDocker = true)`로 구성했다.
-- `ChatControllerTest`를 MockMvc 기반으로 확장해 `ApiResponse` wrapper, `created_at`/`total_messages` snake_case, `USER`/`ASSISTANT` role, history list 응답을 검증한다.
-- `spec_fix.md` 기준에 맞춰 `ChatMessageResponse.role`은 대문자 enum 문자열로 반환하도록 수정했다.
-- `spec_fix.md` 기준에 맞춰 SSE는 event name 없이 `data: {"chunk": ...}`와 `data: {"done": true, "message_id": ...}` JSON payload를 전송하도록 수정했고, 테스트로 고정했다.
-- 외부 LLM 호출은 모든 단위/컨트롤러 테스트에서 mock provider로 대체했다.
-- `/mnt/c` 작업트리에서는 Gradle `FileHasher`가 `Input/output error`로 시작하지 못해, `backend`를 `/tmp/notio-backend-phase12-run`으로 복사한 뒤 `GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew --no-daemon test` 실행 통과.
-- 현재 `build.gradle.kts`에는 Checkstyle/SpotBugs plugin이 설정되어 있지 않아 별도 quality task 실행 대상은 없다.
-- 로컬 환경에서 `ollama` CLI가 발견되지 않았고 `http://localhost:11434/api/tags` 연결도 실패해 Ollama 모델 설치 상태는 미설치/미실행으로 확인했다.
-- `http://localhost:8080/api/v1/chat/daily-summary` 연결이 실패해 backend 서버가 실행 중이 아님을 확인했다. Ollama/PostgreSQL/backend 실행 환경이 준비된 뒤 Chat API smoke test를 수행해야 한다.
-
-## Phase 13. Phase 1 분리 대비 정리
-
-- [x] `LlmProvider` 구현을 local Ollama와 remote AI Service client로 교체 가능하게 유지한다.
-- [x] `EmbeddingProvider` 구현을 local Ollama와 remote AI Service client로 교체 가능하게 유지한다.
-- [x] `RagRetriever` 책임이 ChatService 내부에 흡수되지 않도록 유지한다.
-- [x] prompt 구성 책임이 각 service에 흩어지지 않도록 유지한다.
-- [x] Python FastAPI, LangChain, Celery, Kafka는 이번 Phase 0 구현 범위에서 제외한다.
-- [x] Backend 컨테이너화는 이번 Phase 0 필수 범위에서 제외한다.
-
-### Phase 13 확인 메모
-
-- Phase 0의 완료 기준은 Spring Boot 모놀리스 내부에서 실제 RAG + LLM 응답이 동작하는 것이다.
-- Phase 1의 완료 기준은 같은 Chat API를 유지하면서 내부 provider를 별도 AI Service로 교체하는 것이다.
-- Chat API 계약은 `docs/api/spec_fix.md` 기준으로 유지한다. `POST /api/v1/chat`, `GET /api/v1/chat/stream`, `GET /api/v1/chat/daily-summary`, `GET /api/v1/chat/history` endpoint와 `ApiResponse` wrapper, `snake_case` 응답 필드는 변경하지 않는다.
-- `LlmProvider`는 `chat(LlmPrompt)`, `stream(LlmPrompt, Consumer<String>)`만 노출하므로 Phase 1에서 `OllamaLlmProvider` 대신 remote AI Service client 구현체를 추가/교체할 수 있다.
-- `EmbeddingProvider`는 `embed(String)`만 노출하므로 Phase 1에서 `OllamaEmbeddingProvider` 대신 remote AI Service embedding client 구현체를 추가/교체할 수 있다.
-- `RagRetriever`는 `ChatService` 외부 경계로 유지되어 있고, 현재 pgvector 검색 구현은 `PgvectorRagRetriever`에 격리되어 있다. Phase 1에서 RAG 검색을 Python AI Service 또는 별도 검색 서비스로 이전하더라도 `ChatService`는 `RagRetriever.retrieve(userId, question)` 계약만 사용하면 된다.
-- prompt 구성은 `PromptBuilder`에 중앙화되어 있고, `ChatService`와 `DailySummaryService`는 prompt 문자열을 직접 조립하지 않는다. Phase 1에서 prompt orchestration을 AI Service로 이전할 경우 우선 교체 대상은 `PromptBuilder` 사용 지점과 provider 구현체다.
-- 이번 Phase 0 구현에는 Python FastAPI, LangChain, Celery, Kafka 의존성 또는 실행 구성을 추가하지 않았다. 해당 구성은 Phase 1 이후 별도 서비스 분리 작업에서 다룬다.
-- 이번 Phase 0 구현에는 backend Dockerfile 또는 backend compose service를 필수 변경으로 추가하지 않았다. 로컬 인프라는 기존 PostgreSQL, Redis, Ollama compose 구성만 사용한다.
+- [ ] `./gradlew test`를 실행한다.
+- [ ] `최근 5시간 내의 알림 내역을 요약해줘` 요청 시 RAG SQL에 `created_at` 기간 조건이 적용되는지 확인한다.
+- [ ] 기존 기간 표현 없는 질문이 기존 RAG 검색과 동일하게 동작하는지 확인한다.
+- [ ] 기존 SSE event 형식 `chunk`, `done`이 유지되는지 확인한다.
+- [ ] 프론트엔드 API 계약 변경 없이 기존 Chat 화면에서 동작하는지 확인한다.
+- [ ] 지원하지 않는 기간 표현이 에러 없이 기존 RAG 검색으로 fallback하는지 확인한다.
