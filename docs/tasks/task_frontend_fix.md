@@ -19,13 +19,13 @@
 
 ## Phase 1. Chat API 계약 재검증
 
-- [ ] `ChatRequest`가 `content` 필드만 전송하는지 확인한다.
-- [ ] 자연어 기간 표현이 포함된 메시지도 별도 escaping/가공 없이 `content`에 담기는지 확인한다.
-- [ ] `ChatMessageModel.fromJson`이 기존 `id`, `role`, `content`, `created_at` 필드를 파싱하는지 확인한다.
-- [ ] 백엔드 응답에 기간 필터용 신규 필드가 추가되지 않아도 프론트가 정상 동작하는지 확인한다.
-- [ ] 백엔드가 신규 필드를 추가하더라도 기존 model 파싱에 영향이 없는지 확인한다.
-- [ ] role 값이 기존 프론트 enum/model과 호환되는지 확인한다.
-- [ ] 날짜 필드가 기존 ISO 8601 문자열 파싱 흐름과 호환되는지 확인한다.
+- [x] `ChatRequest`가 `content` 필드만 전송하는지 확인한다.
+- [x] 자연어 기간 표현이 포함된 메시지도 별도 escaping/가공 없이 `content`에 담기는지 확인한다.
+- [x] `ChatMessageModel.fromJson`이 기존 `id`, `role`, `content`, `created_at` 필드를 파싱하는지 확인한다.
+- [x] 백엔드 응답에 기간 필터용 신규 필드가 추가되지 않아도 프론트가 정상 동작하는지 확인한다.
+- [x] 백엔드가 신규 필드를 추가하더라도 기존 model 파싱에 영향이 없는지 확인한다.
+- [x] role 값이 기존 프론트 enum/model과 호환되는지 확인한다.
+- [x] 날짜 필드가 기존 ISO 8601 문자열 파싱 흐름과 호환되는지 확인한다.
 
 ## Phase 2. SSE Streaming 계약 재검증
 
