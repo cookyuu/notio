@@ -8,6 +8,7 @@ import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
 import com.notio.notification.repository.NotificationEmbeddingRepository;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -163,7 +164,7 @@ class PgvectorRagRetrieverIntegrationTest {
                 new NotioRagProperties(5, 3)
         );
 
-        final List<RagDocument> documents = retriever.retrieve(1L, "PR 리뷰 요청 알려줘");
+        final List<RagDocument> documents = retriever.retrieve(1L, "PR 리뷰 요청 알려줘", Optional.empty());
 
         assertThat(documents)
                 .extracting(RagDocument::notificationId)

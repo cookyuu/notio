@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
@@ -143,7 +144,7 @@ class ChatControllerTest {
         when(chatMessageRepository.save(any(ChatMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(assistantMessage);
-        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘")).thenReturn(List.of());
+        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of());
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
         when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage)))
                 .thenReturn(prompt);

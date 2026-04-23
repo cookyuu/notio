@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -23,7 +24,11 @@ public class PgvectorRagRetriever implements RagRetriever {
     private final NotioRagProperties ragProperties;
 
     @Override
-    public List<RagDocument> retrieve(final Long userId, final String question) {
+    public List<RagDocument> retrieve(
+            final Long userId,
+            final String question,
+            final Optional<TimeRange> timeRange
+    ) {
         final float[] queryEmbedding = embeddingProvider.embed(question);
         validateDimension(queryEmbedding);
 

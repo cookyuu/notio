@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.notio.ai.embedding.EmbeddingProvider;
 import com.notio.common.config.properties.NotioRagProperties;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,7 +67,7 @@ class PgvectorRagRetrieverTest {
                 eq(5)
         )).thenReturn(List.of(document));
 
-        final List<RagDocument> documents = retriever.retrieve(userId, "오늘 중요한 알림 알려줘");
+        final List<RagDocument> documents = retriever.retrieve(userId, "오늘 중요한 알림 알려줘", Optional.empty());
 
         assertThat(documents).containsExactly(document);
         final ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
@@ -106,7 +107,7 @@ class PgvectorRagRetrieverTest {
                 eq(5)
         )).thenReturn(List.of());
 
-        final List<RagDocument> documents = retriever.retrieve(userId, "없는 알림 찾아줘");
+        final List<RagDocument> documents = retriever.retrieve(userId, "없는 알림 찾아줘", Optional.empty());
 
         assertThat(documents).isEmpty();
     }
@@ -115,7 +116,7 @@ class PgvectorRagRetrieverTest {
     void retrieveRejectsUnexpectedEmbeddingDimension() {
         when(embeddingProvider.embed("질문")).thenReturn(new float[] {0.1f, 0.2f});
 
-        assertThatThrownBy(() -> retriever.retrieve(10L, "질문"))
+        assertThatThrownBy(() -> retriever.retrieve(10L, "질문", Optional.empty()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Unexpected query embedding dimension");
     }

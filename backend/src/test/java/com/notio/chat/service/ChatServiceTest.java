@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -74,7 +75,7 @@ class ChatServiceTest {
         when(chatMessageRepository.save(any(ChatMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(assistantMessage);
-        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘")).thenReturn(List.of(document));
+        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of(document));
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
         when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage)))
                 .thenReturn(prompt);
@@ -85,7 +86,7 @@ class ChatServiceTest {
         assertThat(response.id()).isEqualTo(2L);
         assertThat(response.role()).isEqualTo("ASSISTANT");
         assertThat(response.content()).isEqualTo("GitHub PR 리뷰 요청이 중요합니다.");
-        verify(ragRetriever).retrieve(1L, "오늘 중요한 알림 알려줘");
+        verify(ragRetriever).retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty());
         verify(promptBuilder).buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage));
         verify(llmProvider).chat(prompt);
         verify(chatMessageRepository, org.mockito.Mockito.times(2)).save(savedMessageCaptor.capture());
@@ -127,7 +128,7 @@ class ChatServiceTest {
         when(chatMessageRepository.save(any(ChatMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(assistantMessage);
-        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘")).thenReturn(List.of());
+        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of());
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
         when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage)))
                 .thenReturn(prompt);

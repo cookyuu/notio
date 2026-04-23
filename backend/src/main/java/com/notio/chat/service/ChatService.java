@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -240,7 +241,7 @@ public class ChatService {
             final Instant startedAt
     ) {
         logTimed(streamId, startedAt, "Chat stream RAG retrieval started");
-        final List<RagDocument> documents = ragRetriever.retrieve(userId, userMessage);
+        final List<RagDocument> documents = ragRetriever.retrieve(userId, userMessage, Optional.empty());
         logTimed(streamId, startedAt, "Chat stream RAG retrieval completed: documents=%d".formatted(documents.size()));
         logTimed(streamId, startedAt, "Chat stream recent history retrieval started");
         final List<ChatMessage> recentMessages = chatMessageRepository.findRecentByUserId(

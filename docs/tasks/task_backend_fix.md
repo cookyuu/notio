@@ -65,11 +65,18 @@
 
 ## Phase 3. RAG 검색 인터페이스 확장
 
-- [ ] `RagRetriever` 시그니처를 `retrieve(Long userId, String question, Optional<TimeRange> timeRange)`로 변경한다.
-- [ ] 기존 `RagRetriever` 호출부를 새 시그니처로 갱신한다.
-- [ ] 기간 조건이 없는 기존 호출은 `Optional.empty()`를 전달한다.
-- [ ] streaming chat과 non-streaming chat이 동일한 RAG 검색 경로를 사용하는지 확인한다.
-- [ ] 변경된 인터페이스로 인해 기존 테스트 mock/stub이 깨지는 지점을 정리한다.
+- [x] `RagRetriever` 시그니처를 `retrieve(Long userId, String question, Optional<TimeRange> timeRange)`로 변경한다.
+- [x] 기존 `RagRetriever` 호출부를 새 시그니처로 갱신한다.
+- [x] 기간 조건이 없는 기존 호출은 `Optional.empty()`를 전달한다.
+- [x] streaming chat과 non-streaming chat이 동일한 RAG 검색 경로를 사용하는지 확인한다.
+- [x] 변경된 인터페이스로 인해 기존 테스트 mock/stub이 깨지는 지점을 정리한다.
+
+검증 메모:
+- `backend/src/main/java/com/notio/ai/rag/RagRetriever.java` 시그니처를 `Optional<TimeRange>` 인자를 받도록 확장했다.
+- `backend/src/main/java/com/notio/ai/rag/PgvectorRagRetriever.java` 구현체도 동일 시그니처로 맞췄다. 기간 SQL 적용은 Phase 4 범위로 남겼다.
+- `backend/src/main/java/com/notio/chat/service/ChatService.java`의 공통 `buildChatPrompt()` 경로에서 `ragRetriever.retrieve(userId, userMessage, Optional.empty())`를 호출하도록 변경했다. `chat()`과 `streamChat()` 모두 이 메서드를 거치므로 동일한 RAG 검색 경로를 유지한다.
+- 기존 테스트 mock/stub은 `Optional.empty()` 인자를 포함하도록 갱신했다.
+- 검증 명령: `./gradlew test --tests com.notio.ai.rag.PgvectorRagRetrieverTest --tests com.notio.chat.service.ChatServiceTest --tests com.notio.chat.controller.ChatControllerTest` 통과.
 
 ## Phase 4. pgvector SQL 기간 조건 적용
 
