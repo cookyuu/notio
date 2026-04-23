@@ -67,12 +67,12 @@
 
 ## Phase 6. 프론트 변경 필요 조건
 
-- [ ] 백엔드가 Chat API path를 변경하면 `ApiConstants`와 datasource를 수정한다.
-- [ ] 백엔드가 request field를 `content`가 아닌 이름으로 변경하면 `ChatRequest`를 수정한다.
-- [ ] 백엔드가 response field를 변경하면 `ChatMessageModel` 파서를 수정한다.
-- [ ] 백엔드가 SSE payload를 JSON event type 기반으로 변경하면 stream parser를 수정한다.
-- [ ] 백엔드가 기간 필터 정보를 응답에 노출하기로 결정하면 model과 UI 표시 여부를 별도 검토한다.
-- [ ] 백엔드가 인증 사용자 기준 chat scope를 강제하면 Dio auth header 흐름을 재검증한다.
+- [x] 백엔드가 Chat API path를 변경하면 `ApiConstants`와 datasource를 수정한다.
+- [x] 백엔드가 request field를 `content`가 아닌 이름으로 변경하면 `ChatRequest`를 수정한다.
+- [x] 백엔드가 response field를 변경하면 `ChatMessageModel` 파서를 수정한다.
+- [x] 백엔드가 SSE payload를 JSON event type 기반으로 변경하면 stream parser를 수정한다.
+- [x] 백엔드가 기간 필터 정보를 응답에 노출하기로 결정하면 model과 UI 표시 여부를 별도 검토한다.
+- [x] 백엔드가 인증 사용자 기준 chat scope를 강제하면 Dio auth header 흐름을 재검증한다.
 
 ## Phase 7. 자동 검증
 
