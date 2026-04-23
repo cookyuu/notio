@@ -13,6 +13,7 @@ import com.notio.ai.prompt.LlmPrompt;
 import com.notio.ai.prompt.PromptBuilder;
 import com.notio.ai.rag.RagDocument;
 import com.notio.ai.rag.RagRetriever;
+import com.notio.ai.rag.TimeRange;
 import com.notio.chat.domain.ChatMessage;
 import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
@@ -38,11 +39,13 @@ class ChatServiceTest {
     void chatUsesRagPromptAndLlmThenStoresAssistantResponse() {
         final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
         final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
         final PromptBuilder promptBuilder = mock(PromptBuilder.class);
         final LlmProvider llmProvider = mock(LlmProvider.class);
         final ChatService chatService = new ChatService(
                 chatMessageRepository,
                 ragRetriever,
+                timeRangeExtractor,
                 promptBuilder,
                 llmProvider,
                 aiProperties(),
@@ -69,13 +72,18 @@ class ChatServiceTest {
                 Instant.parse("2026-04-22T09:59:00Z"),
                 0.91
         );
+        final TimeRange timeRange = new TimeRange(
+                Instant.parse("2026-04-21T15:00:00Z"),
+                Instant.parse("2026-04-22T15:00:00Z")
+        );
         final LlmPrompt prompt = new LlmPrompt("system", "user");
         final ArgumentCaptor<ChatMessage> savedMessageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
 
         when(chatMessageRepository.save(any(ChatMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(assistantMessage);
-        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of(document));
+        when(timeRangeExtractor.extract("오늘 중요한 알림 알려줘")).thenReturn(Optional.of(timeRange));
+        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.of(timeRange))).thenReturn(List.of(document));
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
         when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage)))
                 .thenReturn(prompt);
@@ -86,7 +94,8 @@ class ChatServiceTest {
         assertThat(response.id()).isEqualTo(2L);
         assertThat(response.role()).isEqualTo("ASSISTANT");
         assertThat(response.content()).isEqualTo("GitHub PR 리뷰 요청이 중요합니다.");
-        verify(ragRetriever).retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty());
+        verify(timeRangeExtractor).extract("오늘 중요한 알림 알려줘");
+        verify(ragRetriever).retrieve(1L, "오늘 중요한 알림 알려줘", Optional.of(timeRange));
         verify(promptBuilder).buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage));
         verify(llmProvider).chat(prompt);
         verify(chatMessageRepository, org.mockito.Mockito.times(2)).save(savedMessageCaptor.capture());
@@ -100,11 +109,13 @@ class ChatServiceTest {
     void streamChatStreamsLlmChunksThenStoresAssistantMessage() {
         final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
         final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
         final PromptBuilder promptBuilder = mock(PromptBuilder.class);
         final LlmProvider llmProvider = mock(LlmProvider.class);
         final ChatService chatService = new ChatService(
                 chatMessageRepository,
                 ragRetriever,
+                timeRangeExtractor,
                 promptBuilder,
                 llmProvider,
                 aiProperties(),
@@ -128,6 +139,7 @@ class ChatServiceTest {
         when(chatMessageRepository.save(any(ChatMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(assistantMessage);
+        when(timeRangeExtractor.extract("오늘 중요한 알림 알려줘")).thenReturn(Optional.empty());
         when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of());
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
         when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage)))
@@ -142,6 +154,7 @@ class ChatServiceTest {
         chatService.streamChat(new ChatRequest("오늘 중요한 알림 알려줘"));
 
         verify(llmProvider, org.mockito.Mockito.timeout(1000)).stream(eq(prompt), any(Consumer.class));
+        verify(timeRangeExtractor).extract("오늘 중요한 알림 알려줘");
         verify(chatMessageRepository, org.mockito.Mockito.timeout(1000).times(2)).save(savedMessageCaptor.capture());
         assertThat(savedMessageCaptor.getAllValues())
                 .extracting(ChatMessage::getRole)
@@ -153,11 +166,13 @@ class ChatServiceTest {
     void historyReadsRecentMessagesFromRepository() {
         final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
         final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
         final PromptBuilder promptBuilder = mock(PromptBuilder.class);
         final LlmProvider llmProvider = mock(LlmProvider.class);
         final ChatService chatService = new ChatService(
                 chatMessageRepository,
                 ragRetriever,
+                timeRangeExtractor,
                 promptBuilder,
                 llmProvider,
                 aiProperties(),

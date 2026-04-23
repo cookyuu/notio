@@ -102,14 +102,22 @@
 
 ## Phase 5. ChatService 연결
 
-- [ ] `ChatService`에 `ChatTimeRangeExtractor`를 생성자 주입한다.
-- [ ] `buildChatPrompt()`에서 RAG 검색 전에 기간을 추출한다.
-- [ ] 사용자 메시지 저장 후 `ChatTimeRangeExtractor.extract(userMessage)`를 호출한다.
-- [ ] 추출한 `Optional<TimeRange>`를 `RagRetriever.retrieve(...)`에 전달한다.
-- [ ] `streamChat()`이 기간 필터 로직을 동일하게 타는지 확인한다.
-- [ ] `chat()`이 기간 필터 로직을 동일하게 타는지 확인한다.
-- [ ] 최근 대화 10개 조회에는 기간 필터를 적용하지 않는다.
-- [ ] 기간 표현이 없는 기존 질문은 기존 RAG 검색과 동일하게 동작하게 한다.
+- [x] `ChatService`에 `ChatTimeRangeExtractor`를 생성자 주입한다.
+- [x] `buildChatPrompt()`에서 RAG 검색 전에 기간을 추출한다.
+- [x] 사용자 메시지 저장 후 `ChatTimeRangeExtractor.extract(userMessage)`를 호출한다.
+- [x] 추출한 `Optional<TimeRange>`를 `RagRetriever.retrieve(...)`에 전달한다.
+- [x] `streamChat()`이 기간 필터 로직을 동일하게 타는지 확인한다.
+- [x] `chat()`이 기간 필터 로직을 동일하게 타는지 확인한다.
+- [x] 최근 대화 10개 조회에는 기간 필터를 적용하지 않는다.
+- [x] 기간 표현이 없는 기존 질문은 기존 RAG 검색과 동일하게 동작하게 한다.
+
+검증 메모:
+- `backend/src/main/java/com/notio/chat/service/ChatService.java`에 `ChatTimeRangeExtractor` 생성자 주입 필드를 추가했다.
+- `chat()`과 `streamChat()` 모두 사용자 메시지를 먼저 저장한 뒤 공통 `buildChatPrompt(...)`를 호출하므로, 해당 공통 경로에서 `timeRangeExtractor.extract(userMessage)`를 실행한다.
+- 추출된 `Optional<TimeRange>`는 `ragRetriever.retrieve(userId, userMessage, timeRange)`에 그대로 전달한다.
+- 최근 대화 10개 조회는 기존처럼 `chatMessageRepository.findRecentByUserId(userId, PageRequest.of(0, 10))`만 사용하며 기간 조건을 전달하지 않는다.
+- 기간 표현이 없는 경우 extractor의 `Optional.empty()`가 RAG로 전달되어 기존 fallback 검색 경로를 유지한다.
+- 검증 명령: `./gradlew test --tests com.notio.chat.service.ChatServiceTest --tests com.notio.chat.controller.ChatControllerTest` 통과.
 
 ## Phase 6. PromptBuilder 기간 정보 반영
 

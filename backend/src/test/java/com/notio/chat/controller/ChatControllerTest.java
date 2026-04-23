@@ -25,6 +25,7 @@ import com.notio.chat.dto.ChatMessageResponse;
 import com.notio.chat.dto.DailySummaryResponse;
 import com.notio.chat.repository.ChatMessageRepository;
 import com.notio.chat.service.ChatService;
+import com.notio.chat.service.ChatTimeRangeExtractor;
 import com.notio.chat.service.DailySummaryService;
 import com.notio.common.config.JacksonConfig;
 import com.notio.common.config.properties.NotioAiProperties;
@@ -125,12 +126,14 @@ class ChatControllerTest {
     void streamReturnsJsonChunkAndDoneDataEvents() throws Exception {
         final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
         final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
         final PromptBuilder promptBuilder = mock(PromptBuilder.class);
         final LlmProvider llmProvider = mock(LlmProvider.class);
         final DailySummaryService dailySummaryService = mock(DailySummaryService.class);
         final ChatService chatService = new ChatService(
                 chatMessageRepository,
                 ragRetriever,
+                timeRangeExtractor,
                 promptBuilder,
                 llmProvider,
                 new NotioAiProperties(Duration.ofSeconds(30), Duration.ofSeconds(15), Duration.ofSeconds(5)),
@@ -144,6 +147,7 @@ class ChatControllerTest {
         when(chatMessageRepository.save(any(ChatMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(assistantMessage);
+        when(timeRangeExtractor.extract("오늘 중요한 알림 알려줘")).thenReturn(Optional.empty());
         when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of());
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
         when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage)))

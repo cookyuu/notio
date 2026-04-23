@@ -7,6 +7,7 @@ import com.notio.ai.prompt.LlmPrompt;
 import com.notio.ai.prompt.PromptBuilder;
 import com.notio.ai.rag.RagDocument;
 import com.notio.ai.rag.RagRetriever;
+import com.notio.ai.rag.TimeRange;
 import com.notio.chat.domain.ChatMessage;
 import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
@@ -38,6 +39,7 @@ public class ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final RagRetriever ragRetriever;
+    private final ChatTimeRangeExtractor timeRangeExtractor;
     private final PromptBuilder promptBuilder;
     private final LlmProvider llmProvider;
     private final NotioAiProperties aiProperties;
@@ -46,6 +48,7 @@ public class ChatService {
     public ChatService(
             final ChatMessageRepository chatMessageRepository,
             final RagRetriever ragRetriever,
+            final ChatTimeRangeExtractor timeRangeExtractor,
             final PromptBuilder promptBuilder,
             final LlmProvider llmProvider,
             final NotioAiProperties aiProperties,
@@ -53,6 +56,7 @@ public class ChatService {
     ) {
         this.chatMessageRepository = chatMessageRepository;
         this.ragRetriever = ragRetriever;
+        this.timeRangeExtractor = timeRangeExtractor;
         this.promptBuilder = promptBuilder;
         this.llmProvider = llmProvider;
         this.aiProperties = aiProperties;
@@ -241,7 +245,8 @@ public class ChatService {
             final Instant startedAt
     ) {
         logTimed(streamId, startedAt, "Chat stream RAG retrieval started");
-        final List<RagDocument> documents = ragRetriever.retrieve(userId, userMessage, Optional.empty());
+        final Optional<TimeRange> timeRange = timeRangeExtractor.extract(userMessage);
+        final List<RagDocument> documents = ragRetriever.retrieve(userId, userMessage, timeRange);
         logTimed(streamId, startedAt, "Chat stream RAG retrieval completed: documents=%d".formatted(documents.size()));
         logTimed(streamId, startedAt, "Chat stream recent history retrieval started");
         final List<ChatMessage> recentMessages = chatMessageRepository.findRecentByUserId(
