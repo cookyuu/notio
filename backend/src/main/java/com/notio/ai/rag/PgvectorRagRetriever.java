@@ -5,7 +5,7 @@ import com.notio.common.config.properties.NotioRagProperties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -31,8 +31,15 @@ public class PgvectorRagRetriever implements RagRetriever {
     ) {
         final float[] queryEmbedding = embeddingProvider.embed(question);
         validateDimension(queryEmbedding);
+        final String vectorLiteral = toVectorLiteral(queryEmbedding);
+        final List<Object> parameters = new ArrayList<>();
+        parameters.add(BODY_SUMMARY_LENGTH);
+        parameters.add(BODY_SUMMARY_LENGTH);
+        parameters.add(vectorLiteral);
+        parameters.add(userId);
+        parameters.add(userId);
 
-        return jdbcTemplate.query(
+        final StringBuilder sql = new StringBuilder(
                 """
                 SELECT
                     n.id AS notification_id,
@@ -51,18 +58,24 @@ public class PgvectorRagRetriever implements RagRetriever {
                   AND n.user_id = ?
                   AND ne.deleted_at IS NULL
                   AND n.deleted_at IS NULL
+                """
+        );
+        timeRange.ifPresent(range -> {
+            sql.append("  AND n.created_at >= ?\n");
+            sql.append("  AND n.created_at < ?\n");
+            parameters.add(Timestamp.from(range.startInclusive()));
+            parameters.add(Timestamp.from(range.endExclusive()));
+        });
+        sql.append(
+                """
                 ORDER BY ne.embedding <=> ?::vector
                 LIMIT ?
-                """,
-                this::mapDocument,
-                BODY_SUMMARY_LENGTH,
-                BODY_SUMMARY_LENGTH,
-                toVectorLiteral(queryEmbedding),
-                userId,
-                userId,
-                toVectorLiteral(queryEmbedding),
-                ragProperties.topK()
+                """
         );
+        parameters.add(vectorLiteral);
+        parameters.add(ragProperties.topK());
+
+        return jdbcTemplate.query(sql.toString(), this::mapDocument, parameters.toArray());
     }
 
     private RagDocument mapDocument(final ResultSet resultSet, final int rowNumber) throws SQLException {

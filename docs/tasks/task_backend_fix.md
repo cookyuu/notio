@@ -80,17 +80,25 @@
 
 ## Phase 4. pgvector SQL 기간 조건 적용
 
-- [ ] `PgvectorRagRetriever`에서 기간 조건이 있을 때만 `notifications.created_at` 조건을 추가한다.
-- [ ] 기간 조건이 있으면 SQL에 `AND n.created_at >= ?`를 포함한다.
-- [ ] 기간 조건이 있으면 SQL에 `AND n.created_at < ?`를 포함한다.
-- [ ] 기간 조건이 없으면 기존 SQL과 동일하게 시간 조건을 추가하지 않는다.
-- [ ] 기존 `ne.user_id = ?`, `n.user_id = ?` 조건을 유지한다.
-- [ ] 기존 `ne.deleted_at IS NULL`, `n.deleted_at IS NULL` 조건을 유지한다.
-- [ ] 기존 `ORDER BY ne.embedding <=> ?::vector` 정렬을 유지한다.
-- [ ] 기존 `LIMIT ?` 및 `notio.rag.top-k` 기본값을 유지한다.
-- [ ] SQL 문자열 조합 시 사용자 입력을 직접 붙이지 않는다.
-- [ ] 기간 필터 적용 후에도 결과 의미가 기간 내 전체 알림이 아니라 기간 내 유사도 top-k임을 유지한다.
-- [ ] `JdbcTemplate` 파라미터 순서가 기간 조건 유무에 따라 정확히 맞는지 확인한다.
+- [x] `PgvectorRagRetriever`에서 기간 조건이 있을 때만 `notifications.created_at` 조건을 추가한다.
+- [x] 기간 조건이 있으면 SQL에 `AND n.created_at >= ?`를 포함한다.
+- [x] 기간 조건이 있으면 SQL에 `AND n.created_at < ?`를 포함한다.
+- [x] 기간 조건이 없으면 기존 SQL과 동일하게 시간 조건을 추가하지 않는다.
+- [x] 기존 `ne.user_id = ?`, `n.user_id = ?` 조건을 유지한다.
+- [x] 기존 `ne.deleted_at IS NULL`, `n.deleted_at IS NULL` 조건을 유지한다.
+- [x] 기존 `ORDER BY ne.embedding <=> ?::vector` 정렬을 유지한다.
+- [x] 기존 `LIMIT ?` 및 `notio.rag.top-k` 기본값을 유지한다.
+- [x] SQL 문자열 조합 시 사용자 입력을 직접 붙이지 않는다.
+- [x] 기간 필터 적용 후에도 결과 의미가 기간 내 전체 알림이 아니라 기간 내 유사도 top-k임을 유지한다.
+- [x] `JdbcTemplate` 파라미터 순서가 기간 조건 유무에 따라 정확히 맞는지 확인한다.
+
+검증 메모:
+- `backend/src/main/java/com/notio/ai/rag/PgvectorRagRetriever.java`에서 `Optional<TimeRange>`가 있을 때만 `n.created_at >= ?`, `n.created_at < ?` 조건을 추가한다.
+- 기간 값은 SQL 문자열에 직접 붙이지 않고 `Timestamp.from(range.startInclusive())`, `Timestamp.from(range.endExclusive())`를 `JdbcTemplate` 파라미터로 전달한다.
+- 기간 조건은 `WHERE`의 사용자/soft-delete 조건 뒤, `ORDER BY ne.embedding <=> ?::vector LIMIT ?` 앞에만 추가되어 기간 내 유사도 top-k 의미를 유지한다.
+- 기간 조건이 없을 때는 기존 파라미터 순서인 body 길이 2개, query vector, `ne.user_id`, `n.user_id`, order vector, top-k를 유지한다.
+- 기간 조건이 있을 때는 `n.user_id` 뒤에 start/end timestamp가 추가되고, 그 뒤에 order vector와 top-k가 전달된다.
+- 검증 명령: `./gradlew test --tests com.notio.ai.rag.PgvectorRagRetrieverTest` 통과.
 
 ## Phase 5. ChatService 연결
 

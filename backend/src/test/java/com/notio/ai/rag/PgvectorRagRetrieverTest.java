@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 
 import com.notio.ai.embedding.EmbeddingProvider;
 import com.notio.common.config.properties.NotioRagProperties;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,6 +90,58 @@ class PgvectorRagRetrieverTest {
                 .contains("n.user_id = ?")
                 .contains("ne.deleted_at IS NULL")
                 .contains("n.deleted_at IS NULL")
+                .contains("LIMIT ?")
+                .doesNotContain("n.created_at >= ?")
+                .doesNotContain("n.created_at < ?");
+    }
+
+    @Test
+    void retrieveAddsCreatedAtRangeWhenTimeRangeExists() {
+        final Long userId = 10L;
+        final float[] embedding = new float[] {0.1f, 0.2f, 0.3f};
+        final Instant startInclusive = Instant.parse("2026-04-23T00:00:00Z");
+        final Instant endExclusive = Instant.parse("2026-04-24T00:00:00Z");
+        final TimeRange timeRange = new TimeRange(startInclusive, endExclusive);
+        when(embeddingProvider.embed("오늘 중요한 알림 알려줘")).thenReturn(embedding);
+        when(jdbcTemplate.query(
+                anyString(),
+                any(RowMapper.class),
+                eq(500),
+                eq(500),
+                eq("[0.1,0.2,0.3]"),
+                eq(userId),
+                eq(userId),
+                eq(Timestamp.from(startInclusive)),
+                eq(Timestamp.from(endExclusive)),
+                eq("[0.1,0.2,0.3]"),
+                eq(5)
+        )).thenReturn(List.of());
+
+        final List<RagDocument> documents = retriever.retrieve(userId, "오늘 중요한 알림 알려줘", Optional.of(timeRange));
+
+        assertThat(documents).isEmpty();
+        final ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbcTemplate).query(
+                sqlCaptor.capture(),
+                any(RowMapper.class),
+                eq(500),
+                eq(500),
+                eq("[0.1,0.2,0.3]"),
+                eq(userId),
+                eq(userId),
+                eq(Timestamp.from(startInclusive)),
+                eq(Timestamp.from(endExclusive)),
+                eq("[0.1,0.2,0.3]"),
+                eq(5)
+        );
+        assertThat(sqlCaptor.getValue())
+                .contains("ne.user_id = ?")
+                .contains("n.user_id = ?")
+                .contains("ne.deleted_at IS NULL")
+                .contains("n.deleted_at IS NULL")
+                .contains("AND n.created_at >= ?")
+                .contains("AND n.created_at < ?")
+                .contains("ORDER BY ne.embedding <=> ?::vector")
                 .contains("LIMIT ?");
     }
 
