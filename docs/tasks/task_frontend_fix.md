@@ -206,7 +206,7 @@
 ## Phase 8. LLM 응답 대기 UX 점검
 
 - [x] `POST /api/v1/chat`은 non-streaming 동기 API이므로 LLM 응답이 완료될 때까지 로딩 상태를 유지하는지 확인한다.
-- [x] 동기 API 사용 시 `NOTIO_LLM_TIMEOUT` 기본값(30초)보다 짧은 프론트/Dio timeout으로 요청이 먼저 끊기지 않는지 확인한다.
+- [x] 동기 API 사용 시 `NOTIO_LLM_TIMEOUT` 기본값(120초)보다 짧은 프론트/Dio timeout으로 요청이 먼저 끊기지 않는지 확인한다.
 - [x] 사용자가 토큰 단위 응답을 기대하는 Chat 화면이면 `GET /api/v1/chat/stream?content=...` SSE 경로를 기본 전송 방식으로 사용한다.
 - [x] SSE 사용 시 `chunk` event를 누적 표시하고 `done` event 수신 후 입력창을 다시 활성화한다.
 - [x] 백엔드가 timeout으로 `LLM_UNAVAILABLE`을 반환하면 기존 error state로 표시하고 입력창을 다시 활성화한다.

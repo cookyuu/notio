@@ -1,0 +1,79 @@
+{
+  "hooks" : {
+    "Stop": {
+      {
+        "hooks": [
+	  {
+	    "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/send-notio-webhook.sh",
+            "statusMessage": "Sending Notio webhook"
+	  }
+	]
+      }
+    }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(./gradlew clean build:*)",
+      "Bash(./gradlew:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter clean:*)",
+      "Bash(flutter run:*)",
+      "Bash(git add:*)",
+      "Bash(flutter config:*)",
+      "Bash(flutter.bat doctor:*)",
+      "Bash(flutter doctor:*)",
+      "Bash(flutter devices:*)",
+      "Bash(echo:*)",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter doctor\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter pub get\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter devices\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter doctor -v\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter analyze\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter pub run build_runner build --delete-conflicting-outputs\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter pub get && flutter pub run build_runner build --delete-conflicting-outputs\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter run -d chrome --web-renderer html\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\USER\\\\Documents\\\\dev\\\\notio\\\\frontend && flutter run -d chrome\")",
+      "Bash(git commit:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(cmd.exe /c \"flutter analyze\")",
+      "Bash(cmd.exe /c \"flutter test --no-pub\")",
+      "Bash(cmd.exe /c \"flutter test --update-goldens test/shared/widgets/glass_card_test.dart\")",
+      "Bash(git push)",
+      "Bash(cmd.exe /c \"flutter pub run build_runner build --delete-conflicting-outputs\")",
+      "Bash(cmd.exe /c \"flutter pub get\")",
+      "Bash(cmd.exe /c \"flutter analyze 2>&1 | head -50\")",
+      "Bash(cmd.exe /c \"flutter analyze 2>&1 | head -100\")",
+      "Bash(cmd.exe /c \"flutter pub get && flutter analyze 2>&1 | findstr /V \"\"Downloading Resolving Changed dependencies packages have newer versions incompatible\"\"\")",
+      "Bash(cmd.exe /c \"cd /d C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter test\")",
+      "Bash(git reset:*)",
+      "Bash(mkdir:*)",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr /V \"\"Downloading Resolving Changed dependencies packages have newer versions incompatible\"\"\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | head -100\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr /C:\"\"issues found\"\"\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr analytics_screen\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr /C:\"\"analytics_screen\"\"\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter pub run build_runner build --delete-conflicting-outputs\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter clean\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter pub get\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && dart run build_runner build --delete-conflicting-outputs\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr /C:\"\"developer\"\" /C:\"\"notification_local\"\" /C:\"\"chat_local\"\" /C:\"\"database\"\"\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter run -d chrome --web-renderer html\")",
+      "Bash(cmd.exe /c \"cd C:\\\\USERS\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter run -d chrome\")",
+      "Bash(cmd.exe /c \"flutter analyze 2>&1 | findstr /C:\"\"error\"\" /C:\"\"issues found\"\"\")",
+      "Bash(cmd.exe /c \"gradlew.bat clean build -x test\")",
+      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\backend && gradlew.bat clean build -x test\")",
+      "Bash(cmd.exe /c \"java -version\")",
+      "Bash(git rm:*)",
+      "Bash(git diff:*)",
+      "Bash(git checkout:*)",
+      "Bash(cmd.exe /c \"flutter analyze 2>&1\")"
+    ]
+  }
+}

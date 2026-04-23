@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -35,6 +36,18 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         @Param("userId") Long userId,
         @Param("source") NotificationSource source,
         @Param("isRead") Boolean isRead,
+        Pageable pageable
+    );
+
+    @Query("SELECT n FROM Notification n WHERE n.deletedAt IS NULL " +
+           "AND n.userId = :userId " +
+           "AND n.createdAt >= :startInclusive " +
+           "AND n.createdAt < :endExclusive " +
+           "ORDER BY n.createdAt DESC")
+    Page<Notification> findAllByUserIdAndCreatedAtRange(
+        @Param("userId") Long userId,
+        @Param("startInclusive") Instant startInclusive,
+        @Param("endExclusive") Instant endExclusive,
         Pageable pageable
     );
 

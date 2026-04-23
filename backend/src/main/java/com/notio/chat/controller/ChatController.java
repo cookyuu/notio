@@ -5,11 +5,14 @@ import com.notio.chat.dto.ChatRequest;
 import com.notio.chat.dto.DailySummaryResponse;
 import com.notio.chat.service.ChatService;
 import com.notio.chat.service.DailySummaryService;
+import com.notio.common.exception.ErrorCode;
+import com.notio.common.exception.NotioException;
 import com.notio.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,12 +49,24 @@ public class ChatController {
     }
 
     @GetMapping("/daily-summary")
-    public ApiResponse<DailySummaryResponse> dailySummary() {
-        return ApiResponse.success(dailySummaryService.getSummary());
+    public ApiResponse<DailySummaryResponse> dailySummary(final Authentication authentication) {
+        return ApiResponse.success(dailySummaryService.getSummary(currentUserId(authentication)));
     }
 
     @GetMapping("/history")
     public ApiResponse<List<ChatMessageResponse>> history() {
         return ApiResponse.success(chatService.history());
+    }
+
+    private Long currentUserId(final Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new NotioException(ErrorCode.UNAUTHORIZED);
+        }
+
+        try {
+            return Long.valueOf(authentication.getPrincipal().toString());
+        } catch (final NumberFormatException exception) {
+            throw new NotioException(ErrorCode.UNAUTHORIZED);
+        }
     }
 }

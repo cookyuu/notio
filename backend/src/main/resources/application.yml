@@ -130,7 +130,7 @@ notio:
     enabled: ${NOTIO_FIREBASE_ENABLED:false}
     service-account-path: ${NOTIO_FIREBASE_SERVICE_ACCOUNT_PATH:}
   ai:
-    llm-timeout: ${NOTIO_LLM_TIMEOUT:30s}
+    llm-timeout: ${NOTIO_LLM_TIMEOUT:120s}
     embedding-timeout: ${NOTIO_EMBED_TIMEOUT:15s}
     streaming-timeout: ${NOTIO_STREAMING_TIMEOUT:120s}
   rag:

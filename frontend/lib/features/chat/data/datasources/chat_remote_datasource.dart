@@ -8,6 +8,7 @@ import 'package:notio_app/features/chat/data/models/daily_summary_model.dart';
 /// Remote data source for chat messages
 class ChatRemoteDataSource {
   static const chatReceiveTimeout = Duration(minutes: 2);
+  static const summaryReceiveTimeout = Duration(minutes: 3);
   static const streamReceiveTimeout = Duration(minutes: 5);
 
   final Dio _dio;
@@ -90,7 +91,12 @@ class ChatRemoteDataSource {
   /// Get daily summary
   Future<DailySummaryModel> getDailySummary() async {
     try {
-      final response = await _dio.get('/api/v1/chat/daily-summary');
+      final response = await _dio.get(
+        '/api/v1/chat/daily-summary',
+        options: Options(
+          receiveTimeout: summaryReceiveTimeout,
+        ),
+      );
 
       if (response.data['success'] == true) {
         return DailySummaryModel.fromJson(response.data['data']);

@@ -12,6 +12,10 @@ import com.notio.notification.embedding.NotificationEmbeddingService;
 import com.notio.notification.repository.NotificationRepository;
 import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -23,8 +27,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,6 +34,8 @@ import java.util.Map;
 public class NotificationService {
 
     private static final Long DEFAULT_PHASE0_USER_ID = 1L;
+    private static final String DAILY_SUMMARY_CACHE_NAME = "dailySummary";
+    private static final ZoneId SUMMARY_ZONE = ZoneId.of("Asia/Seoul");
 
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
@@ -90,6 +94,7 @@ public class NotificationService {
         Notification saved = notificationRepository.save(notification);
         log.info("Notification created: id={}, userId={}, connectionId={}, source={}, title={}",
             saved.getId(), saved.getUserId(), saved.getConnectionId(), saved.getSource(), saved.getTitle());
+        evictDailySummaryCache(saved.getUserId());
 
         try {
             notificationEmbeddingService.embedNotification(saved);
@@ -115,6 +120,20 @@ public class NotificationService {
      */
     public Page<Notification> findAll(Long userId, NotificationSource source, Boolean isRead, Pageable pageable) {
         return notificationRepository.findAllWithFilter(userId, source, isRead, pageable);
+    }
+
+    public Page<Notification> findAllCreatedInRange(
+        Long userId,
+        Instant startInclusive,
+        Instant endExclusive,
+        Pageable pageable
+    ) {
+        return notificationRepository.findAllByUserIdAndCreatedAtRange(
+            userId,
+            startInclusive,
+            endExclusive,
+            pageable
+        );
     }
 
     public Page<NotificationSummaryResponse> findAllSummaries(
@@ -222,6 +241,17 @@ public class NotificationService {
         }
 
         cache.evict(userId);
+    }
+
+    private void evictDailySummaryCache(Long userId) {
+        Cache cache = cacheManager.getCache(DAILY_SUMMARY_CACHE_NAME);
+        if (cache == null) {
+            log.warn("Daily summary cache is not configured; skip eviction for userId={}", userId);
+            return;
+        }
+
+        final LocalDate today = LocalDate.now(SUMMARY_ZONE);
+        cache.evict(userId + ":" + today);
     }
 
     /**

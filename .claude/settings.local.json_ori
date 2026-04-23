@@ -79,60 +79,7 @@
       "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr /C:\"\"issues found\"\" /C:\"\"error\"\" /C:\"\"auth\"\"\")",
       "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend &amp;&amp; flutter analyze 2>&1 | findstr /C:\"\"error\"\" /C:\"\"issues found\"\"\")",
       "Bash(cmd.exe /c \"cd /d C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | head -20\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr /C:\"\"notification\"\" /C:\"\"error\"\" /C:\"\"issues found\"\"\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | head -50\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter test\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend &amp;&amp; flutter analyze 2>&1 | head -100\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | head -100\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | findstr /C:\"\"issues found\"\" /C:\"\"error\"\" /C:\"\"No issues found\"\"\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend &amp;&amp; flutter analyze 2>&1 | findstr /C:\"\"issues found\"\" /C:\"\"error\"\" /C:\"\"settings_screen\"\"\")",
-      "Bash(docker:*)",
-      "Bash(git --version:*)",
-      "Bash(psql:*)",
-      "Bash(redis-cli:*)",
-      "Bash(flutter --version:*)",
-      "Bash(ls:*)",
-      "Bash(test:*)",
-      "Bash(cmd.exe /c \"flutter doctor -v\")",
-      "WebSearch",
-      "WebFetch(domain:claudefa.st)",
-      "WebFetch(domain:simonwillison.net)",
-      "Bash(jq:*)",
-      "WebFetch(domain:github.com)",
-      "Bash(.claude/hooks/send-permission-webhook.sh)",
-      "Bash(.claude/hooks/send-stop-webhook.sh:*)",
-      "Bash(python3:*)",
-      "Bash(/mnt/c/Windows/System32/cmd.exe /c \"flutter analyze 2>&1\")",
-      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend &amp;&amp; flutter analyze 2>&1 | findstr /C:\"\"issues found\"\" /C:\"\"error\"\" /C:\"\"No issues found\"\"\")",
-      "Bash(GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew:*)",
-      "Bash(cat:*)"
-    ]
-  },
-  "hooks": {
-    "PermissionRequest": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/send-permission-webhook.sh",
-            "statusMessage": "Sending permission request notification"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/send-stop-webhook.sh",
-            "statusMessage": "Sending completion notification"
-          }
-        ]
-      }
+      "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend && flutter analyze 2>&1 | head -20\")"
     ]
   }
 }

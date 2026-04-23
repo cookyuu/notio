@@ -94,6 +94,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
+              ref.invalidate(dailySummaryProvider);
               ref.read(chatProvider.notifier).refresh();
             },
             tooltip: 'Refresh messages',
@@ -163,6 +164,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(height: AppSpacing.s16),
             ElevatedButton(
               onPressed: () {
+                ref.invalidate(dailySummaryProvider);
                 ref.read(chatProvider.notifier).refresh();
               },
               child: const Text('Retry'),

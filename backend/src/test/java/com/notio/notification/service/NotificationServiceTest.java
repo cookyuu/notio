@@ -21,6 +21,8 @@ import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +54,9 @@ class NotificationServiceTest {
     private Cache unreadCountCache;
 
     @Mock
+    private Cache dailySummaryCache;
+
+    @Mock
     private NotificationEmbeddingService notificationEmbeddingService;
 
     private NotificationService notificationService;
@@ -66,6 +71,7 @@ class NotificationServiceTest {
                 notificationEmbeddingService
         );
         lenient().when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
+        lenient().when(cacheManager.getCache("dailySummary")).thenReturn(dailySummaryCache);
     }
 
     @Test
@@ -101,6 +107,7 @@ class NotificationServiceTest {
         verify(notificationRepository).save(any(Notification.class));
         verify(notificationEmbeddingService).embedNotification(saved);
         verify(pushService).sendPush(saved.getId(), saved.getUserId());
+        verify(dailySummaryCache).evict(event.userId() + ":" + LocalDate.now(ZoneId.of("Asia/Seoul")));
     }
 
     @Test
@@ -137,6 +144,7 @@ class NotificationServiceTest {
         assertThat(savedNotification).isSameAs(saved);
         verify(notificationRepository).save(any(Notification.class));
         verify(notificationEmbeddingService).embedNotification(saved);
+        verify(dailySummaryCache).evict(event.userId() + ":" + LocalDate.now(ZoneId.of("Asia/Seoul")));
         verify(pushService).sendPush(saved.getId(), saved.getUserId());
     }
 
@@ -385,6 +393,7 @@ class NotificationServiceTest {
         assertThat(savedNotification.getUserId()).isEqualTo(10L);
         assertThat(savedNotification.getConnectionId()).isEqualTo(20L);
         verify(notificationRepository).save(any(Notification.class));
+        verify(dailySummaryCache).evict("10:" + LocalDate.now(ZoneId.of("Asia/Seoul")));
     }
 
     @Test

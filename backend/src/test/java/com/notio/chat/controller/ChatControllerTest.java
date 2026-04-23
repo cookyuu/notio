@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -76,7 +77,7 @@ class ChatControllerTest {
         final DailySummaryService dailySummaryService = mock(DailySummaryService.class);
         final MockMvc mockMvc = mockMvc(new ChatController(chatService, dailySummaryService));
 
-        when(dailySummaryService.getSummary()).thenReturn(
+        when(dailySummaryService.getSummary(10L)).thenReturn(
                 new DailySummaryResponse(
                         "오늘 총 0건의 알림이 수집되었습니다.",
                         "2026-04-22",
@@ -85,7 +86,8 @@ class ChatControllerTest {
                 )
         );
 
-        mockMvc.perform(get("/api/v1/chat/daily-summary"))
+        mockMvc.perform(get("/api/v1/chat/daily-summary")
+                        .principal(new TestingAuthenticationToken("10", null)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.summary").value("오늘 총 0건의 알림이 수집되었습니다."))

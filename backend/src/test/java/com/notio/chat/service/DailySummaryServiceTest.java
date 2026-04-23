@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,7 +23,7 @@ import com.notio.notification.domain.NotificationSource;
 import com.notio.notification.service.NotificationService;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.Cache;
@@ -32,6 +33,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 class DailySummaryServiceTest {
+
+    private static final ZoneId SUMMARY_ZONE = ZoneId.of("Asia/Seoul");
 
     @Test
     void getSummaryReturnsCachedResponseWhenCacheHit() {
@@ -50,7 +53,7 @@ class DailySummaryServiceTest {
                 aiExceptionTranslator
         );
 
-        final LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        final LocalDate today = LocalDate.now(SUMMARY_ZONE);
         final String cacheKey = "1:" + today;
         final DailySummaryResponse cachedResponse = new DailySummaryResponse(
                 "캐시된 요약입니다.",
@@ -62,11 +65,11 @@ class DailySummaryServiceTest {
         when(cacheManager.getCache("dailySummary")).thenReturn(cache);
         when(cache.get(cacheKey, DailySummaryResponse.class)).thenReturn(cachedResponse);
 
-        final DailySummaryResponse response = dailySummaryService.getSummary();
+        final DailySummaryResponse response = dailySummaryService.getSummary(1L);
 
         assertThat(response).isEqualTo(cachedResponse);
         verify(llmProvider, never()).chat(any(LlmPrompt.class));
-        verify(notificationService, never()).findAll(any(), any(), any());
+        verify(notificationService, never()).findAllCreatedInRange(any(), any(), any(), any());
     }
 
     @Test
@@ -86,9 +89,11 @@ class DailySummaryServiceTest {
                 aiExceptionTranslator
         );
 
-        final LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        final LocalDate today = LocalDate.now(SUMMARY_ZONE);
         final String cacheKey = "1:" + today;
-        final Instant todayInstant = today.atStartOfDay(ZoneOffset.UTC).toInstant().plusSeconds(3600);
+        final Instant startOfDay = today.atStartOfDay(SUMMARY_ZONE).toInstant();
+        final Instant startOfNextDay = today.plusDays(1).atStartOfDay(SUMMARY_ZONE).toInstant();
+        final Instant todayInstant = startOfDay.plusSeconds(3600);
 
         final Notification notification1 = createNotification(
                 1L,
@@ -114,11 +119,11 @@ class DailySummaryServiceTest {
 
         when(cacheManager.getCache("dailySummary")).thenReturn(cache);
         when(cache.get(cacheKey, DailySummaryResponse.class)).thenReturn(null);
-        when(notificationService.findAll(any(), any(), any(PageRequest.class))).thenReturn(notificationPage);
+        when(notificationService.findAllCreatedInRange(any(), any(), any(), any(PageRequest.class))).thenReturn(notificationPage);
         when(promptBuilder.buildDailySummaryPrompt(any(LocalDate.class), any(List.class))).thenReturn(prompt);
         when(llmProvider.chat(prompt)).thenReturn(llmSummary);
 
-        final DailySummaryResponse response = dailySummaryService.getSummary();
+        final DailySummaryResponse response = dailySummaryService.getSummary(1L);
 
         assertThat(response.summary()).isEqualTo(llmSummary);
         assertThat(response.date()).isEqualTo(today.toString());
@@ -127,6 +132,12 @@ class DailySummaryServiceTest {
 
         verify(llmProvider).chat(prompt);
         verify(promptBuilder).buildDailySummaryPrompt(any(LocalDate.class), any(List.class));
+        verify(notificationService).findAllCreatedInRange(
+                eq(1L),
+                eq(startOfDay),
+                eq(startOfNextDay),
+                any(PageRequest.class)
+        );
         verify(cache).put(cacheKey, response);
     }
 
@@ -147,15 +158,15 @@ class DailySummaryServiceTest {
                 aiExceptionTranslator
         );
 
-        final LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        final LocalDate today = LocalDate.now(SUMMARY_ZONE);
         final String cacheKey = "1:" + today;
         final Page<Notification> emptyPage = new PageImpl<>(List.of());
 
         when(cacheManager.getCache("dailySummary")).thenReturn(cache);
         when(cache.get(cacheKey, DailySummaryResponse.class)).thenReturn(null);
-        when(notificationService.findAll(any(), any(), any(PageRequest.class))).thenReturn(emptyPage);
+        when(notificationService.findAllCreatedInRange(any(), any(), any(), any(PageRequest.class))).thenReturn(emptyPage);
 
-        final DailySummaryResponse response = dailySummaryService.getSummary();
+        final DailySummaryResponse response = dailySummaryService.getSummary(1L);
 
         assertThat(response.summary()).isEqualTo("오늘은 아직 수집된 알림이 없습니다. 조용한 하루를 보내고 계시네요!");
         assertThat(response.date()).isEqualTo(today.toString());
@@ -183,9 +194,9 @@ class DailySummaryServiceTest {
                 aiExceptionTranslator
         );
 
-        final LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        final LocalDate today = LocalDate.now(SUMMARY_ZONE);
         final String cacheKey = "1:" + today;
-        final Instant todayInstant = today.atStartOfDay(ZoneOffset.UTC).toInstant().plusSeconds(3600);
+        final Instant todayInstant = today.atStartOfDay(SUMMARY_ZONE).toInstant().plusSeconds(3600);
 
         final Notification notification = createNotification(
                 1L,
@@ -202,11 +213,11 @@ class DailySummaryServiceTest {
 
         when(cacheManager.getCache("dailySummary")).thenReturn(cache);
         when(cache.get(cacheKey, DailySummaryResponse.class)).thenReturn(null);
-        when(notificationService.findAll(any(), any(), any(PageRequest.class))).thenReturn(notificationPage);
+        when(notificationService.findAllCreatedInRange(any(), any(), any(), any(PageRequest.class))).thenReturn(notificationPage);
         when(promptBuilder.buildDailySummaryPrompt(any(LocalDate.class), any(List.class))).thenReturn(prompt);
         when(llmProvider.chat(prompt)).thenThrow(new RuntimeException("Ollama connection failed"));
 
-        assertThatThrownBy(() -> dailySummaryService.getSummary())
+        assertThatThrownBy(() -> dailySummaryService.getSummary(1L))
                 .isInstanceOf(NotioException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LLM_UNAVAILABLE);
 
@@ -230,9 +241,9 @@ class DailySummaryServiceTest {
                 aiExceptionTranslator
         );
 
-        final LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        final LocalDate today = LocalDate.now(SUMMARY_ZONE);
         final String cacheKey = "1:" + today;
-        final Instant todayInstant = today.atStartOfDay(ZoneOffset.UTC).toInstant().plusSeconds(3600);
+        final Instant todayInstant = today.atStartOfDay(SUMMARY_ZONE).toInstant().plusSeconds(3600);
 
         final Notification notification = createNotification(
                 1L,
@@ -249,11 +260,11 @@ class DailySummaryServiceTest {
 
         when(cacheManager.getCache("dailySummary")).thenReturn(cache);
         when(cache.get(cacheKey, DailySummaryResponse.class)).thenReturn(null);
-        when(notificationService.findAll(any(), any(), any(PageRequest.class))).thenReturn(notificationPage);
+        when(notificationService.findAllCreatedInRange(any(), any(), any(), any(PageRequest.class))).thenReturn(notificationPage);
         when(promptBuilder.buildDailySummaryPrompt(any(LocalDate.class), any(List.class))).thenReturn(prompt);
         when(llmProvider.chat(prompt)).thenReturn("");
 
-        assertThatThrownBy(() -> dailySummaryService.getSummary())
+        assertThatThrownBy(() -> dailySummaryService.getSummary(1L))
                 .isInstanceOf(NotioException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LLM_UNAVAILABLE);
 

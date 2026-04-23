@@ -7,9 +7,9 @@ import com.notio.chat.dto.DailySummaryResponse;
 import com.notio.common.exception.AiExceptionTranslator;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.service.NotificationService;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,8 +25,8 @@ import org.springframework.stereotype.Service;
 public class DailySummaryService {
 
     private static final Logger logger = LoggerFactory.getLogger(DailySummaryService.class);
-    private static final Long DEFAULT_PHASE0_USER_ID = 1L;
     private static final String CACHE_NAME = "dailySummary";
+    private static final ZoneId SUMMARY_ZONE = ZoneId.of("Asia/Seoul");
 
     private final NotificationService notificationService;
     private final PromptBuilder promptBuilder;
@@ -48,9 +48,8 @@ public class DailySummaryService {
         this.aiExceptionTranslator = aiExceptionTranslator;
     }
 
-    public DailySummaryResponse getSummary() {
-        final Long userId = DEFAULT_PHASE0_USER_ID;
-        final LocalDate today = LocalDate.now(ZoneOffset.UTC);
+    public DailySummaryResponse getSummary(final Long userId) {
+        final LocalDate today = LocalDate.now(SUMMARY_ZONE);
         final String cacheKey = buildCacheKey(userId, today);
 
         // 1. 캐시 확인
@@ -64,17 +63,14 @@ public class DailySummaryService {
         }
 
         // 2. 오늘 알림 조회
-        final List<Notification> notifications = notificationService.findAll(
-                null, // source
-                null, // isRead
+        final Instant startOfDay = today.atStartOfDay(SUMMARY_ZONE).toInstant();
+        final Instant startOfNextDay = today.plusDays(1).atStartOfDay(SUMMARY_ZONE).toInstant();
+        final List<Notification> todaysNotifications = notificationService.findAllCreatedInRange(
+                userId,
+                startOfDay,
+                startOfNextDay,
                 PageRequest.of(0, 200, Sort.by(Sort.Direction.DESC, "createdAt"))
         ).getContent();
-
-        final OffsetDateTime startOfDay = today.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
-
-        final List<Notification> todaysNotifications = notifications.stream()
-                .filter(notification -> notification.getCreatedAt().atZone(ZoneOffset.UTC).toOffsetDateTime().isAfter(startOfDay))
-                .toList();
 
         // 3. topics 추출 (기존 규칙 기반 유지)
         final List<String> topics = extractTopics(todaysNotifications);
