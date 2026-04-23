@@ -32,7 +32,7 @@ class ChatRemoteDataSource {
         throw Exception(response.data['error']['message']);
       }
     } on DioException catch (e) {
-      throw Exception('네트워크 오류: ${e.message}');
+      throw _dioError(e);
     }
   }
 
@@ -65,7 +65,7 @@ class ChatRemoteDataSource {
         }
       }
     } on DioException catch (e) {
-      throw Exception('네트워크 오류: ${e.message}');
+      throw _dioError(e);
     }
   }
 
@@ -104,7 +104,7 @@ class ChatRemoteDataSource {
         throw Exception(response.data['error']['message']);
       }
     } on DioException catch (e) {
-      throw Exception('네트워크 오류: ${e.message}');
+      throw _dioError(e);
     }
   }
 
@@ -129,7 +129,18 @@ class ChatRemoteDataSource {
         throw Exception(response.data['error']['message']);
       }
     } on DioException catch (e) {
-      throw Exception('네트워크 오류: ${e.message}');
+      throw _dioError(e);
     }
+  }
+
+  /// Extracts the backend's JSON error message from a DioException when
+  /// the server responded with a standard ApiResponse error body.
+  Exception _dioError(DioException e) {
+    String? serverMessage;
+    final data = e.response?.data;
+    if (data is Map) {
+      serverMessage = data['error']?['message'] as String?;
+    }
+    return Exception(serverMessage ?? '네트워크 오류: ${e.message}');
   }
 }

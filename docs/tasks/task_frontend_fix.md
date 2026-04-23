@@ -58,12 +58,12 @@
 
 ## Phase 5. 빈 결과 및 장애 상태 점검
 
-- [ ] 기간 조건에 맞는 RAG 결과가 없을 때 백엔드 fallback 응답이 일반 assistant 메시지처럼 표시되는지 확인한다.
-- [ ] 기간 파싱 실패 fallback 상황이 프론트 error state로 표시되지 않는지 확인한다.
-- [ ] LLM 또는 embedding 장애 시 기존 백엔드 표준 error message가 표시되는지 확인한다.
-- [ ] Ollama 미기동 또는 backend timeout 시 입력창이 다시 활성화되는지 확인한다.
-- [ ] SSE 연결이 중간에 끊겨도 `isSending`, `isStreaming` 상태가 정상 해제되는지 확인한다.
-- [ ] retry 또는 재전송 시 user message가 의도치 않게 중복 저장되지 않는지 확인한다.
+- [x] 기간 조건에 맞는 RAG 결과가 없을 때 백엔드 fallback 응답이 일반 assistant 메시지처럼 표시되는지 확인한다.
+- [x] 기간 파싱 실패 fallback 상황이 프론트 error state로 표시되지 않는지 확인한다.
+- [x] LLM 또는 embedding 장애 시 기존 백엔드 표준 error message가 표시되는지 확인한다.
+- [x] Ollama 미기동 또는 backend timeout 시 입력창이 다시 활성화되는지 확인한다.
+- [x] SSE 연결이 중간에 끊겨도 `isSending`, `isStreaming` 상태가 정상 해제되는지 확인한다.
+- [x] retry 또는 재전송 시 user message가 의도치 않게 중복 저장되지 않는지 확인한다.
 
 ## Phase 6. 프론트 변경 필요 조건
 
