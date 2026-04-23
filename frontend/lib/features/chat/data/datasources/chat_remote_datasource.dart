@@ -70,22 +70,22 @@ class ChatRemoteDataSource {
   }
 
   String? _extractChunkData(String eventBlock) {
-    String? eventName;
-    final dataLines = <String>[];
-
     for (final line in eventBlock.split('\n')) {
-      if (line.startsWith('event:')) {
-        eventName = line.substring(6).trim();
-      } else if (line.startsWith('data:')) {
-        dataLines.add(line.substring(5).trim());
+      if (line.startsWith('data:')) {
+        final raw = line.substring(5).trim();
+        try {
+          final decoded = jsonDecode(raw) as Map<String, dynamic>;
+          if (decoded.containsKey('chunk')) {
+            return decoded['chunk'] as String?;
+          }
+          // 'done' payload: stream ends naturally, nothing to yield
+        } catch (_) {
+          // non-JSON raw text fallback
+          if (raw.isNotEmpty) return raw;
+        }
       }
     }
-
-    if (eventName != 'chunk') {
-      return null;
-    }
-
-    return dataLines.join('\n');
+    return null;
   }
 
   /// Get daily summary

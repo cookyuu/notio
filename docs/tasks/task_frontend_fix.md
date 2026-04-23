@@ -29,14 +29,14 @@
 
 ## Phase 2. SSE Streaming 계약 재검증
 
-- [ ] `ChatRemoteDataSource.streamMessage`가 기존 `/api/v1/chat/stream`을 호출하는지 확인한다.
-- [ ] query parameter 이름이 `content`로 유지되는지 확인한다.
-- [ ] `Accept: text/event-stream` header가 유지되는지 확인한다.
-- [ ] 백엔드 SSE event name이 기존 `chunk`, `done`으로 유지되는지 확인한다.
-- [ ] 기간 필터 적용 후에도 chunk payload를 기존처럼 문자열로 누적 표시할 수 있는지 확인한다.
-- [ ] `done` 수신 또는 stream 종료 시 기존 완료 처리 흐름이 유지되는지 확인한다.
-- [ ] 기간 조건으로 RAG 결과가 비어 있을 때도 fallback assistant 응답이 일반 chunk처럼 표시되는지 확인한다.
-- [ ] stream 중 백엔드 오류가 발생하면 기존 error state로 전환되는지 확인한다.
+- [x] `ChatRemoteDataSource.streamMessage`가 기존 `/api/v1/chat/stream`을 호출하는지 확인한다.
+- [x] query parameter 이름이 `content`로 유지되는지 확인한다.
+- [x] `Accept: text/event-stream` header가 유지되는지 확인한다.
+- [x] 백엔드 SSE event name이 기존 `chunk`, `done`으로 유지되는지 확인한다.
+- [x] 기간 필터 적용 후에도 chunk payload를 기존처럼 문자열로 누적 표시할 수 있는지 확인한다.
+- [x] `done` 수신 또는 stream 종료 시 기존 완료 처리 흐름이 유지되는지 확인한다.
+- [x] 기간 조건으로 RAG 결과가 비어 있을 때도 fallback assistant 응답이 일반 chunk처럼 표시되는지 확인한다.
+- [x] stream 중 백엔드 오류가 발생하면 기존 error state로 전환되는지 확인한다.
 
 ## Phase 3. Chat 입력 UX 점검
 
