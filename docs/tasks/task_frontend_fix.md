@@ -49,12 +49,12 @@
 
 ## Phase 4. 로컬 캐시 및 히스토리 영향도 점검
 
-- [ ] 기간 필터는 RAG 검색에만 적용되므로 로컬 chat cache schema 변경이 필요 없는지 확인한다.
-- [ ] user message가 기간 표현을 포함해도 local cache에 원문 그대로 저장되는지 확인한다.
-- [ ] assistant fallback 응답이 기존 assistant message와 동일하게 저장되는지 확인한다.
-- [ ] streaming 완료 후 최종 assistant 메시지가 기존 흐름대로 local cache에 반영되는지 확인한다.
-- [ ] remote history refresh 시 기간 필터 개선과 무관하게 기존 정렬/중복 제거 흐름이 유지되는지 확인한다.
-- [ ] 앱 재시작 후 기간 표현이 포함된 대화가 history에 정상 복원되는지 확인한다.
+- [x] 기간 필터는 RAG 검색에만 적용되므로 로컬 chat cache schema 변경이 필요 없는지 확인한다.
+- [x] user message가 기간 표현을 포함해도 local cache에 원문 그대로 저장되는지 확인한다.
+- [x] assistant fallback 응답이 기존 assistant message와 동일하게 저장되는지 확인한다.
+- [x] streaming 완료 후 최종 assistant 메시지가 기존 흐름대로 local cache에 반영되는지 확인한다.
+- [x] remote history refresh 시 기간 필터 개선과 무관하게 기존 정렬/중복 제거 흐름이 유지되는지 확인한다.
+- [x] 앱 재시작 후 기간 표현이 포함된 대화가 history에 정상 복원되는지 확인한다.
 
 ## Phase 5. 빈 결과 및 장애 상태 점검
 
