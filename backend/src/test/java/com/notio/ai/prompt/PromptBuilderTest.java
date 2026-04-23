@@ -95,6 +95,44 @@ class PromptBuilderTest {
     }
 
     @Test
+    void buildChatPromptIncludesNoTimeFilterWhenAbsent() {
+        final LlmPrompt prompt = promptBuilder.buildChatPrompt(
+                "중요한 알림 알려줘",
+                List.of(),
+                List.of(),
+                Optional.empty()
+        );
+
+        assertThat(prompt.user())
+                .contains("Applied time filter:")
+                .contains("- 기간 필터 없음")
+                .doesNotContain("startInclusive <= notification.created_at < endExclusive");
+    }
+
+    @Test
+    void buildChatPromptKeepsRagCreatedAtOutputFormat() {
+        final RagDocument document = new RagDocument(
+                10L,
+                "GITHUB",
+                "PR 리뷰 요청",
+                "결제 모듈 변경에 대한 리뷰가 요청되었습니다.",
+                "HIGH",
+                Instant.parse("2026-04-22T01:00:00Z"),
+                0.91321
+        );
+
+        final LlmPrompt prompt = promptBuilder.buildChatPrompt(
+                "알림 요약해줘",
+                List.of(document),
+                List.of()
+        );
+
+        assertThat(prompt.user())
+                .contains("created_at: 2026-04-22T01:00:00Z")
+                .contains("similarity_score: 0.9132");
+    }
+
+    @Test
     void buildChatPromptIncludesFallbackInstructionWhenRagContextIsEmpty() {
         final LlmPrompt prompt = promptBuilder.buildChatPrompt(
                 "관련 알림이 있어?",

@@ -171,10 +171,17 @@
 
 ## Phase 9. PromptBuilder 테스트 보강
 
-- [ ] `PromptBuilderTest`에서 기간 조건이 있을 때 prompt에 `Applied time filter`가 포함되는지 검증한다.
-- [ ] `PromptBuilderTest`에서 기간 조건이 없을 때 prompt에 기간 필터 없음이 포함되는지 검증한다.
-- [ ] `PromptBuilderTest`에서 RAG context의 `created_at` 출력 형식이 유지되는지 검증한다.
-- [ ] RAG context가 비어 있을 때 fallback 답변 지침이 prompt에 포함되는지 검증한다.
+- [x] `PromptBuilderTest`에서 기간 조건이 있을 때 prompt에 `Applied time filter`가 포함되는지 검증한다.
+- [x] `PromptBuilderTest`에서 기간 조건이 없을 때 prompt에 기간 필터 없음이 포함되는지 검증한다.
+- [x] `PromptBuilderTest`에서 RAG context의 `created_at` 출력 형식이 유지되는지 검증한다.
+- [x] RAG context가 비어 있을 때 fallback 답변 지침이 prompt에 포함되는지 검증한다.
+
+검증 메모:
+- `backend/src/test/java/com/notio/ai/prompt/PromptBuilderTest.java`의 `buildChatPromptIncludesAppliedTimeFilterWhenPresent()`에서 기간 조건이 있을 때 `Applied time filter`, `startInclusive <= notification.created_at < endExclusive`, 시작/종료 시각, 기간 조건 fallback 지침이 포함되는지 검증한다.
+- `buildChatPromptIncludesNoTimeFilterWhenAbsent()`를 추가해 기간 조건이 없을 때 `Applied time filter` 섹션과 `- 기간 필터 없음`이 포함되고 기간 범위 조건 문구가 들어가지 않는지 검증한다.
+- `buildChatPromptKeepsRagCreatedAtOutputFormat()`을 추가해 RAG context의 `created_at: 2026-04-22T01:00:00Z` 출력 형식과 기존 similarity score 포맷이 유지되는지 검증한다.
+- `buildChatPromptIncludesFallbackInstructionWhenRagContextIsEmpty()`에서 RAG context가 비어 있을 때 `관련 알림 컨텍스트 없음`과 fallback 답변 지침이 포함되는지 검증한다.
+- 검증 명령: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test --tests com.notio.ai.prompt.PromptBuilderTest` 통과.
 
 ## Phase 10. 최종 검증
 
