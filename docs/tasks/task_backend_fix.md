@@ -42,18 +42,26 @@
 
 ## Phase 2. 자연어 기간 추출기 구현
 
-- [ ] `ChatTimeRangeExtractor`를 추가한다.
-- [ ] 사용자 질문 문자열에서 지원 기간 표현을 찾아 `Optional<TimeRange>`를 반환한다.
-- [ ] 기간 표현이 없으면 `Optional.empty()`를 반환한다.
-- [ ] 미지원 날짜 범위 표현은 `Optional.empty()`로 fallback한다.
-- [ ] 상대 기간 정규식 `(최근|지난)\s*(\d+)\s*(분|시간|일)`을 지원한다.
-- [ ] `최근 N분`, `지난 N분`을 `now - N분 <= created_at < now`로 변환한다.
-- [ ] `최근 N시간`, `지난 N시간`을 `now - N시간 <= created_at < now`로 변환한다.
-- [ ] `최근 N일`, `지난 N일`을 `now - N일 <= created_at < now`로 변환한다.
-- [ ] `오늘`을 서버 기본 timezone 기준 오늘 00:00 이상, 내일 00:00 미만으로 변환한다.
-- [ ] `어제`를 서버 기본 timezone 기준 어제 00:00 이상, 오늘 00:00 미만으로 변환한다.
-- [ ] 상대 기간과 날짜 키워드가 모두 있으면 상대 기간을 우선한다.
-- [ ] `Clock`을 생성자 주입받아 테스트에서 현재 시각을 고정할 수 있게 한다.
+- [x] `ChatTimeRangeExtractor`를 추가한다.
+- [x] 사용자 질문 문자열에서 지원 기간 표현을 찾아 `Optional<TimeRange>`를 반환한다.
+- [x] 기간 표현이 없으면 `Optional.empty()`를 반환한다.
+- [x] 미지원 날짜 범위 표현은 `Optional.empty()`로 fallback한다.
+- [x] 상대 기간 정규식 `(최근|지난)\s*(\d+)\s*(분|시간|일)`을 지원한다.
+- [x] `최근 N분`, `지난 N분`을 `now - N분 <= created_at < now`로 변환한다.
+- [x] `최근 N시간`, `지난 N시간`을 `now - N시간 <= created_at < now`로 변환한다.
+- [x] `최근 N일`, `지난 N일`을 `now - N일 <= created_at < now`로 변환한다.
+- [x] `오늘`을 서버 기본 timezone 기준 오늘 00:00 이상, 내일 00:00 미만으로 변환한다.
+- [x] `어제`를 서버 기본 timezone 기준 어제 00:00 이상, 오늘 00:00 미만으로 변환한다.
+- [x] 상대 기간과 날짜 키워드가 모두 있으면 상대 기간을 우선한다.
+- [x] `Clock`을 생성자 주입받아 테스트에서 현재 시각을 고정할 수 있게 한다.
+
+검증 메모:
+- `backend/src/main/java/com/notio/chat/service/ChatTimeRangeExtractor.java`를 추가했다.
+- 지원 상대 기간은 `(최근|지난)\s*(\d+)\s*(분|시간|일)` 패턴으로 추출하고, `Clock.instant()` 기준 `now - duration <= created_at < now` 범위의 `TimeRange`로 변환한다.
+- `오늘`, `어제`는 `Clock`의 zone, 즉 서버 기본 timezone 기준 날짜 시작 시각으로 변환한다.
+- 상대 기간을 먼저 검사하므로 `최근 5시간 오늘 알림`처럼 상대 기간과 날짜 키워드가 함께 있으면 상대 기간이 우선된다.
+- 기간 표현이 없거나 `부터`, `까지`, `~` 같은 미지원 날짜 범위 표현은 예외 없이 `Optional.empty()`를 반환한다.
+- `backend/src/main/java/com/notio/common/config/ClockConfig.java`에서 `Clock.systemDefaultZone()` 빈을 제공하고, 추출기는 생성자 주입으로 `Clock`을 받는다.
 
 ## Phase 3. RAG 검색 인터페이스 확장
 
