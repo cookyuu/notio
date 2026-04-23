@@ -76,11 +76,11 @@
 
 ## Phase 7. 자동 검증
 
-- [ ] `flutter analyze`를 실행한다.
-- [ ] `flutter test`를 실행한다.
-- [ ] `chat_remote_datasource` 관련 테스트가 있으면 기존 API 계약 기준으로 통과하는지 확인한다.
-- [ ] `chat_repository` 관련 테스트가 local cache/history 흐름을 유지하는지 확인한다.
-- [ ] SSE parser 테스트가 있으면 `chunk`, `done` 형식을 유지하는지 확인한다.
+- [x] `flutter analyze`를 실행한다.
+- [x] `flutter test`를 실행한다.
+- [x] `chat_remote_datasource` 관련 테스트가 있으면 기존 API 계약 기준으로 통과하는지 확인한다.
+- [x] `chat_repository` 관련 테스트가 local cache/history 흐름을 유지하는지 확인한다.
+- [x] SSE parser 테스트가 있으면 `chunk`, `done` 형식을 유지하는지 확인한다.
 
 ## Phase 8. 수동 통합 검증
 

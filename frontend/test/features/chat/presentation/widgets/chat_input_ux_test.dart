@@ -174,7 +174,7 @@ void main() {
     // ---------------------------------------------------------------
 
     group('ChatMessageBubble', () {
-      Widget _wrap(Widget child) => MaterialApp(
+      Widget wrap(Widget child) => MaterialApp(
             home: Scaffold(body: child),
           );
 
@@ -189,7 +189,7 @@ void main() {
           createdAt: DateTime(2026, 4, 23),
         );
 
-        await tester.pumpWidget(_wrap(ChatMessageBubble(message: message)));
+        await tester.pumpWidget(wrap(ChatMessageBubble(message: message)));
         await tester.pumpAndSettle();
 
         expect(find.text(content), findsOneWidget);
@@ -206,7 +206,7 @@ void main() {
           createdAt: DateTime(2026, 4, 23),
         );
 
-        await tester.pumpWidget(_wrap(ChatMessageBubble(message: message)));
+        await tester.pumpWidget(wrap(ChatMessageBubble(message: message)));
         await tester.pumpAndSettle();
 
         expect(find.text(content), findsOneWidget);
@@ -223,7 +223,7 @@ void main() {
           createdAt: DateTime(2026, 4, 23),
         );
 
-        await tester.pumpWidget(_wrap(ChatMessageBubble(message: message)));
+        await tester.pumpWidget(wrap(ChatMessageBubble(message: message)));
         await tester.pumpAndSettle();
 
         expect(find.text(content), findsOneWidget);
@@ -240,7 +240,7 @@ void main() {
           createdAt: DateTime(2026, 4, 23),
         );
 
-        await tester.pumpWidget(_wrap(ChatMessageBubble(message: message)));
+        await tester.pumpWidget(wrap(ChatMessageBubble(message: message)));
         await tester.pumpAndSettle();
 
         expect(find.text(content), findsOneWidget);
