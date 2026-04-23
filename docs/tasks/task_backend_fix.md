@@ -27,12 +27,18 @@
 
 ## Phase 1. 기간 필터 값 타입 추가
 
-- [ ] `com.notio.ai.rag` 또는 `com.notio.chat.service` 하위에 `TimeRange` record를 추가한다.
-- [ ] `TimeRange`는 `Instant startInclusive`, `Instant endExclusive`를 가진다.
-- [ ] `startInclusive`는 필수 값으로 다룬다.
-- [ ] 상대 기간에서도 `endExclusive`에는 추출 시점의 `now`를 명시적으로 넣는다.
-- [ ] SQL 조건 기준을 `created_at >= startInclusive AND created_at < endExclusive`로 통일한다.
-- [ ] 값 타입 위치가 RAG, Chat, Prompt 경계를 불필요하게 순환 참조하지 않는지 확인한다.
+- [x] `com.notio.ai.rag` 또는 `com.notio.chat.service` 하위에 `TimeRange` record를 추가한다.
+- [x] `TimeRange`는 `Instant startInclusive`, `Instant endExclusive`를 가진다.
+- [x] `startInclusive`는 필수 값으로 다룬다.
+- [x] 상대 기간에서도 `endExclusive`에는 추출 시점의 `now`를 명시적으로 넣는다.
+- [x] SQL 조건 기준을 `created_at >= startInclusive AND created_at < endExclusive`로 통일한다.
+- [x] 값 타입 위치가 RAG, Chat, Prompt 경계를 불필요하게 순환 참조하지 않는지 확인한다.
+
+검증 메모:
+- `backend/src/main/java/com/notio/ai/rag/TimeRange.java`에 `TimeRange(Instant startInclusive, Instant endExclusive)` record를 추가했다.
+- record는 Java record의 canonical constructor 기준으로 두 필드를 필수 생성 인자로 가진다. 별도 nullable 완화 코드는 두지 않았다.
+- 기간 값 타입을 `com.notio.ai.rag`에 두어 이후 `RagRetriever`, `PgvectorRagRetriever`, `ChatService`, `PromptBuilder`가 모두 참조하더라도 `chat -> ai.prompt`, `chat -> ai.rag`의 기존 의존 방향을 유지할 수 있다.
+- `endExclusive = now`, `created_at >= startInclusive AND created_at < endExclusive` 규칙은 타입 도입 기준으로 문서화했고, 실제 적용은 이후 Phase 2~4 구현에서 이 타입을 사용해 연결한다.
 
 ## Phase 2. 자연어 기간 추출기 구현
 
