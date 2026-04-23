@@ -1,6 +1,7 @@
 package com.notio.ai.prompt;
 
 import com.notio.ai.rag.RagDocument;
+import com.notio.ai.rag.TimeRange;
 import com.notio.chat.domain.ChatMessage;
 import com.notio.notification.domain.Notification;
 import java.time.LocalDate;
@@ -8,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -32,10 +34,22 @@ public class PromptBuilder {
             final List<RagDocument> documents,
             final List<ChatMessage> recentMessages
     ) {
+        return buildChatPrompt(userMessage, documents, recentMessages, Optional.empty());
+    }
+
+    public LlmPrompt buildChatPrompt(
+            final String userMessage,
+            final List<RagDocument> documents,
+            final List<ChatMessage> recentMessages,
+            final Optional<TimeRange> timeRange
+    ) {
         final String userPrompt = """
                 다음 RAG context와 최근 대화 히스토리를 바탕으로 사용자 질문에 답하라.
-                RAG context가 비어 있으면 현재 검색 가능한 관련 알림이 없다고 명확히 말하라.
+                RAG context가 비어 있으면 %s
                 답변은 한국어로 작성하고 %d자 이하로 제한하라.
+
+                Applied time filter:
+                %s
 
                 RAG context:
                 %s
@@ -46,7 +60,9 @@ public class PromptBuilder {
                 User:
                 %s
                 """.formatted(
+                emptyRagContextInstruction(timeRange),
                 CHAT_RESPONSE_MAX_CHARS,
+                formatAppliedTimeFilter(timeRange),
                 formatRagContext(documents),
                 formatRecentMessages(recentMessages),
                 normalize(userMessage)
@@ -98,6 +114,26 @@ public class PromptBuilder {
                     .append('\n');
         }
         return builder.toString().trim();
+    }
+
+    private String formatAppliedTimeFilter(final Optional<TimeRange> timeRange) {
+        if (timeRange.isEmpty()) {
+            return "- 기간 필터 없음";
+        }
+
+        final TimeRange range = timeRange.get();
+        return """
+                - startInclusive <= notification.created_at < endExclusive
+                - startInclusive: %s
+                - endExclusive: %s
+                """.formatted(range.startInclusive(), range.endExclusive()).trim();
+    }
+
+    private String emptyRagContextInstruction(final Optional<TimeRange> timeRange) {
+        if (timeRange.isPresent()) {
+            return "적용된 기간 조건에 맞는 관련 알림을 찾지 못했다고 명확히 말하라.";
+        }
+        return "현재 검색 가능한 관련 알림이 없다고 명확히 말하라.";
     }
 
     private String formatRecentMessages(final List<ChatMessage> messages) {

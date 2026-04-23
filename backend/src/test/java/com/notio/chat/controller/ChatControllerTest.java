@@ -150,7 +150,7 @@ class ChatControllerTest {
         when(timeRangeExtractor.extract("오늘 중요한 알림 알려줘")).thenReturn(Optional.empty());
         when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of());
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
-        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage)))
+        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage), Optional.empty()))
                 .thenReturn(prompt);
         org.mockito.Mockito.doAnswer(invocation -> {
             final Consumer<String> chunkConsumer = invocation.getArgument(1);

@@ -121,13 +121,22 @@
 
 ## Phase 6. PromptBuilder 기간 정보 반영
 
-- [ ] `PromptBuilder`의 chat prompt 생성 입력에 적용된 기간 조건을 전달할 수 있게 한다.
-- [ ] 기간 조건이 있으면 prompt에 `Applied time filter` 섹션을 포함한다.
-- [ ] 기간 조건이 있으면 `startInclusive <= notification.created_at < endExclusive` 범위를 명시한다.
-- [ ] 기간 조건이 없으면 prompt에 기간 필터 없음 상태를 명시한다.
-- [ ] RAG context의 기존 `created_at` 출력 형식은 유지한다.
-- [ ] RAG context가 비어 있으면 해당 기간 조건에 맞는 관련 알림을 찾지 못했다는 취지로 답하도록 유도한다.
-- [ ] 기본 응답 언어와 기존 system instruction을 유지한다.
+- [x] `PromptBuilder`의 chat prompt 생성 입력에 적용된 기간 조건을 전달할 수 있게 한다.
+- [x] 기간 조건이 있으면 prompt에 `Applied time filter` 섹션을 포함한다.
+- [x] 기간 조건이 있으면 `startInclusive <= notification.created_at < endExclusive` 범위를 명시한다.
+- [x] 기간 조건이 없으면 prompt에 기간 필터 없음 상태를 명시한다.
+- [x] RAG context의 기존 `created_at` 출력 형식은 유지한다.
+- [x] RAG context가 비어 있으면 해당 기간 조건에 맞는 관련 알림을 찾지 못했다는 취지로 답하도록 유도한다.
+- [x] 기본 응답 언어와 기존 system instruction을 유지한다.
+
+검증 메모:
+- `backend/src/main/java/com/notio/ai/prompt/PromptBuilder.java`의 chat prompt 생성 입력에 `Optional<TimeRange>`를 추가하고, 기존 3개 인자 메서드는 `Optional.empty()`로 위임해 기존 호출 호환성을 유지했다.
+- `backend/src/main/java/com/notio/chat/service/ChatService.java`에서 `ChatTimeRangeExtractor`가 추출한 `Optional<TimeRange>`를 `PromptBuilder`에 전달하도록 연결했다.
+- 기간 조건이 있으면 prompt의 `Applied time filter` 섹션에 `startInclusive <= notification.created_at < endExclusive`, `startInclusive`, `endExclusive`를 명시한다.
+- 기간 조건이 없으면 같은 섹션에 `기간 필터 없음`을 명시한다.
+- RAG context의 `created_at: {Instant}` 출력은 기존 `formatRagContext(...)` 경로를 유지해 변경하지 않았다.
+- RAG context가 비어 있고 기간 조건이 있으면 적용된 기간 조건에 맞는 관련 알림을 찾지 못했다고 답하도록 지시한다.
+- 기존 system instruction과 기본 한국어 응답 지침은 유지했다.
 
 ## Phase 7. 단위 테스트 보강
 

@@ -3,6 +3,7 @@ package com.notio.ai.prompt;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.notio.ai.rag.RagDocument;
+import com.notio.ai.rag.TimeRange;
 import com.notio.chat.domain.ChatMessage;
 import com.notio.chat.domain.ChatMessageRole;
 import com.notio.notification.domain.Notification;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -61,10 +63,35 @@ class PromptBuilderTest {
                 .contains("priority: HIGH")
                 .contains("created_at: 2026-04-22T01:00:00Z")
                 .contains("similarity_score: 0.9132")
+                .contains("Applied time filter:")
+                .contains("기간 필터 없음")
                 .contains("- user: 오늘 중요한 알림 알려줘")
                 .contains("- assistant: GitHub 리뷰 요청이 중요합니다.")
                 .contains("답변은 한국어로 작성하고 4000자 이하로 제한하라")
                 .contains("User:\n내가 먼저 처리할 일은?");
+    }
+
+    @Test
+    void buildChatPromptIncludesAppliedTimeFilterWhenPresent() {
+        final TimeRange timeRange = new TimeRange(
+                Instant.parse("2026-04-22T00:00:00Z"),
+                Instant.parse("2026-04-23T00:00:00Z")
+        );
+
+        final LlmPrompt prompt = promptBuilder.buildChatPrompt(
+                "오늘 알림 요약해줘",
+                List.of(),
+                List.of(),
+                Optional.of(timeRange)
+        );
+
+        assertThat(prompt.user())
+                .contains("Applied time filter:")
+                .contains("startInclusive <= notification.created_at < endExclusive")
+                .contains("startInclusive: 2026-04-22T00:00:00Z")
+                .contains("endExclusive: 2026-04-23T00:00:00Z")
+                .contains("적용된 기간 조건에 맞는 관련 알림을 찾지 못했다고 명확히 말하라")
+                .contains("관련 알림 컨텍스트 없음");
     }
 
     @Test

@@ -85,7 +85,7 @@ class ChatServiceTest {
         when(timeRangeExtractor.extract("오늘 중요한 알림 알려줘")).thenReturn(Optional.of(timeRange));
         when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.of(timeRange))).thenReturn(List.of(document));
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
-        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage)))
+        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage), Optional.of(timeRange)))
                 .thenReturn(prompt);
         when(llmProvider.chat(prompt)).thenReturn("GitHub PR 리뷰 요청이 중요합니다.");
 
@@ -96,7 +96,7 @@ class ChatServiceTest {
         assertThat(response.content()).isEqualTo("GitHub PR 리뷰 요청이 중요합니다.");
         verify(timeRangeExtractor).extract("오늘 중요한 알림 알려줘");
         verify(ragRetriever).retrieve(1L, "오늘 중요한 알림 알려줘", Optional.of(timeRange));
-        verify(promptBuilder).buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage));
+        verify(promptBuilder).buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage), Optional.of(timeRange));
         verify(llmProvider).chat(prompt);
         verify(chatMessageRepository, org.mockito.Mockito.times(2)).save(savedMessageCaptor.capture());
         assertThat(savedMessageCaptor.getAllValues())
@@ -142,7 +142,7 @@ class ChatServiceTest {
         when(timeRangeExtractor.extract("오늘 중요한 알림 알려줘")).thenReturn(Optional.empty());
         when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of());
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
-        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage)))
+        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage), Optional.empty()))
                 .thenReturn(prompt);
         org.mockito.Mockito.doAnswer(invocation -> {
             final Consumer<String> chunkConsumer = invocation.getArgument(1);

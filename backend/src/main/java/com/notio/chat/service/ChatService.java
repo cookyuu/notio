@@ -258,7 +258,7 @@ public class ChatService {
                 startedAt,
                 "Chat stream recent history retrieval completed: messages=%d".formatted(recentMessages.size())
         );
-        return promptBuilder.buildChatPrompt(userMessage, documents, recentMessages);
+        return promptBuilder.buildChatPrompt(userMessage, documents, recentMessages, timeRange);
     }
 
     private void logTimed(final String streamId, final Instant startedAt, final String message) {
