@@ -39,15 +39,15 @@
 
 ## Phase 1. 의존성 및 설정 기반 추가
 
-- [ ] `backend/build.gradle.kts`에 `spring-boot-starter-actuator`를 추가한다.
-- [ ] `backend/build.gradle.kts`에 `micrometer-registry-prometheus`를 추가한다.
-- [ ] `application.yml`에 `management.endpoints.web.exposure.include=health,info,prometheus,metrics`를 추가한다.
-- [ ] `application.yml`에 `management.endpoint.health.show-details=never`를 추가한다.
-- [ ] `application.yml`에 `management.prometheus.metrics.export.enabled=true`를 추가한다.
-- [ ] `application-local.yml`과 `application-prod.yml`의 logging/management 정책이 상위 설정과 충돌하지 않도록 정리한다.
-- [ ] `SecurityConfig`에서 `/actuator/health`를 인증 없이 허용한다.
-- [ ] `SecurityConfig`에서 `/actuator/prometheus`를 인증 없이 허용한다.
-- [ ] 기존 인증/웹훅/public auth endpoint 정책이 actuator 추가로 깨지지 않게 유지한다.
+- [x] `backend/build.gradle.kts`에 `spring-boot-starter-actuator`를 추가한다.
+- [x] `backend/build.gradle.kts`에 `micrometer-registry-prometheus`를 추가한다.
+- [x] `application.yml`에 `management.endpoints.web.exposure.include=health,info,prometheus,metrics`를 추가한다.
+- [x] `application.yml`에 `management.endpoint.health.show-details=never`를 추가한다.
+- [x] `application.yml`에 `management.prometheus.metrics.export.enabled=true`를 추가한다.
+- [x] `application-local.yml`과 `application-prod.yml`의 logging/management 정책이 상위 설정과 충돌하지 않도록 정리한다.
+- [x] `SecurityConfig`에서 `/actuator/health`를 인증 없이 허용한다.
+- [x] `SecurityConfig`에서 `/actuator/prometheus`를 인증 없이 허용한다.
+- [x] 기존 인증/웹훅/public auth endpoint 정책이 actuator 추가로 깨지지 않게 유지한다.
 
 상세 가이드:
 - management port는 이번 작업에서 분리하지 않고 애플리케이션 동일 포트에서 노출한다.
