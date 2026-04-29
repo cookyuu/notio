@@ -106,7 +106,7 @@ class ChatServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void streamChatStreamsLlmChunksThenStoresAssistantMessage() {
+    void streamChatExtractsTimeRangeAndStreamsLlmChunksThenStoresAssistantMessage() {
         final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
         final RagRetriever ragRetriever = mock(RagRetriever.class);
         final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
@@ -124,7 +124,7 @@ class ChatServiceTest {
         final ChatMessage userMessage = message(
                 1L,
                 ChatMessageRole.USER,
-                "오늘 중요한 알림 알려줘",
+                "최근 5시간 내의 알림 내역을 요약해줘",
                 OffsetDateTime.of(2026, 4, 22, 10, 0, 0, 0, ZoneOffset.UTC)
         );
         final ChatMessage assistantMessage = message(
@@ -133,16 +133,26 @@ class ChatServiceTest {
                 "GitHub PR 리뷰 요청",
                 OffsetDateTime.of(2026, 4, 22, 10, 0, 1, 0, ZoneOffset.UTC)
         );
+        final TimeRange timeRange = new TimeRange(
+                Instant.parse("2026-04-22T05:00:00Z"),
+                Instant.parse("2026-04-22T10:00:00Z")
+        );
         final LlmPrompt prompt = new LlmPrompt("system", "user");
         final ArgumentCaptor<ChatMessage> savedMessageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
 
         when(chatMessageRepository.save(any(ChatMessage.class)))
                 .thenReturn(userMessage)
                 .thenReturn(assistantMessage);
-        when(timeRangeExtractor.extract("오늘 중요한 알림 알려줘")).thenReturn(Optional.empty());
-        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.empty())).thenReturn(List.of());
+        when(timeRangeExtractor.extract("최근 5시간 내의 알림 내역을 요약해줘")).thenReturn(Optional.of(timeRange));
+        when(ragRetriever.retrieve(1L, "최근 5시간 내의 알림 내역을 요약해줘", Optional.of(timeRange)))
+                .thenReturn(List.of());
         when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
-        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(), List.of(userMessage), Optional.empty()))
+        when(promptBuilder.buildChatPrompt(
+                "최근 5시간 내의 알림 내역을 요약해줘",
+                List.of(),
+                List.of(userMessage),
+                Optional.of(timeRange)
+        ))
                 .thenReturn(prompt);
         org.mockito.Mockito.doAnswer(invocation -> {
             final Consumer<String> chunkConsumer = invocation.getArgument(1);
@@ -151,15 +161,70 @@ class ChatServiceTest {
             return null;
         }).when(llmProvider).stream(eq(prompt), any(Consumer.class));
 
-        chatService.streamChat(new ChatRequest("오늘 중요한 알림 알려줘"));
+        chatService.streamChat(new ChatRequest("최근 5시간 내의 알림 내역을 요약해줘"));
 
         verify(llmProvider, org.mockito.Mockito.timeout(1000)).stream(eq(prompt), any(Consumer.class));
-        verify(timeRangeExtractor).extract("오늘 중요한 알림 알려줘");
+        verify(timeRangeExtractor).extract("최근 5시간 내의 알림 내역을 요약해줘");
+        verify(ragRetriever).retrieve(1L, "최근 5시간 내의 알림 내역을 요약해줘", Optional.of(timeRange));
+        verify(promptBuilder).buildChatPrompt(
+                "최근 5시간 내의 알림 내역을 요약해줘",
+                List.of(),
+                List.of(userMessage),
+                Optional.of(timeRange)
+        );
         verify(chatMessageRepository, org.mockito.Mockito.timeout(1000).times(2)).save(savedMessageCaptor.capture());
         assertThat(savedMessageCaptor.getAllValues())
                 .extracting(ChatMessage::getRole)
                 .containsExactly(ChatMessageRole.USER, ChatMessageRole.ASSISTANT);
         assertThat(savedMessageCaptor.getAllValues().get(1).getContent()).isEqualTo("GitHub PR 리뷰 요청");
+    }
+
+    @Test
+    void chatUsesEmptyTimeRangeWhenQuestionHasNoTimeExpression() {
+        final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
+        final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
+        final PromptBuilder promptBuilder = mock(PromptBuilder.class);
+        final LlmProvider llmProvider = mock(LlmProvider.class);
+        final ChatService chatService = new ChatService(
+                chatMessageRepository,
+                ragRetriever,
+                timeRangeExtractor,
+                promptBuilder,
+                llmProvider,
+                aiProperties(),
+                objectMapper()
+        );
+        final ChatMessage userMessage = message(
+                1L,
+                ChatMessageRole.USER,
+                "중요한 알림 알려줘",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 0, 0, ZoneOffset.UTC)
+        );
+        final ChatMessage assistantMessage = message(
+                2L,
+                ChatMessageRole.ASSISTANT,
+                "중요한 알림이 없습니다.",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 1, 0, ZoneOffset.UTC)
+        );
+        final LlmPrompt prompt = new LlmPrompt("system", "user");
+
+        when(chatMessageRepository.save(any(ChatMessage.class)))
+                .thenReturn(userMessage)
+                .thenReturn(assistantMessage);
+        when(timeRangeExtractor.extract("중요한 알림 알려줘")).thenReturn(Optional.empty());
+        when(ragRetriever.retrieve(1L, "중요한 알림 알려줘", Optional.empty())).thenReturn(List.of());
+        when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
+        when(promptBuilder.buildChatPrompt("중요한 알림 알려줘", List.of(), List.of(userMessage), Optional.empty()))
+                .thenReturn(prompt);
+        when(llmProvider.chat(prompt)).thenReturn("중요한 알림이 없습니다.");
+
+        final ChatMessageResponse response = chatService.chat(new ChatRequest("중요한 알림 알려줘"));
+
+        assertThat(response.content()).isEqualTo("중요한 알림이 없습니다.");
+        verify(timeRangeExtractor).extract("중요한 알림 알려줘");
+        verify(ragRetriever).retrieve(1L, "중요한 알림 알려줘", Optional.empty());
+        verify(promptBuilder).buildChatPrompt("중요한 알림 알려줘", List.of(), List.of(userMessage), Optional.empty());
     }
 
     @Test

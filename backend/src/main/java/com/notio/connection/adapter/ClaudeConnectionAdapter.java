@@ -41,11 +41,11 @@ public class ClaudeConnectionAdapter implements ConnectionProviderAdapter {
         final Map<String, Object> payload = context.payload();
         return new NotificationEvent(
             NotificationSource.CLAUDE,
-            firstNonBlank(WebhookPayloadExtractor.stringValue(payload, "title", "event.title"), "Claude notification"),
-            firstNonBlank(WebhookPayloadExtractor.stringValue(payload, "body", "content", "message", "event.body"), context.rawBody()),
+            firstNonBlank(WebhookPayloadExtractor.stringValue(payload, "title", "notification.title"), "Claude notification"),
+            firstNonBlank(WebhookPayloadExtractor.stringValue(payload, "body", "content", "message", "notification.message"), context.rawBody()),
             safePriority(WebhookPayloadExtractor.stringValue(payload, "priority")),
-            WebhookPayloadExtractor.stringValue(payload, "external_id", "id", "event.id"),
-            WebhookPayloadExtractor.stringValue(payload, "external_url", "url", "event.url"),
+            WebhookPayloadExtractor.stringValue(payload, "external_id", "id", "notification.id"),
+            WebhookPayloadExtractor.stringValue(payload, "external_url", "url", "notification.url"),
             payload
         );
     }

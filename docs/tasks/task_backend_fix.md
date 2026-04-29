@@ -159,15 +159,24 @@
 
 ## Phase 8. RAG 및 ChatService 테스트 보강
 
-- [ ] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 SQL에 `n.created_at >= ?`가 포함되는지 검증한다.
-- [ ] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 SQL에 `n.created_at < ?`가 포함되는지 검증한다.
-- [ ] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 start/end 파라미터가 `JdbcTemplate`에 전달되는지 검증한다.
-- [ ] `PgvectorRagRetrieverTest`에서 기간 조건이 없으면 기존 SQL 조건과 파라미터 순서를 유지하는지 검증한다.
-- [ ] 기존 embedding dimension 검증 테스트를 유지한다.
-- [ ] `ChatServiceTest`에서 streaming chat 기간 표현 질문이 `RagRetriever.retrieve(..., timeRange)`를 호출하는지 검증한다.
-- [ ] `ChatServiceTest`에서 non-streaming chat도 동일하게 기간 조건을 전달하는지 검증한다.
-- [ ] `ChatServiceTest`에서 기간 표현이 없으면 `Optional.empty()`로 RAG 검색하는지 검증한다.
-- [ ] 기존 LLM streaming chunk 누적과 assistant message 저장 동작 테스트를 유지한다.
+- [x] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 SQL에 `n.created_at >= ?`가 포함되는지 검증한다.
+- [x] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 SQL에 `n.created_at < ?`가 포함되는지 검증한다.
+- [x] `PgvectorRagRetrieverTest`에서 기간 조건이 있으면 start/end 파라미터가 `JdbcTemplate`에 전달되는지 검증한다.
+- [x] `PgvectorRagRetrieverTest`에서 기간 조건이 없으면 기존 SQL 조건과 파라미터 순서를 유지하는지 검증한다.
+- [x] 기존 embedding dimension 검증 테스트를 유지한다.
+- [x] `ChatServiceTest`에서 streaming chat 기간 표현 질문이 `RagRetriever.retrieve(..., timeRange)`를 호출하는지 검증한다.
+- [x] `ChatServiceTest`에서 non-streaming chat도 동일하게 기간 조건을 전달하는지 검증한다.
+- [x] `ChatServiceTest`에서 기간 표현이 없으면 `Optional.empty()`로 RAG 검색하는지 검증한다.
+- [x] 기존 LLM streaming chunk 누적과 assistant message 저장 동작 테스트를 유지한다.
+
+검증 메모:
+- `backend/src/test/java/com/notio/ai/rag/PgvectorRagRetrieverTest.java`의 `retrieveAddsCreatedAtRangeWhenTimeRangeExists()`에서 기간 조건 SQL(`AND n.created_at >= ?`, `AND n.created_at < ?`)과 `Timestamp.from(startInclusive)`, `Timestamp.from(endExclusive)` 파라미터 전달을 검증한다.
+- 같은 테스트 파일의 `retrieveEmbedsQuestionAndSearchesUserScopedActiveNotifications()`에서 기간 조건이 없을 때 `created_at` 조건이 추가되지 않고 기존 `JdbcTemplate` 파라미터 순서가 유지되는지 검증한다.
+- 기존 `retrieveRejectsUnexpectedEmbeddingDimension()` 테스트를 유지해 embedding dimension 검증을 보존했다.
+- `backend/src/test/java/com/notio/chat/service/ChatServiceTest.java`의 `streamChatExtractsTimeRangeAndStreamsLlmChunksThenStoresAssistantMessage()`에서 streaming chat이 기간 표현 질문에 대해 `RagRetriever.retrieve(..., Optional.of(timeRange))`와 `PromptBuilder` 기간 전달을 수행하고, LLM chunk 누적 후 assistant message를 저장하는지 검증한다.
+- 같은 테스트 파일의 `chatUsesRagPromptAndLlmThenStoresAssistantResponse()`에서 non-streaming chat도 `Optional.of(timeRange)`를 전달하는지 검증한다.
+- 같은 테스트 파일의 `chatUsesEmptyTimeRangeWhenQuestionHasNoTimeExpression()`에서 기간 표현 없는 질문이 `Optional.empty()`로 RAG 검색되는지 검증한다.
+- 검증 명령: `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew test --tests com.notio.ai.rag.PgvectorRagRetrieverTest --tests com.notio.chat.service.ChatServiceTest` 통과.
 
 ## Phase 9. PromptBuilder 테스트 보강
 

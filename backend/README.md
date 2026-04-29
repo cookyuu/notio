@@ -44,10 +44,30 @@ backend/
 
 ### 사전 요구사항
 
-- Java 25
-- Docker (PostgreSQL, Redis, Ollama)
+- Docker
+- Java 25 (로컬에서 직접 실행할 때만 필요)
 
 ### 설치 및 실행
+
+1. **Docker 이미지로 백엔드 실행**
+```bash
+# 루트 디렉토리에서
+docker compose -f docker-compose/docker-compose.yml up -d --build notio-backend
+```
+
+2. **로그 확인**
+```bash
+docker compose -f docker-compose/docker-compose.yml logs -f notio-backend
+```
+
+3. **종료**
+```bash
+docker compose -f docker-compose/docker-compose.yml down
+```
+
+### 로컬 JVM으로 직접 실행
+
+IntelliJ 디버깅이나 로컬 JVM 확인이 필요할 때만 사용합니다.
 
 1. **환경 변수 설정**
 ```bash
@@ -56,10 +76,10 @@ cp ../.env.example ../.env
 # .env 파일 수정
 ```
 
-2. **Docker 서비스 시작**
+2. **의존 서비스 시작**
 ```bash
 cd ..
-docker-compose up -d
+docker compose -f docker-compose/docker-compose.yml up -d postgres redis ollama
 ```
 
 3. **애플리케이션 실행**
