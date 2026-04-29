@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="notio-backend" />
+
+    <property name="TEXT_PATTERN"
+              value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %logger{36} app=${appName} correlation_id=%X{correlation_id:-} event=%X{event:-} outcome=%X{outcome:-} route=%X{route:-} http_method=%X{http_method:-} - %msg%n%wEx" />
+
+    <springProfile name="!prod">
+        <appender name="CONSOLE_TEXT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>${TEXT_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_TEXT" />
+        </root>
+    </springProfile>
+
+    <springProfile name="prod">
+        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <timestamp>
+                        <fieldName>timestamp</fieldName>
+                    </timestamp>
+                    <logLevel>
+                        <fieldName>level</fieldName>
+                    </logLevel>
+                    <loggerName>
+                        <fieldName>logger</fieldName>
+                    </loggerName>
+                    <threadName>
+                        <fieldName>thread</fieldName>
+                    </threadName>
+                    <pattern>
+                        <pattern>
+                            {
+                              "app":"${appName}",
+                              "correlation_id":"%mdc{correlation_id:-}",
+                              "event":"%mdc{event:-}",
+                              "outcome":"%mdc{outcome:-}",
+                              "route":"%mdc{route:-}",
+                              "http_method":"%mdc{http_method:-}"
+                            }
+                        </pattern>
+                    </pattern>
+                    <mdc>
+                        <excludeMdcKeyName>correlation_id</excludeMdcKeyName>
+                        <excludeMdcKeyName>event</excludeMdcKeyName>
+                        <excludeMdcKeyName>outcome</excludeMdcKeyName>
+                        <excludeMdcKeyName>route</excludeMdcKeyName>
+                        <excludeMdcKeyName>http_method</excludeMdcKeyName>
+                    </mdc>
+                    <message>
+                        <fieldName>message</fieldName>
+                    </message>
+                    <stackTrace>
+                        <fieldName>stack_trace</fieldName>
+                    </stackTrace>
+                </providers>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON" />
+        </root>
+    </springProfile>
+</configuration>

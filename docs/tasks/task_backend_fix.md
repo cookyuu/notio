@@ -101,13 +101,13 @@
 
 ## Phase 3. logback 및 로그 포맷 표준화
 
-- [ ] `logback-spring.xml`을 추가한다.
-- [ ] `prod` 프로필에서 JSON 구조화 로그를 출력하도록 설정한다.
-- [ ] `local/dev` 프로필에서 사람이 읽기 쉬운 텍스트 로그를 출력하도록 설정한다.
-- [ ] 두 포맷 모두 `correlation_id`를 포함한다.
-- [ ] 두 포맷 모두 `event`, `outcome`, `route`, `http_method` 등 핵심 필드를 포함한다.
-- [ ] stacktrace는 `ERROR`/`WARN` 정책에 맞게 JSON에서도 읽기 가능한 필드로 남긴다.
-- [ ] logger level 설정이 `application.yml`, `application-local.yml`, `application-prod.yml`과 충돌하지 않게 정리한다.
+- [x] `logback-spring.xml`을 추가한다.
+- [x] `prod` 프로필에서 JSON 구조화 로그를 출력하도록 설정한다.
+- [x] `local/dev` 프로필에서 사람이 읽기 쉬운 텍스트 로그를 출력하도록 설정한다.
+- [x] 두 포맷 모두 `correlation_id`를 포함한다.
+- [x] 두 포맷 모두 `event`, `outcome`, `route`, `http_method` 등 핵심 필드를 포함한다.
+- [x] stacktrace는 `ERROR`/`WARN` 정책에 맞게 JSON에서도 읽기 가능한 필드로 남긴다.
+- [x] logger level 설정이 `application.yml`, `application-local.yml`, `application-prod.yml`과 충돌하지 않게 정리한다.
 
 상세 가이드:
 - `prod` JSON 구조화 로그는 Grafana/Loki/Promtail 계열 적재를 전제로 한다.

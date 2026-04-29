@@ -58,6 +58,8 @@ class RequestCorrelationFilterTest {
         assertThat(startedEvent.getLevel()).isEqualTo(Level.INFO);
         assertThat(startedEvent.getFormattedMessage()).contains("event=request_started");
         assertThat(startedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.CORRELATION_ID_KEY, "corr-123");
+        assertThat(startedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.EVENT_KEY, "request_started");
+        assertThat(startedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.OUTCOME_KEY, "started");
         assertThat(startedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.ROUTE_KEY, "/api/v1/notifications");
         assertThat(startedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.HTTP_METHOD_KEY, "GET");
 
@@ -66,9 +68,14 @@ class RequestCorrelationFilterTest {
         assertThat(completedEvent.getFormattedMessage()).contains("status=200");
         assertThat(completedEvent.getFormattedMessage()).contains("authenticated=true");
         assertThat(completedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.CORRELATION_ID_KEY, "corr-123");
+        assertThat(completedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.EVENT_KEY, "request_completed");
+        assertThat(completedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.OUTCOME_KEY, "success");
         assertThat(completedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.ROUTE_KEY, "/api/v1/notifications");
         assertThat(completedEvent.getMDCPropertyMap()).containsEntry(RequestCorrelationFilter.HTTP_METHOD_KEY, "GET");
-        assertThat(completedEvent.getMDCPropertyMap()).isEqualTo(startedEvent.getMDCPropertyMap());
+        assertThat(completedEvent.getMDCPropertyMap())
+                .containsEntry(RequestCorrelationFilter.CORRELATION_ID_KEY, startedEvent.getMDCPropertyMap().get(RequestCorrelationFilter.CORRELATION_ID_KEY))
+                .containsEntry(RequestCorrelationFilter.ROUTE_KEY, startedEvent.getMDCPropertyMap().get(RequestCorrelationFilter.ROUTE_KEY))
+                .containsEntry(RequestCorrelationFilter.HTTP_METHOD_KEY, startedEvent.getMDCPropertyMap().get(RequestCorrelationFilter.HTTP_METHOD_KEY));
     }
 
     @Test

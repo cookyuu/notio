@@ -25,6 +25,8 @@ public class RequestCorrelationFilter extends OncePerRequestFilter {
 
     static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
     static final String CORRELATION_ID_KEY = "correlation_id";
+    static final String EVENT_KEY = "event";
+    static final String OUTCOME_KEY = "outcome";
     static final String ROUTE_KEY = "route";
     static final String HTTP_METHOD_KEY = "http_method";
 
@@ -46,23 +48,16 @@ public class RequestCorrelationFilter extends OncePerRequestFilter {
         MDC.put(HTTP_METHOD_KEY, httpMethod);
         response.setHeader(CORRELATION_ID_HEADER, correlationId);
 
-        log.info(
-                "event=request_started client_ip={} user_agent={}",
-                resolveClientIp(request),
-                request.getHeader("User-Agent")
-        );
+        logRequestStarted(request);
 
         try {
             filterChain.doFilter(request, response);
         } finally {
-            log.info(
-                    "event=request_completed status={} elapsed_ms={} authenticated={}",
-                    response.getStatus(),
-                    System.currentTimeMillis() - startedAt,
-                    isAuthenticated()
-            );
+            logRequestCompleted(response, startedAt);
             MDC.remove(HTTP_METHOD_KEY);
             MDC.remove(ROUTE_KEY);
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
             MDC.remove(CORRELATION_ID_KEY);
         }
     }
@@ -103,5 +98,49 @@ public class RequestCorrelationFilter extends OncePerRequestFilter {
         return authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken);
+    }
+
+    private void logRequestStarted(final HttpServletRequest request) {
+        putEventContext("request_started", "started");
+        try {
+            log.info(
+                    "event=request_started client_ip={} user_agent={}",
+                    resolveClientIp(request),
+                    request.getHeader("User-Agent")
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logRequestCompleted(final HttpServletResponse response, final long startedAt) {
+        putEventContext("request_completed", resolveOutcome(response.getStatus()));
+        try {
+            log.info(
+                    "event=request_completed status={} elapsed_ms={} authenticated={}",
+                    response.getStatus(),
+                    System.currentTimeMillis() - startedAt,
+                    isAuthenticated()
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void putEventContext(final String event, final String outcome) {
+        MDC.put(EVENT_KEY, event);
+        MDC.put(OUTCOME_KEY, outcome);
+    }
+
+    private String resolveOutcome(final int status) {
+        if (status >= 500) {
+            return "error";
+        }
+        if (status >= 400) {
+            return "failure";
+        }
+        return "success";
     }
 }
