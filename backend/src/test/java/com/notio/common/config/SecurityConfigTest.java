@@ -1,6 +1,7 @@
 package com.notio.common.config;
 
 import com.notio.auth.filter.JwtAuthenticationFilter;
+import com.notio.common.logging.RequestCorrelationFilter;
 import com.notio.common.ratelimit.RateLimitFilter;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ class SecurityConfigTest {
                 new CorsProperties(List.of("http://localhost:[*]", "http://127.0.0.1:[*]"));
         final SecurityConfig securityConfig = new SecurityConfig(
                 mock(JwtAuthenticationFilter.class),
+                mock(RequestCorrelationFilter.class),
                 mock(RateLimitFilter.class),
                 corsProperties
         );

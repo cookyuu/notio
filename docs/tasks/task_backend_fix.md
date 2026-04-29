@@ -62,17 +62,17 @@
 
 ## Phase 2. 공통 correlation filter 및 MDC 표준화
 
-- [ ] `/api/v1/**` 요청에 적용되는 공통 `OncePerRequestFilter`를 추가한다.
-- [ ] 요청 헤더 `X-Correlation-Id`가 있으면 해당 값을 그대로 사용한다.
-- [ ] 요청 헤더가 없으면 서버가 새로운 `correlation_id`를 생성한다.
-- [ ] 생성 또는 재사용한 `correlation_id`를 MDC에 저장한다.
-- [ ] `route`, `http_method`를 MDC 또는 공통 로그 필드로 저장한다.
-- [ ] 응답 헤더에 `X-Correlation-Id`를 설정한다.
-- [ ] 요청 시작 시 `event=request_started` 로그를 남긴다.
-- [ ] 요청 완료 시 `event=request_completed` 로그를 남긴다.
-- [ ] 완료 로그에 `status`, `elapsed_ms`, `authenticated`를 포함한다.
-- [ ] 예외 발생 여부와 관계없이 `finally`에서 MDC를 정리한다.
-- [ ] `/api/v1/**` 외 경로에 대한 필터 적용 범위를 명확히 제한한다.
+- [x] `/api/v1/**` 요청에 적용되는 공통 `OncePerRequestFilter`를 추가한다.
+- [x] 요청 헤더 `X-Correlation-Id`가 있으면 해당 값을 그대로 사용한다.
+- [x] 요청 헤더가 없으면 서버가 새로운 `correlation_id`를 생성한다.
+- [x] 생성 또는 재사용한 `correlation_id`를 MDC에 저장한다.
+- [x] `route`, `http_method`를 MDC 또는 공통 로그 필드로 저장한다.
+- [x] 응답 헤더에 `X-Correlation-Id`를 설정한다.
+- [x] 요청 시작 시 `event=request_started` 로그를 남긴다.
+- [x] 요청 완료 시 `event=request_completed` 로그를 남긴다.
+- [x] 완료 로그에 `status`, `elapsed_ms`, `authenticated`를 포함한다.
+- [x] 예외 발생 여부와 관계없이 `finally`에서 MDC를 정리한다.
+- [x] `/api/v1/**` 외 경로에 대한 필터 적용 범위를 명확히 제한한다.
 
 상세 가이드:
 - filter 이름은 `RequestCorrelationFilter` 또는 같은 의도를 명확히 드러내는 이름으로 둔다.

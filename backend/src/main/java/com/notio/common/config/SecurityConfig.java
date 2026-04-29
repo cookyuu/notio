@@ -1,6 +1,7 @@
 package com.notio.common.config;
 
 import com.notio.auth.filter.JwtAuthenticationFilter;
+import com.notio.common.logging.RequestCorrelationFilter;
 import com.notio.common.ratelimit.RateLimitFilter;
 import com.notio.common.ratelimit.RateLimitProperties;
 import jakarta.servlet.DispatcherType;
@@ -25,6 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RequestCorrelationFilter requestCorrelationFilter;
     private final RateLimitFilter rateLimitFilter;
     private final CorsProperties corsProperties;
 
@@ -55,7 +57,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/webhook/**").permitAll()
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(requestCorrelationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(jwtAuthenticationFilter, RequestCorrelationFilter.class)
                 .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class)
                 .build();
     }
