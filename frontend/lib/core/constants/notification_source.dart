@@ -1,6 +1,7 @@
 /// Notification source enum
 enum NotificationSource {
   claude,
+  codex,
   slack,
   github,
   gmail,
@@ -11,6 +12,8 @@ extension NotificationSourceExtension on NotificationSource {
     switch (this) {
       case NotificationSource.claude:
         return 'Claude';
+      case NotificationSource.codex:
+        return 'Codex';
       case NotificationSource.slack:
         return 'Slack';
       case NotificationSource.github:
@@ -24,6 +27,8 @@ extension NotificationSourceExtension on NotificationSource {
     switch (this) {
       case NotificationSource.claude:
         return 'CLAUDE';
+      case NotificationSource.codex:
+        return 'CODEX';
       case NotificationSource.slack:
         return 'SLACK';
       case NotificationSource.github:
@@ -37,6 +42,8 @@ extension NotificationSourceExtension on NotificationSource {
     switch (value.toUpperCase()) {
       case 'CLAUDE':
         return NotificationSource.claude;
+      case 'CODEX':
+        return NotificationSource.codex;
       case 'SLACK':
         return NotificationSource.slack;
       case 'GITHUB':

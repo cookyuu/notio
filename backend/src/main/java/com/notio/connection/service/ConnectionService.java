@@ -173,7 +173,7 @@ public class ConnectionService {
 
     private ConnectionAuthType defaultAuthType(final ConnectionProvider provider) {
         return switch (provider) {
-            case CLAUDE -> ConnectionAuthType.API_KEY;
+            case CLAUDE, CODEX -> ConnectionAuthType.API_KEY;
             case SLACK, GMAIL -> ConnectionAuthType.OAUTH;
             case GITHUB, DISCORD, JIRA, LINEAR, TEAMS -> ConnectionAuthType.SIGNATURE;
         };

@@ -5,6 +5,7 @@ import com.notio.common.exception.NotioException;
 
 public enum NotificationSource {
     CLAUDE,
+    CODEX,
     SLACK,
     GITHUB,
     GMAIL,

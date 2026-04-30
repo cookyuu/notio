@@ -2,6 +2,7 @@ package com.notio.connection.domain;
 
 public enum ConnectionProvider {
     CLAUDE,
+    CODEX,
     SLACK,
     GMAIL,
     GITHUB,

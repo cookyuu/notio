@@ -31,6 +31,7 @@ class _CreateConnectionSheetState extends ConsumerState<CreateConnectionSheet> {
   Map<ConnectionProvider, List<ConnectionAuthType>> _getSupportedAuthTypes() {
     return {
       ConnectionProvider.claude: [ConnectionAuthType.apiKey],
+      ConnectionProvider.codex: [ConnectionAuthType.apiKey],
       ConnectionProvider.slack: [ConnectionAuthType.oauth],
       ConnectionProvider.gmail: [ConnectionAuthType.oauth],
       ConnectionProvider.github: [ConnectionAuthType.oauth],
@@ -312,6 +313,8 @@ class _CreateConnectionSheetState extends ConsumerState<CreateConnectionSheet> {
     switch (provider) {
       case ConnectionProvider.claude:
         return 'Claude';
+      case ConnectionProvider.codex:
+        return 'Codex';
       case ConnectionProvider.slack:
         return 'Slack';
       case ConnectionProvider.gmail:

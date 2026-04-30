@@ -3,7 +3,7 @@
     <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="notio-backend" />
 
     <property name="TEXT_PATTERN"
-              value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %logger{36} app=${appName} correlation_id=%X{correlation_id:-} event=%X{event:-} outcome=%X{outcome:-} route=%X{route:-} http_method=%X{http_method:-} - %msg%n%wEx" />
+              value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %logger{36} app=${appName} correlation_id=%X{correlation_id:-} event=%X{event:-} outcome=%X{outcome:-} route=%X{route:-} http_method=%X{http_method:-} - %msg%n%xEx" />
 
     <springProfile name="!prod">
         <appender name="CONSOLE_TEXT" class="ch.qos.logback.core.ConsoleAppender">

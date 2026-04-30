@@ -2,6 +2,7 @@
 /// Backend는 UPPER_SNAKE_CASE를 사용하지만 Dart enum은 camelCase를 사용
 enum ConnectionProvider {
   claude('CLAUDE'),
+  codex('CODEX'),
   slack('SLACK'),
   gmail('GMAIL'),
   github('GITHUB'),

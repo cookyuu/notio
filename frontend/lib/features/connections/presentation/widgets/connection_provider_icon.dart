@@ -10,6 +10,8 @@ class ConnectionProviderIcon {
     switch (provider) {
       case ConnectionProvider.claude:
         return Icons.smart_toy_outlined;
+      case ConnectionProvider.codex:
+        return Icons.terminal_outlined;
       case ConnectionProvider.slack:
         return Icons.chat_bubble_outline;
       case ConnectionProvider.gmail:
@@ -31,6 +33,8 @@ class ConnectionProviderIcon {
     switch (provider) {
       case ConnectionProvider.claude:
         return AppColors.primary;
+      case ConnectionProvider.codex:
+        return AppColors.srcCodex;
       case ConnectionProvider.slack:
         return const Color(0xFFE01E5A);
       case ConnectionProvider.gmail:

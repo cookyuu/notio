@@ -36,6 +36,7 @@ class AppColors {
 
   // Source colors
   static const Color srcClaude = Color(0xFFA78BFA);
+  static const Color srcCodex = Color(0xFF22C55E);
   static const Color srcSlack = Color(0xFFFB923C);
   static const Color srcGithub = Color(0xFF94A3B8);
   static const Color srcGmail = Color(0xFFF87171);
@@ -52,6 +53,7 @@ class AppColors {
   static const Color textSecondary = text2;
   static const Color textTertiary = text3;
   static const Color claudeBadge = srcClaude;
+  static const Color codexBadge = srcCodex;
   static const Color slackBadge = srcSlack;
   static const Color githubBadge = srcGithub;
   static const Color gmailBadge = srcGmail;

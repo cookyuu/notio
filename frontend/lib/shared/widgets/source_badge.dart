@@ -19,6 +19,8 @@ class SourceBadge extends StatelessWidget {
     switch (source) {
       case NotificationSource.claude:
         return AppColors.claudeBadge;
+      case NotificationSource.codex:
+        return AppColors.codexBadge;
       case NotificationSource.slack:
         return AppColors.slackBadge;
       case NotificationSource.github:
@@ -32,6 +34,8 @@ class SourceBadge extends StatelessWidget {
     switch (source) {
       case NotificationSource.claude:
         return Icons.auto_awesome;
+      case NotificationSource.codex:
+        return Icons.terminal;
       case NotificationSource.slack:
         return Icons.tag;
       case NotificationSource.github:

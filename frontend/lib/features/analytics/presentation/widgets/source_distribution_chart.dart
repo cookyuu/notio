@@ -181,6 +181,8 @@ class _SourceDistributionChartState extends State<SourceDistributionChart> {
     switch (source) {
       case NotificationSource.claude:
         return AppColors.claudeBadge;
+      case NotificationSource.codex:
+        return AppColors.codexBadge;
       case NotificationSource.slack:
         return AppColors.slackBadge;
       case NotificationSource.github:

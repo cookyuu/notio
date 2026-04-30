@@ -71,6 +71,7 @@ public class WebhookDispatcher {
     private ConnectionProvider providerFrom(final NotificationSource source) {
         return switch (source) {
             case CLAUDE -> ConnectionProvider.CLAUDE;
+            case CODEX -> ConnectionProvider.CODEX;
             case SLACK -> ConnectionProvider.SLACK;
             case GMAIL -> ConnectionProvider.GMAIL;
             case GITHUB -> ConnectionProvider.GITHUB;
