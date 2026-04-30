@@ -15,10 +15,12 @@ import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
 import com.notio.notification.dto.NotificationSummaryResponse;
 import com.notio.notification.embedding.NotificationEmbeddingService;
+import com.notio.notification.metrics.NotificationFlowMetrics;
 import com.notio.notification.repository.NotificationRepository;
 import com.notio.notification.repository.NotificationSummaryProjection;
 import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -59,16 +61,19 @@ class NotificationServiceTest {
     @Mock
     private NotificationEmbeddingService notificationEmbeddingService;
 
+    private SimpleMeterRegistry meterRegistry;
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
         notificationService = new NotificationService(
                 notificationRepository,
                 new ObjectMapper(),
                 pushService,
                 cacheManager,
-                notificationEmbeddingService
+                notificationEmbeddingService,
+                new NotificationFlowMetrics(meterRegistry)
         );
         lenient().when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
         lenient().when(cacheManager.getCache("dailySummary")).thenReturn(dailySummaryCache);
@@ -108,6 +113,14 @@ class NotificationServiceTest {
         verify(notificationEmbeddingService).embedNotification(saved);
         verify(pushService).sendPush(saved.getId(), saved.getUserId());
         verify(dailySummaryCache).evict(event.userId() + ":" + LocalDate.now(ZoneId.of("Asia/Seoul")));
+        assertThat(meterRegistry.get("notio_notifications_created_total")
+                .tag("source", "slack")
+                .counter()
+                .count()).isEqualTo(1.0d);
+        assertThat(meterRegistry.get("notio_notification_embedding_total")
+                .tag("outcome", "success")
+                .counter()
+                .count()).isEqualTo(1.0d);
     }
 
     @Test
@@ -146,6 +159,10 @@ class NotificationServiceTest {
         verify(notificationEmbeddingService).embedNotification(saved);
         verify(dailySummaryCache).evict(event.userId() + ":" + LocalDate.now(ZoneId.of("Asia/Seoul")));
         verify(pushService).sendPush(saved.getId(), saved.getUserId());
+        assertThat(meterRegistry.get("notio_notification_embedding_total")
+                .tag("outcome", "failure")
+                .counter()
+                .count()).isEqualTo(1.0d);
     }
 
     @Test

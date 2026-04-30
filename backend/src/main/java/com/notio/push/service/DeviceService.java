@@ -38,7 +38,7 @@ public class DeviceService {
             Device device = existingDevice.get();
             device.updateToken(fcmToken);
             device.activate();
-            log.info("Device token updated: deviceId={}, fcmToken={}", deviceId, fcmToken);
+            log.info("event=device_updated device_id={} platform={} active=true", deviceId, device.getPlatform());
             return device;
         }
 
@@ -53,7 +53,7 @@ public class DeviceService {
             .build();
 
         Device saved = deviceRepository.save(newDevice);
-        log.info("New device registered: id={}, deviceId={}, platform={}",
+        log.info("event=device_registered id={}, device_id={}, platform={}",
             saved.getId(), deviceId, platform);
 
         return saved;
@@ -66,7 +66,7 @@ public class DeviceService {
     public void deactivate(String deviceId) {
         deviceRepository.findByDeviceId(deviceId).ifPresent(device -> {
             device.deactivate();
-            log.info("Device deactivated: deviceId={}", deviceId);
+            log.info("event=device_deactivated device_id={}", deviceId);
         });
     }
 }

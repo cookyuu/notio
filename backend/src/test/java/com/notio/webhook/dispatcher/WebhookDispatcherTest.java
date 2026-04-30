@@ -3,6 +3,9 @@ package com.notio.webhook.dispatcher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.notio.common.exception.NotioException;
 import com.notio.connection.adapter.ConnectionProviderAdapter;
 import com.notio.connection.adapter.ConnectionProviderAdapterRegistry;
@@ -17,6 +20,7 @@ import com.notio.webhook.dto.WebhookRequestContext;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 
 class WebhookDispatcherTest {
@@ -37,17 +41,31 @@ class WebhookDispatcherTest {
                 List.of(),
                 new ConnectionProviderAdapterRegistry(List.of(new TestAdapter(event, true)))
         );
+        final Logger logger = (Logger) LoggerFactory.getLogger(WebhookDispatcher.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
 
-        final WebhookDispatchResult result = dispatcher.dispatch(new WebhookRequestContext(
-                NotificationSource.SLACK,
-                new HttpHeaders(),
-                "{\"text\":\"hello\"}",
-                Map.of("text", "hello")
-        ));
+        final WebhookDispatchResult result;
+        try {
+            result = dispatcher.dispatch(new WebhookRequestContext(
+                    NotificationSource.SLACK,
+                    new HttpHeaders(),
+                    "{\"text\":\"hello\"}",
+                    Map.of("text", "hello")
+            ));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
 
         assertThat(result.event().title()).isEqualTo(event.title());
         assertThat(result.event().userId()).isEqualTo(10L);
         assertThat(result.event().connectionId()).isEqualTo(20L);
+        assertThat(appender.list)
+            .extracting(ILoggingEvent::getFormattedMessage)
+            .anySatisfy(message -> assertThat(message).contains("event=webhook_authenticated"))
+            .anySatisfy(message -> assertThat(message).contains("event=webhook_event_mapped"));
     }
 
     @Test
@@ -57,14 +75,27 @@ class WebhookDispatcherTest {
                 List.of(),
                 new ConnectionProviderAdapterRegistry(List.of(new TestAdapter(null, false)))
         );
+        final Logger logger = (Logger) LoggerFactory.getLogger(WebhookDispatcher.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
 
-        assertThatThrownBy(() -> dispatcher.dispatch(new WebhookRequestContext(
-                NotificationSource.SLACK,
-                new HttpHeaders(),
-                "{}",
-                Map.of()
-        ))).isInstanceOf(NotioException.class)
-                .hasMessage("Webhook 서명 검증에 실패했습니다.");
+        try {
+            assertThatThrownBy(() -> dispatcher.dispatch(new WebhookRequestContext(
+                    NotificationSource.SLACK,
+                    new HttpHeaders(),
+                    "{}",
+                    Map.of()
+            ))).isInstanceOf(NotioException.class)
+                    .hasMessage("Webhook 서명 검증에 실패했습니다.");
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+
+        assertThat(appender.list)
+            .extracting(ILoggingEvent::getFormattedMessage)
+            .anySatisfy(message -> assertThat(message).contains("event=webhook_rejected"));
     }
 
     private record TestAdapter(NotificationEvent event, boolean authenticated) implements ConnectionProviderAdapter {

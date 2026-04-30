@@ -220,18 +220,18 @@
 
 ## Phase 7. Webhook / Connection / Notification / Push 로그 및 메트릭
 
-- [ ] `WebhookController`에 `event=webhook_received` 로그를 추가한다.
-- [ ] webhook 수신 로그에 `source`, `provider`, `payload_size`, `correlation_id`를 포함한다.
-- [ ] `WebhookDispatcher`에 인증 완료 로그 `event=webhook_authenticated`를 추가한다.
-- [ ] `WebhookDispatcher` 또는 변환 계층에 `event=webhook_event_mapped` 로그를 추가한다.
-- [ ] webhook 처리 완료 시 `event=webhook_processed` 로그를 남긴다.
-- [ ] webhook 거부/검증 실패 시 `event=webhook_rejected` 로그를 남긴다.
-- [ ] `ConnectionService`의 이벤트 저장 vocabulary와 운영 로그 vocabulary를 맞춘다.
-- [ ] `NotificationService`의 생성 성공 로그를 `event=notification_created` 기준으로 정리한다.
-- [ ] notification embedding 실패 로그를 `event=notification_embedding_failed`로 정리한다.
-- [ ] push 발송 시작/성공/실패 로그를 표준화한다.
-- [ ] `PushService`와 `DeviceService` 로그에서 FCM token을 제거한다.
-- [ ] webhook / notification / push 관련 Prometheus counter/timer를 추가한다.
+- [x] `WebhookController`에 `event=webhook_received` 로그를 추가한다.
+- [x] webhook 수신 로그에 `source`, `provider`, `payload_size`, `correlation_id`를 포함한다.
+- [x] `WebhookDispatcher`에 인증 완료 로그 `event=webhook_authenticated`를 추가한다.
+- [x] `WebhookDispatcher` 또는 변환 계층에 `event=webhook_event_mapped` 로그를 추가한다.
+- [x] webhook 처리 완료 시 `event=webhook_processed` 로그를 남긴다.
+- [x] webhook 거부/검증 실패 시 `event=webhook_rejected` 로그를 남긴다.
+- [x] `ConnectionService`의 이벤트 저장 vocabulary와 운영 로그 vocabulary를 맞춘다.
+- [x] `NotificationService`의 생성 성공 로그를 `event=notification_created` 기준으로 정리한다.
+- [x] notification embedding 실패 로그를 `event=notification_embedding_failed`로 정리한다.
+- [x] push 발송 시작/성공/실패 로그를 표준화한다.
+- [x] `PushService`와 `DeviceService` 로그에서 FCM token을 제거한다.
+- [x] webhook / notification / push 관련 Prometheus counter/timer를 추가한다.
 
 상세 가이드:
 - webhook 계층은 하나의 `correlation_id`로 `receive -> authenticate -> map -> save -> push`까지 추적할 수 있어야 한다.

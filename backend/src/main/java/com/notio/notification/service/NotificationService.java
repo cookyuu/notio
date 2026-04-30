@@ -9,6 +9,7 @@ import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationSource;
 import com.notio.notification.dto.NotificationSummaryResponse;
 import com.notio.notification.embedding.NotificationEmbeddingService;
+import com.notio.notification.metrics.NotificationFlowMetrics;
 import com.notio.notification.repository.NotificationRepository;
 import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
@@ -42,6 +43,7 @@ public class NotificationService {
     private final PushService pushService;
     private final CacheManager cacheManager;
     private final NotificationEmbeddingService notificationEmbeddingService;
+    private final NotificationFlowMetrics notificationFlowMetrics;
 
     /**
      * Webhook 이벤트로부터 알림 생성.
@@ -92,15 +94,28 @@ public class NotificationService {
             .build();
 
         Notification saved = notificationRepository.save(notification);
-        log.info("Notification created: id={}, userId={}, connectionId={}, source={}, title={}",
-            saved.getId(), saved.getUserId(), saved.getConnectionId(), saved.getSource(), saved.getTitle());
+        log.info(
+            "event=notification_created notification_id={} user_id={} connection_id={} source={} outcome=success",
+            saved.getId(),
+            saved.getUserId(),
+            saved.getConnectionId(),
+            saved.getSource().name().toLowerCase()
+        );
+        notificationFlowMetrics.recordNotificationCreated(saved.getSource().name().toLowerCase());
         evictDailySummaryCache(saved.getUserId());
 
         try {
             notificationEmbeddingService.embedNotification(saved);
+            notificationFlowMetrics.recordNotificationEmbedding("success");
         } catch (Exception e) {
-            log.warn("Failed to create notification embedding: notificationId={}, userId={}, source={}, errorType={}",
-                saved.getId(), saved.getUserId(), saved.getSource(), e.getClass().getSimpleName());
+            notificationFlowMetrics.recordNotificationEmbedding("failure");
+            log.warn(
+                "event=notification_embedding_failed notification_id={} user_id={} source={} exception_type={}",
+                saved.getId(),
+                saved.getUserId(),
+                saved.getSource().name().toLowerCase(),
+                e.getClass().getSimpleName()
+            );
         }
 
         // 푸시 알림 발송 (동기 - Phase 0)
@@ -108,8 +123,13 @@ public class NotificationService {
             pushService.sendPush(saved.getId(), saved.getUserId());
         } catch (Exception e) {
             // 푸시 발송 실패해도 알림 생성은 성공으로 처리
-            log.error("Failed to send push notification: notificationId={}, error={}",
-                saved.getId(), e.getMessage(), e);
+            log.error(
+                "event=push_send_failed notification_id={} user_id={} exception_type={}",
+                saved.getId(),
+                saved.getUserId(),
+                e.getClass().getSimpleName(),
+                e
+            );
         }
 
         return saved;

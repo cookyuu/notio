@@ -6,8 +6,11 @@ import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
 import com.notio.push.domain.Device;
 import com.notio.push.repository.DeviceRepository;
+import com.notio.notification.metrics.NotificationFlowMetrics;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.repository.NotificationRepository;
+import java.time.Duration;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,14 +27,17 @@ public class PushService {
 
     private final NotificationRepository notificationRepository;
     private final DeviceRepository deviceRepository;
+    private final NotificationFlowMetrics notificationFlowMetrics;
 
     /**
      * 알림 ID로 푸시 발송
      */
     public void sendPush(Long notificationId, Long userId) {
+        final Instant startedAt = Instant.now();
         // Firebase가 초기화되지 않은 경우 경고 로그만 출력
         if (FirebaseApp.getApps().isEmpty()) {
-            log.warn("Firebase not initialized. Skipping push notification for notificationId={}", notificationId);
+            log.warn("event=push_send_failed notification_id={} reason=firebase_not_initialized", notificationId);
+            notificationFlowMetrics.recordPushSend("failure", Duration.between(startedAt, Instant.now()));
             return;
         }
 
@@ -42,11 +48,14 @@ public class PushService {
         List<Device> activeDevices = deviceRepository.findAllActive();
 
         if (activeDevices.isEmpty()) {
-            log.info("No active devices found. Skipping push notification for notificationId={}", notificationId);
+            log.info("event=push_send_started notification_id={} device_count=0", notificationId);
+            log.info("event=push_send_succeeded notification_id={} device_count=0 success_count=0 failure_count=0", notificationId);
+            notificationFlowMetrics.recordPushSend("success", Duration.between(startedAt, Instant.now()));
             return;
         }
 
-        sendPushToDevices(notification, activeDevices);
+        log.info("event=push_send_started notification_id={} device_count={}", notificationId, activeDevices.size());
+        sendPushToDevices(notification, activeDevices, startedAt);
     }
 
     /**
@@ -60,7 +69,7 @@ public class PushService {
     /**
      * 여러 디바이스에 푸시 발송
      */
-    private void sendPushToDevices(Notification notification, List<Device> devices) {
+    private void sendPushToDevices(Notification notification, List<Device> devices, Instant startedAt) {
         List<String> fcmTokens = devices.stream()
             .map(Device::getFcmToken)
             .collect(Collectors.toList());
@@ -69,13 +78,13 @@ public class PushService {
 
         // 단일 토큰 발송
         if (fcmTokens.size() == 1) {
-            sendSingleMessage(message, notification.getId());
+            sendSingleMessage(message, notification.getId(), startedAt);
             return;
         }
 
         // 멀티캐스트 발송
         MulticastMessage multicastMessage = buildMulticastMessage(notification, fcmTokens);
-        sendMulticastMessage(multicastMessage, notification.getId(), fcmTokens.size());
+        sendMulticastMessage(multicastMessage, notification.getId(), fcmTokens.size(), startedAt);
     }
 
     /**
@@ -159,14 +168,23 @@ public class PushService {
     /**
      * 단일 메시지 발송
      */
-    private void sendSingleMessage(Message message, Long notificationId) {
+    private void sendSingleMessage(Message message, Long notificationId, Instant startedAt) {
         try {
             String response = FirebaseMessaging.getInstance().send(message);
-            log.info("Push notification sent successfully: notificationId={}, response={}",
-                notificationId, response);
+            log.info(
+                "event=push_send_succeeded notification_id={} device_count=1 success_count=1 failure_count=0 response_id={}",
+                notificationId,
+                response
+            );
+            notificationFlowMetrics.recordPushSend("success", Duration.between(startedAt, Instant.now()));
         } catch (FirebaseMessagingException e) {
-            log.error("Failed to send push notification: notificationId={}, error={}",
-                notificationId, e.getMessage(), e);
+            log.error(
+                "event=push_send_failed notification_id={} device_count=1 success_count=0 failure_count=1 exception_type={}",
+                notificationId,
+                e.getClass().getSimpleName(),
+                e
+            );
+            notificationFlowMetrics.recordPushSend("failure", Duration.between(startedAt, Instant.now()));
             // Phase 0에서는 푸시 실패해도 예외를 던지지 않음
         }
     }
@@ -174,23 +192,41 @@ public class PushService {
     /**
      * 멀티캐스트 메시지 발송
      */
-    private void sendMulticastMessage(MulticastMessage message, Long notificationId, int deviceCount) {
+    private void sendMulticastMessage(MulticastMessage message, Long notificationId, int deviceCount, Instant startedAt) {
         try {
             BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
-            log.info("Push notification sent to {} devices: notificationId={}, successCount={}, failureCount={}",
-                deviceCount, notificationId, response.getSuccessCount(), response.getFailureCount());
+            final String outcome = response.getFailureCount() > 0 ? "failure" : "success";
+            log.info(
+                "event={} notification_id={} device_count={} success_count={} failure_count={}",
+                "success".equals(outcome) ? "push_send_succeeded" : "push_send_failed",
+                notificationId,
+                deviceCount,
+                response.getSuccessCount(),
+                response.getFailureCount()
+            );
+            notificationFlowMetrics.recordPushSend(outcome, Duration.between(startedAt, Instant.now()));
 
             if (response.getFailureCount() > 0) {
                 response.getResponses().forEach(sendResponse -> {
                     if (!sendResponse.isSuccessful()) {
-                        log.warn("Failed to send push to device: error={}",
-                            sendResponse.getException().getMessage());
+                        log.warn(
+                            "event=push_send_failed notification_id={} device_count={} exception_type={}",
+                            notificationId,
+                            deviceCount,
+                            sendResponse.getException().getClass().getSimpleName()
+                        );
                     }
                 });
             }
         } catch (FirebaseMessagingException e) {
-            log.error("Failed to send multicast push notification: notificationId={}, error={}",
-                notificationId, e.getMessage(), e);
+            log.error(
+                "event=push_send_failed notification_id={} device_count={} exception_type={}",
+                notificationId,
+                deviceCount,
+                e.getClass().getSimpleName(),
+                e
+            );
+            notificationFlowMetrics.recordPushSend("failure", Duration.between(startedAt, Instant.now()));
         }
     }
 

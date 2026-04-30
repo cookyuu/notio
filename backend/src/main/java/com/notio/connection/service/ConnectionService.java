@@ -28,9 +28,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -138,22 +140,37 @@ public class ConnectionService {
 
     @Transactional
     public void recordWebhookSuccess(final Connection connection) {
-        recordEvent(connection, "WEBHOOK_RECEIVED", "SUCCESS", Map.of());
+        recordEvent(connection, "webhook_processed", "SUCCESS", Map.of());
+        log.info(
+            "event=webhook_processed connection_id={} user_id={} provider={}",
+            connection.getId(),
+            connection.getUserId(),
+            connection.getProvider().name().toLowerCase()
+        );
     }
 
     @Transactional
     public void recordWebhookSuccess(final Long userId, final Long connectionId) {
-        recordEvent(userId, connectionId, "WEBHOOK_RECEIVED", "SUCCESS", Map.of());
+        recordEvent(userId, connectionId, "webhook_processed", "SUCCESS", Map.of());
+        log.info("event=webhook_processed connection_id={} user_id={}", connectionId, userId);
     }
 
     @Transactional
     public void recordWebhookFailure(final Connection connection, final String reason) {
-        recordEvent(connection, "WEBHOOK_RECEIVED", "FAILURE", reasonMetadata(reason));
+        recordEvent(connection, "webhook_rejected", "FAILURE", reasonMetadata(reason));
+        log.warn(
+            "event=webhook_rejected connection_id={} user_id={} provider={} reason={}",
+            connection.getId(),
+            connection.getUserId(),
+            connection.getProvider().name().toLowerCase(),
+            reason
+        );
     }
 
     @Transactional
     public void recordWebhookFailure(final Long userId, final Long connectionId, final String reason) {
-        recordEvent(userId, connectionId, "WEBHOOK_RECEIVED", "FAILURE", reasonMetadata(reason));
+        recordEvent(userId, connectionId, "webhook_rejected", "FAILURE", reasonMetadata(reason));
+        log.warn("event=webhook_rejected connection_id={} user_id={} reason={}", connectionId, userId, reason);
     }
 
     @Transactional

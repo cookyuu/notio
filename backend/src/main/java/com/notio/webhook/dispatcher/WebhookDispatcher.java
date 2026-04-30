@@ -15,8 +15,11 @@ import com.notio.webhook.verifier.WebhookVerifier;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class WebhookDispatcher {
 
@@ -36,21 +39,28 @@ public class WebhookDispatcher {
 
     public WebhookDispatchResult dispatch(final WebhookRequestContext context) {
         final ConnectionProvider provider = providerFrom(context.source());
-        final ConnectionProviderAdapter adapter = adapterRegistry.get(provider);
-        final WebhookPrincipal principal = adapter.authenticateWebhook(context);
-        final NotificationEvent adapterEvent = adapter.toNotificationEvent(context);
-        final NotificationEvent event = new NotificationEvent(
-            adapterEvent.source(),
-            adapterEvent.title(),
-            adapterEvent.body(),
-            adapterEvent.priority(),
-            adapterEvent.externalId(),
-            adapterEvent.externalUrl(),
-            adapterEvent.metadata(),
-            principal.userId(),
-            principal.connectionId()
-        );
-        return new WebhookDispatchResult(event, principal);
+        try {
+            final ConnectionProviderAdapter adapter = adapterRegistry.get(provider);
+            final WebhookPrincipal principal = adapter.authenticateWebhook(context);
+            logWebhookAuthenticated(context, principal);
+            final NotificationEvent adapterEvent = adapter.toNotificationEvent(context);
+            final NotificationEvent event = new NotificationEvent(
+                adapterEvent.source(),
+                adapterEvent.title(),
+                adapterEvent.body(),
+                adapterEvent.priority(),
+                adapterEvent.externalId(),
+                adapterEvent.externalUrl(),
+                adapterEvent.metadata(),
+                principal.userId(),
+                principal.connectionId()
+            );
+            logWebhookMapped(context, principal, event);
+            return new WebhookDispatchResult(event, principal);
+        } catch (RuntimeException exception) {
+            logWebhookRejected(context, provider, exception);
+            throw exception;
+        }
     }
 
     @Deprecated
@@ -93,5 +103,71 @@ public class WebhookDispatcher {
             result.put(verifier.supports(), verifier);
         }
         return result;
+    }
+
+    private void logWebhookAuthenticated(
+            final WebhookRequestContext context,
+            final WebhookPrincipal principal
+    ) {
+        MDC.put("event", "webhook_authenticated");
+        MDC.put("outcome", "success");
+        try {
+            log.info(
+                    "event=webhook_authenticated source={} provider={} user_id={} connection_id={}",
+                    metricTag(context.source().name()),
+                    metricTag(principal.provider().name()),
+                    principal.userId(),
+                    principal.connectionId()
+            );
+        } finally {
+            MDC.remove("outcome");
+            MDC.remove("event");
+        }
+    }
+
+    private void logWebhookMapped(
+            final WebhookRequestContext context,
+            final WebhookPrincipal principal,
+            final NotificationEvent event
+    ) {
+        MDC.put("event", "webhook_event_mapped");
+        MDC.put("outcome", "success");
+        try {
+            log.info(
+                    "event=webhook_event_mapped source={} provider={} user_id={} connection_id={} has_external_id={}",
+                    metricTag(context.source().name()),
+                    metricTag(principal.provider().name()),
+                    principal.userId(),
+                    principal.connectionId(),
+                    event.externalId() != null && !event.externalId().isBlank()
+            );
+        } finally {
+            MDC.remove("outcome");
+            MDC.remove("event");
+        }
+    }
+
+    private void logWebhookRejected(
+            final WebhookRequestContext context,
+            final ConnectionProvider provider,
+            final RuntimeException exception
+    ) {
+        MDC.put("event", "webhook_rejected");
+        MDC.put("outcome", "failure");
+        try {
+            log.warn(
+                    "event=webhook_rejected source={} provider={} exception_type={}",
+                    metricTag(context.source().name()),
+                    metricTag(provider.name()),
+                    exception.getClass().getSimpleName()
+            );
+        } finally {
+            MDC.remove("outcome");
+            MDC.remove("event");
+        }
+    }
+
+    private String metricTag(final String value) {
+        return value.toLowerCase();
     }
 }
