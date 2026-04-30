@@ -7,6 +7,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.ai.llm.LlmProvider;
 import com.notio.ai.prompt.LlmPrompt;
@@ -29,11 +33,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -178,11 +185,193 @@ class ChatServiceTest {
                 List.of(userMessage),
                 Optional.of(timeRange)
         );
-        verify(chatMessageRepository, org.mockito.Mockito.timeout(1000).times(2)).save(savedMessageCaptor.capture());
+        verify(chatMessageRepository, org.mockito.Mockito.timeout(2_000).atLeast(2)).save(savedMessageCaptor.capture());
         assertThat(savedMessageCaptor.getAllValues())
                 .extracting(ChatMessage::getRole)
                 .containsExactly(ChatMessageRole.USER, ChatMessageRole.ASSISTANT);
         assertThat(savedMessageCaptor.getAllValues().get(1).getContent()).isEqualTo("GitHub PR 리뷰 요청");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void streamChatLogsSameCorrelationIdAndStreamIdAcrossStartedFirstChunkAndCompletedEvents() {
+        final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
+        final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
+        final PromptBuilder promptBuilder = mock(PromptBuilder.class);
+        final LlmProvider llmProvider = mock(LlmProvider.class);
+        final ChatService chatService = new ChatService(
+                chatMessageRepository,
+                ragRetriever,
+                timeRangeExtractor,
+                promptBuilder,
+                llmProvider,
+                aiProperties(),
+                objectMapper(),
+                chatMetrics()
+        );
+        final ChatMessage userMessage = message(
+                1L,
+                ChatMessageRole.USER,
+                "최근 5시간 내의 알림 내역을 요약해줘",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 0, 0, ZoneOffset.UTC)
+        );
+        final ChatMessage assistantMessage = message(
+                2L,
+                ChatMessageRole.ASSISTANT,
+                "GitHub PR 리뷰 요청",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 1, 0, ZoneOffset.UTC)
+        );
+        final TimeRange timeRange = new TimeRange(
+                Instant.parse("2026-04-22T05:00:00Z"),
+                Instant.parse("2026-04-22T10:00:00Z")
+        );
+        final LlmPrompt prompt = new LlmPrompt("system", "user");
+        when(chatMessageRepository.save(any(ChatMessage.class)))
+                .thenReturn(userMessage)
+                .thenReturn(assistantMessage);
+        when(timeRangeExtractor.extract("최근 5시간 내의 알림 내역을 요약해줘")).thenReturn(Optional.of(timeRange));
+        when(ragRetriever.retrieve(1L, "최근 5시간 내의 알림 내역을 요약해줘", Optional.of(timeRange)))
+                .thenReturn(List.of());
+        when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
+        when(promptBuilder.buildChatPrompt(
+                "최근 5시간 내의 알림 내역을 요약해줘",
+                List.of(),
+                List.of(userMessage),
+                Optional.of(timeRange)
+        )).thenReturn(prompt);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            final Consumer<String> chunkConsumer = invocation.getArgument(1);
+            chunkConsumer.accept("GitHub PR ");
+            chunkConsumer.accept("리뷰 요청");
+            return null;
+        }).when(llmProvider).stream(eq(prompt), any(Consumer.class));
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(ChatService.class);
+        final Level previousLevel = logger.getLevel();
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.setLevel(Level.INFO);
+        logger.addAppender(appender);
+        MDC.put("correlation_id", "corr-stream-success");
+
+        try {
+            chatService.streamChat(new ChatRequest("최근 5시간 내의 알림 내역을 요약해줘"));
+            verify(chatMessageRepository, org.mockito.Mockito.timeout(1000).times(2)).save(any(ChatMessage.class));
+            awaitLogCount(appender, 4);
+        } finally {
+            MDC.clear();
+            logger.detachAppender(appender);
+            logger.setLevel(previousLevel);
+            appender.stop();
+        }
+
+        final List<ILoggingEvent> events = new ArrayList<>(appender.list);
+        assertThat(events).hasSize(4);
+        assertThat(events)
+                .extracting(event -> event.getMDCPropertyMap().get("correlation_id"))
+                .containsOnly("corr-stream-success");
+        assertThat(events)
+                .extracting(event -> event.getMDCPropertyMap().get("event"))
+                .containsExactly(
+                        "chat_stream_started",
+                        "chat_prompt_built",
+                        "chat_stream_first_chunk",
+                        "chat_stream_completed"
+                );
+
+        final String streamId = extractStreamId(events.getFirst().getFormattedMessage());
+        assertThat(streamId).isNotBlank();
+        assertThat(events)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .allSatisfy(message -> assertThat(message).contains("stream_id=" + streamId));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void streamChatLogsSameCorrelationIdAndStreamIdAcrossFailureEvents() {
+        final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
+        final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
+        final PromptBuilder promptBuilder = mock(PromptBuilder.class);
+        final LlmProvider llmProvider = mock(LlmProvider.class);
+        final ChatService chatService = new ChatService(
+                chatMessageRepository,
+                ragRetriever,
+                timeRangeExtractor,
+                promptBuilder,
+                llmProvider,
+                aiProperties(),
+                objectMapper(),
+                chatMetrics()
+        );
+        final ChatMessage userMessage = message(
+                1L,
+                ChatMessageRole.USER,
+                "최근 5시간 내의 알림 내역을 요약해줘",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 0, 0, ZoneOffset.UTC)
+        );
+        final TimeRange timeRange = new TimeRange(
+                Instant.parse("2026-04-22T05:00:00Z"),
+                Instant.parse("2026-04-22T10:00:00Z")
+        );
+        final LlmPrompt prompt = new LlmPrompt("system", "user");
+        when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(userMessage);
+        when(timeRangeExtractor.extract("최근 5시간 내의 알림 내역을 요약해줘")).thenReturn(Optional.of(timeRange));
+        when(ragRetriever.retrieve(1L, "최근 5시간 내의 알림 내역을 요약해줘", Optional.of(timeRange)))
+                .thenReturn(List.of());
+        when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
+        when(promptBuilder.buildChatPrompt(
+                "최근 5시간 내의 알림 내역을 요약해줘",
+                List.of(),
+                List.of(userMessage),
+                Optional.of(timeRange)
+        )).thenReturn(prompt);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            final Consumer<String> chunkConsumer = invocation.getArgument(1);
+            chunkConsumer.accept("GitHub PR ");
+            throw new IllegalStateException("llm stream failed");
+        }).when(llmProvider).stream(eq(prompt), any(Consumer.class));
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(ChatService.class);
+        final Level previousLevel = logger.getLevel();
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.setLevel(Level.INFO);
+        logger.addAppender(appender);
+        MDC.put("correlation_id", "corr-stream-failure");
+
+        try {
+            chatService.streamChat(new ChatRequest("최근 5시간 내의 알림 내역을 요약해줘"));
+            verify(llmProvider, org.mockito.Mockito.timeout(1000)).stream(eq(prompt), any(Consumer.class));
+            awaitLogCount(appender, 4);
+        } finally {
+            MDC.clear();
+            logger.detachAppender(appender);
+            logger.setLevel(previousLevel);
+            appender.stop();
+        }
+
+        final List<ILoggingEvent> events = new ArrayList<>(appender.list);
+        assertThat(events).hasSize(4);
+        assertThat(events)
+                .extracting(event -> event.getMDCPropertyMap().get("correlation_id"))
+                .containsOnly("corr-stream-failure");
+        assertThat(events)
+                .extracting(event -> event.getMDCPropertyMap().get("event"))
+                .containsExactly(
+                        "chat_stream_started",
+                        "chat_prompt_built",
+                        "chat_stream_first_chunk",
+                        "chat_stream_failed"
+                );
+
+        final String streamId = extractStreamId(events.getFirst().getFormattedMessage());
+        assertThat(events)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .allSatisfy(message -> assertThat(message).contains("stream_id=" + streamId));
+        assertThat(events.getLast().getLevel()).isEqualTo(Level.WARN);
+        assertThat(events.getLast().getThrowableProxy()).isNotNull();
     }
 
     @Test
@@ -301,5 +490,32 @@ class ChatServiceTest {
     private ChatMetrics chatMetrics() {
         final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         return new ChatMetrics(new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy()));
+    }
+
+    private void awaitLogCount(final ListAppender<ILoggingEvent> appender, final int expectedCount) {
+        final long deadline = System.currentTimeMillis() + 1_000L;
+        while (System.currentTimeMillis() < deadline) {
+            if (appender.list.size() >= expectedCount) {
+                return;
+            }
+            try {
+                Thread.sleep(10L);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Interrupted while waiting for chat logs", exception);
+            }
+        }
+        throw new AssertionError("Expected at least " + expectedCount + " log events but found " + appender.list.size());
+    }
+
+    private String extractStreamId(final String message) {
+        final String marker = "stream_id=";
+        final int start = message.indexOf(marker);
+        assertThat(start).isGreaterThanOrEqualTo(0);
+        final int end = message.indexOf(' ', start);
+        if (end < 0) {
+            return message.substring(start + marker.length());
+        }
+        return message.substring(start + marker.length(), end);
     }
 }

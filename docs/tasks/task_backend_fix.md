@@ -284,14 +284,14 @@
 
 ## Phase 9. 테스트 보강
 
-- [ ] correlation filter 단위 테스트를 추가한다.
-- [ ] actuator endpoint 공개 여부에 대한 security 테스트를 추가한다.
-- [ ] `GlobalExceptionHandler` 구조화 로그 테스트를 추가한다.
-- [ ] auth 서비스 로그 정책에 대한 테스트를 보강한다.
-- [ ] chat stream 시작/first chunk/done/failure correlation 일관성 테스트를 보강한다.
-- [ ] webhook receive/authenticate/process correlation 일관성 테스트를 보강한다.
-- [ ] 민감정보 비로그 정책 테스트를 추가한다.
-- [ ] Prometheus 메트릭 노출 및 증가 검증 테스트를 추가한다.
+- [x] correlation filter 단위 테스트를 추가한다.
+- [x] actuator endpoint 공개 여부에 대한 security 테스트를 추가한다.
+- [x] `GlobalExceptionHandler` 구조화 로그 테스트를 추가한다.
+- [x] auth 서비스 로그 정책에 대한 테스트를 보강한다.
+- [x] chat stream 시작/first chunk/done/failure correlation 일관성 테스트를 보강한다.
+- [x] webhook receive/authenticate/process correlation 일관성 테스트를 보강한다.
+- [x] 민감정보 비로그 정책 테스트를 추가한다.
+- [x] Prometheus 메트릭 노출 및 증가 검증 테스트를 추가한다.
 
 상세 가이드:
 - 로그 자체를 완전 문자열 비교하기보다, appender 캡처 또는 logging test utility로 핵심 필드 존재 여부를 검증한다.

@@ -234,4 +234,38 @@ class AuthServiceTest {
         assertThat(event.getMDCPropertyMap()).containsEntry("event", "auth_refresh_succeeded");
         assertThat(event.getMDCPropertyMap()).containsEntry("outcome", "success");
     }
+
+    @Test
+    void refreshLogsFailureWithoutRefreshTokenLeak() {
+        final RefreshRequest request = RefreshRequest.builder()
+                .refreshToken("incoming-refresh-token")
+                .build();
+
+        when(jwtTokenProvider.validateToken("incoming-refresh-token")).thenReturn(false);
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(AuthService.class);
+        final Level previousLevel = logger.getLevel();
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.setLevel(Level.WARN);
+        logger.addAppender(appender);
+
+        try {
+            assertThatThrownBy(() -> authService.refresh(request))
+                    .isInstanceOf(NotioException.class);
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(previousLevel);
+            appender.stop();
+        }
+
+        assertThat(appender.list).hasSize(1);
+        final ILoggingEvent event = appender.list.getFirst();
+        assertThat(event.getLevel()).isEqualTo(Level.WARN);
+        assertThat(event.getFormattedMessage()).contains("event=auth_refresh_failed");
+        assertThat(event.getFormattedMessage()).contains("reason_category=token_invalid");
+        assertThat(event.getFormattedMessage()).doesNotContain("incoming-refresh-token");
+        assertThat(event.getMDCPropertyMap()).containsEntry("event", "auth_refresh_failed");
+        assertThat(event.getMDCPropertyMap()).containsEntry("outcome", "failure");
+    }
 }

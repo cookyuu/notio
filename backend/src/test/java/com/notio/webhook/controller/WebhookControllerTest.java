@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -32,11 +33,13 @@ import com.notio.webhook.dto.WebhookPrincipal;
 import com.notio.webhook.dto.WebhookReceiptResponse;
 import com.notio.webhook.dto.WebhookRequestContext;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -106,6 +109,101 @@ class WebhookControllerTest {
             .anySatisfy(message -> assertThat(message).contains("event=webhook_processed"));
         verify(notificationService).saveFromEvent(event);
         verify(connectionService).recordWebhookSuccess(10L, 20L);
+    }
+
+    @Test
+    void receiveWebhookPreservesCorrelationIdAcrossReceiveAuthenticateAndProcessLogsWithoutLeakingPayload() {
+        final WebhookDispatcher webhookDispatcher = mock(WebhookDispatcher.class);
+        final NotificationService notificationService = mock(NotificationService.class);
+        final ConnectionService connectionService = mock(ConnectionService.class);
+        final WebhookController controller = new WebhookController(
+                webhookDispatcher,
+                notificationService,
+                connectionService,
+                new ObjectMapper(),
+                new NotificationFlowMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
+        );
+        final NotificationEvent event = new NotificationEvent(
+                com.notio.notification.domain.NotificationSource.CLAUDE,
+                "Claude alert",
+                "body",
+                NotificationPriority.HIGH,
+                "ext-1",
+                null,
+                Map.of("scope", "repo"),
+                10L,
+                20L
+        );
+        final WebhookPrincipal principal = new WebhookPrincipal(20L, 10L, ConnectionProvider.CLAUDE);
+        final Notification notification = Notification.builder()
+                .id(99L)
+                .userId(10L)
+                .connectionId(20L)
+                .source(event.source())
+                .title(event.title())
+                .body(event.body())
+                .priority(event.priority())
+                .build();
+        when(webhookDispatcher.dispatch(org.mockito.ArgumentMatchers.any(WebhookRequestContext.class)))
+                .thenAnswer(invocation -> {
+                    MDC.put("event", "webhook_authenticated");
+                    MDC.put("outcome", "success");
+                    try {
+                        ((Logger) LoggerFactory.getLogger(WebhookDispatcher.class)).info(
+                                "event=webhook_authenticated source=claude provider=claude user_id=10 connection_id=20"
+                        );
+                    } finally {
+                        MDC.remove("outcome");
+                        MDC.remove("event");
+                    }
+                    return new WebhookDispatchResult(event, principal);
+                });
+        when(notificationService.saveFromEvent(event)).thenReturn(notification);
+
+        final Logger controllerLogger = (Logger) LoggerFactory.getLogger(WebhookController.class);
+        final Logger dispatcherLogger = (Logger) LoggerFactory.getLogger(WebhookDispatcher.class);
+        final Level previousControllerLevel = controllerLogger.getLevel();
+        final Level previousDispatcherLevel = dispatcherLogger.getLevel();
+        final ListAppender<ILoggingEvent> controllerAppender = new ListAppender<>();
+        final ListAppender<ILoggingEvent> dispatcherAppender = new ListAppender<>();
+        controllerAppender.start();
+        dispatcherAppender.start();
+        controllerLogger.setLevel(Level.INFO);
+        dispatcherLogger.setLevel(Level.INFO);
+        controllerLogger.addAppender(controllerAppender);
+        dispatcherLogger.addAppender(dispatcherAppender);
+        MDC.put("correlation_id", "corr-webhook-success");
+
+        try {
+            controller.receiveWebhook(
+                    "claude",
+                    new HttpHeaders(),
+                    "{\"token\":\"super-secret-token\",\"message\":\"hello\"}"
+            );
+        } finally {
+            MDC.clear();
+            controllerLogger.detachAppender(controllerAppender);
+            dispatcherLogger.detachAppender(dispatcherAppender);
+            controllerLogger.setLevel(previousControllerLevel);
+            dispatcherLogger.setLevel(previousDispatcherLevel);
+            controllerAppender.stop();
+            dispatcherAppender.stop();
+        }
+
+        final List<ILoggingEvent> events = new ArrayList<>(controllerAppender.list);
+        events.addAll(dispatcherAppender.list);
+        assertThat(events)
+                .extracting(eventLog -> eventLog.getMDCPropertyMap().get("correlation_id"))
+                .containsOnly("corr-webhook-success");
+        assertThat(events)
+                .extracting(eventLog -> eventLog.getMDCPropertyMap().get("event"))
+                .contains("webhook_received", "webhook_authenticated", "webhook_processed");
+        assertThat(events)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .allSatisfy(message -> {
+                    assertThat(message).doesNotContain("super-secret-token");
+                    assertThat(message).doesNotContain("\"message\":\"hello\"");
+                });
     }
 
     @Test

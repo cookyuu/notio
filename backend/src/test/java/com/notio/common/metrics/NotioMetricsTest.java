@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.notio.common.config.MetricsConfig;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -58,6 +60,28 @@ class NotioMetricsTest {
                 .tag("exception", "none")
                 .counter()
                 .count()).isEqualTo(1.0d);
+    }
+
+    @Test
+    void prometheusRegistryScrapesCustomMetricAfterIncrement() {
+        final PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        meterRegistry.config().meterFilter(new MetricsConfig().notioMetricsTagFilter(new NotioMetricsTagPolicy()));
+        final NotioMetrics metrics = new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy());
+
+        metrics.incrementCounter("notio_webhook_requests_total", Tags.of("source", "slack", "outcome", "success"));
+        metrics.incrementCounter("notio_webhook_requests_total", Tags.of("source", "slack", "outcome", "success"));
+
+        assertThat(meterRegistry.get("notio_webhook_requests_total")
+                .tag("source", "slack")
+                .tag("outcome", "success")
+                .counter()
+                .count()).isEqualTo(2.0d);
+
+        final String scrape = meterRegistry.scrape();
+        assertThat(scrape).contains("notio_webhook_requests_total");
+        assertThat(scrape).contains("source=\"slack\"");
+        assertThat(scrape).contains("outcome=\"success\"");
+        assertThat(scrape).contains("2.0");
     }
 
     private SimpleMeterRegistry meterRegistry() {
