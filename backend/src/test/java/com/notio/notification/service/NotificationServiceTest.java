@@ -7,6 +7,10 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.connection.domain.Connection;
 import com.notio.common.exception.NotioException;
@@ -35,6 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -165,6 +170,62 @@ class NotificationServiceTest {
                 .tag("outcome", "failure")
                 .counter()
                 .count()).isEqualTo(1.0d);
+    }
+
+    @Test
+    void saveFromEventReturnsSavedNotificationWhenPushDispatchFailsAndLogsFailure() {
+        final NotificationEvent event = new NotificationEvent(
+                NotificationSource.SLACK,
+                "title",
+                "body",
+                NotificationPriority.HIGH,
+                "ext-1",
+                "https://notio.dev",
+                Map.of("channel", "dev"),
+                10L,
+                20L
+        );
+        final Notification saved = Notification.builder()
+                .id(1L)
+                .userId(event.userId())
+                .connectionId(event.connectionId())
+                .source(event.source())
+                .title(event.title())
+                .body(event.body())
+                .priority(event.priority())
+                .externalId(event.externalId())
+                .externalUrl(event.externalUrl())
+                .metadata("{\"channel\":\"dev\"}")
+                .build();
+        when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
+        org.mockito.Mockito.doThrow(new IllegalStateException("firebase down"))
+                .when(pushService).sendPush(saved.getId(), saved.getUserId());
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(NotificationService.class);
+        final Level previousLevel = logger.getLevel();
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.setLevel(Level.ERROR);
+        logger.addAppender(appender);
+
+        final Notification result;
+        try {
+            result = notificationService.saveFromEvent(event);
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(previousLevel);
+            appender.stop();
+        }
+
+        assertThat(result).isSameAs(saved);
+        verify(notificationRepository).save(any(Notification.class));
+        verify(pushService).sendPush(saved.getId(), saved.getUserId());
+        assertThat(appender.list).hasSize(1);
+        assertThat(appender.list.getFirst().getFormattedMessage())
+                .contains("event=push_dispatch_failed")
+                .contains("notification_id=1")
+                .contains("user_id=10")
+                .contains("exception_type=IllegalStateException");
     }
 
     @Test

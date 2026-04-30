@@ -36,7 +36,7 @@ public class PushService {
         final Instant startedAt = Instant.now();
         // Firebase가 초기화되지 않은 경우 경고 로그만 출력
         if (FirebaseApp.getApps().isEmpty()) {
-            log.warn("event=push_send_failed notification_id={} reason=firebase_not_initialized", notificationId);
+            log.warn("event=push_dispatch_failed notification_id={} reason=firebase_not_initialized", notificationId);
             notificationFlowMetrics.recordPushSend("failure", Duration.between(startedAt, Instant.now()));
             return;
         }
@@ -48,13 +48,13 @@ public class PushService {
         List<Device> activeDevices = deviceRepository.findAllActive();
 
         if (activeDevices.isEmpty()) {
-            log.info("event=push_send_started notification_id={} device_count=0", notificationId);
-            log.info("event=push_send_succeeded notification_id={} device_count=0 success_count=0 failure_count=0", notificationId);
+            log.info("event=push_dispatch_started notification_id={} device_count=0", notificationId);
+            log.info("event=push_dispatch_succeeded notification_id={} device_count=0 success_count=0 failure_count=0", notificationId);
             notificationFlowMetrics.recordPushSend("success", Duration.between(startedAt, Instant.now()));
             return;
         }
 
-        log.info("event=push_send_started notification_id={} device_count={}", notificationId, activeDevices.size());
+        log.info("event=push_dispatch_started notification_id={} device_count={}", notificationId, activeDevices.size());
         sendPushToDevices(notification, activeDevices, startedAt);
     }
 
@@ -172,14 +172,14 @@ public class PushService {
         try {
             String response = FirebaseMessaging.getInstance().send(message);
             log.info(
-                "event=push_send_succeeded notification_id={} device_count=1 success_count=1 failure_count=0 response_id={}",
+                "event=push_dispatch_succeeded notification_id={} device_count=1 success_count=1 failure_count=0 response_id={}",
                 notificationId,
                 response
             );
             notificationFlowMetrics.recordPushSend("success", Duration.between(startedAt, Instant.now()));
         } catch (FirebaseMessagingException e) {
             log.error(
-                "event=push_send_failed notification_id={} device_count=1 success_count=0 failure_count=1 exception_type={}",
+                "event=push_dispatch_failed notification_id={} device_count=1 success_count=0 failure_count=1 exception_type={}",
                 notificationId,
                 e.getClass().getSimpleName(),
                 e
@@ -198,7 +198,7 @@ public class PushService {
             final String outcome = response.getFailureCount() > 0 ? "failure" : "success";
             log.info(
                 "event={} notification_id={} device_count={} success_count={} failure_count={}",
-                "success".equals(outcome) ? "push_send_succeeded" : "push_send_failed",
+                "success".equals(outcome) ? "push_dispatch_succeeded" : "push_dispatch_failed",
                 notificationId,
                 deviceCount,
                 response.getSuccessCount(),
@@ -210,7 +210,7 @@ public class PushService {
                 response.getResponses().forEach(sendResponse -> {
                     if (!sendResponse.isSuccessful()) {
                         log.warn(
-                            "event=push_send_failed notification_id={} device_count={} exception_type={}",
+                            "event=push_dispatch_failed notification_id={} device_count={} exception_type={}",
                             notificationId,
                             deviceCount,
                             sendResponse.getException().getClass().getSimpleName()
@@ -220,7 +220,7 @@ public class PushService {
             }
         } catch (FirebaseMessagingException e) {
             log.error(
-                "event=push_send_failed notification_id={} device_count={} exception_type={}",
+                "event=push_dispatch_failed notification_id={} device_count={} exception_type={}",
                 notificationId,
                 deviceCount,
                 e.getClass().getSimpleName(),

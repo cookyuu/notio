@@ -311,17 +311,17 @@
 
 ## Phase 10. 운영 검증
 
-- [ ] `./gradlew test`를 실행한다.
+- [x] `./gradlew test`를 실행한다.
 - [ ] 애플리케이션 실행 후 `/actuator/health`가 정상 응답하는지 확인한다.
 - [ ] 애플리케이션 실행 후 `/actuator/prometheus`가 정상 응답하는지 확인한다.
-- [ ] 일반 API 요청 1건에 대해 시작/완료/예외 로그가 같은 `correlation_id`를 공유하는지 확인한다.
-- [ ] auth API 요청 시 성공/실패 로그가 표준 event/outcome 체계를 따르는지 확인한다.
-- [ ] chat sync 요청 시 `chat_request_started -> rag_retrieve_completed -> llm_call_completed` 흐름이 같은 `correlation_id`로 조회되는지 확인한다.
-- [ ] chat stream 요청 시 `chat_stream_started -> chat_stream_first_chunk -> chat_stream_completed` 흐름이 같은 `correlation_id`와 `stream_id`로 조회되는지 확인한다.
-- [ ] webhook 요청 시 `webhook_received -> webhook_authenticated -> webhook_processed -> notification_created` 흐름이 같은 `correlation_id`로 조회되는지 확인한다.
-- [ ] notification 생성 후 push 실패 시 요청 전체는 성공 처리되되 `push_dispatch_failed` 로그와 관련 메트릭이 남는지 확인한다.
-- [ ] 로그에 민감정보가 포함되지 않는지 샘플링 검토한다.
-- [ ] Grafana/Loki 기준으로 `correlation_id` 검색이 가능한 로그 필드 구조인지 확인한다.
+- [x] 일반 API 요청 1건에 대해 시작/완료/예외 로그가 같은 `correlation_id`를 공유하는지 확인한다.
+- [x] auth API 요청 시 성공/실패 로그가 표준 event/outcome 체계를 따르는지 확인한다.
+- [x] chat sync 요청 시 `chat_request_started -> rag_retrieve_completed -> llm_call_completed` 흐름이 같은 `correlation_id`로 조회되는지 확인한다.
+- [x] chat stream 요청 시 `chat_stream_started -> chat_stream_first_chunk -> chat_stream_completed` 흐름이 같은 `correlation_id`와 `stream_id`로 조회되는지 확인한다.
+- [x] webhook 요청 시 `webhook_received -> webhook_authenticated -> webhook_processed -> notification_created` 흐름이 같은 `correlation_id`로 조회되는지 확인한다.
+- [x] notification 생성 후 push 실패 시 요청 전체는 성공 처리되되 `push_dispatch_failed` 로그와 관련 메트릭이 남는지 확인한다.
+- [x] 로그에 민감정보가 포함되지 않는지 샘플링 검토한다.
+- [x] Grafana/Loki 기준으로 `correlation_id` 검색이 가능한 로그 필드 구조인지 확인한다.
 
 상세 가이드:
 - 운영 검증은 local 또는 dev profile에서 텍스트 로그 가독성을 먼저 확인하고, prod profile에서 JSON 구조를 확인하는 순서가 좋다.

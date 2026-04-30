@@ -124,7 +124,7 @@ public class NotificationService {
         } catch (Exception e) {
             // 푸시 발송 실패해도 알림 생성은 성공으로 처리
             log.error(
-                "event=push_send_failed notification_id={} user_id={} exception_type={}",
+                "event=push_dispatch_failed notification_id={} user_id={} exception_type={}",
                 saved.getId(),
                 saved.getUserId(),
                 e.getClass().getSimpleName(),

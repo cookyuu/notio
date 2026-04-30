@@ -12,9 +12,11 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.notio.ai.llm.OllamaLlmProvider;
 import com.notio.ai.llm.LlmProvider;
 import com.notio.ai.prompt.LlmPrompt;
 import com.notio.ai.prompt.PromptBuilder;
+import com.notio.ai.rag.PgvectorRagRetriever;
 import com.notio.ai.rag.RagDocument;
 import com.notio.ai.rag.RagRetriever;
 import com.notio.ai.rag.TimeRange;
@@ -372,6 +374,133 @@ class ChatServiceTest {
                 .allSatisfy(message -> assertThat(message).contains("stream_id=" + streamId));
         assertThat(events.getLast().getLevel()).isEqualTo(Level.WARN);
         assertThat(events.getLast().getThrowableProxy()).isNotNull();
+    }
+
+    @Test
+    void chatLogsSameCorrelationIdAcrossRequestRagAndLlmCompletionFlow() {
+        final ChatMessageRepository chatMessageRepository = mock(ChatMessageRepository.class);
+        final RagRetriever ragRetriever = mock(RagRetriever.class);
+        final ChatTimeRangeExtractor timeRangeExtractor = mock(ChatTimeRangeExtractor.class);
+        final PromptBuilder promptBuilder = mock(PromptBuilder.class);
+        final LlmProvider llmProvider = mock(LlmProvider.class);
+        final ChatService chatService = new ChatService(
+                chatMessageRepository,
+                ragRetriever,
+                timeRangeExtractor,
+                promptBuilder,
+                llmProvider,
+                aiProperties(),
+                objectMapper(),
+                chatMetrics()
+        );
+        final ChatMessage userMessage = message(
+                1L,
+                ChatMessageRole.USER,
+                "오늘 중요한 알림 알려줘",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 0, 0, ZoneOffset.UTC)
+        );
+        final ChatMessage assistantMessage = message(
+                2L,
+                ChatMessageRole.ASSISTANT,
+                "GitHub PR 리뷰 요청이 중요합니다.",
+                OffsetDateTime.of(2026, 4, 22, 10, 0, 1, 0, ZoneOffset.UTC)
+        );
+        final RagDocument document = new RagDocument(
+                100L,
+                "GITHUB",
+                "PR review requested",
+                "리뷰 요청",
+                "HIGH",
+                Instant.parse("2026-04-22T09:59:00Z"),
+                0.91
+        );
+        final TimeRange timeRange = new TimeRange(
+                Instant.parse("2026-04-21T15:00:00Z"),
+                Instant.parse("2026-04-22T15:00:00Z")
+        );
+        final LlmPrompt prompt = new LlmPrompt("system", "user");
+
+        when(chatMessageRepository.save(any(ChatMessage.class)))
+                .thenReturn(userMessage)
+                .thenReturn(assistantMessage);
+        when(timeRangeExtractor.extract("오늘 중요한 알림 알려줘")).thenReturn(Optional.of(timeRange));
+        when(ragRetriever.retrieve(1L, "오늘 중요한 알림 알려줘", Optional.of(timeRange)))
+                .thenAnswer(invocation -> {
+                    MDC.put("event", "rag_retrieve_completed");
+                    MDC.put("outcome", "success");
+                    try {
+                        ((Logger) LoggerFactory.getLogger(PgvectorRagRetriever.class)).info(
+                                "event=rag_retrieve_completed time_range_applied=true top_k=5 result_count=1 elapsed_ms=12"
+                        );
+                    } finally {
+                        MDC.remove("outcome");
+                        MDC.remove("event");
+                    }
+                    return List.of(document);
+                });
+        when(chatMessageRepository.findRecentByUserId(eq(1L), any(Pageable.class))).thenReturn(List.of(userMessage));
+        when(promptBuilder.buildChatPrompt("오늘 중요한 알림 알려줘", List.of(document), List.of(userMessage), Optional.of(timeRange)))
+                .thenReturn(prompt);
+        when(llmProvider.chat(prompt)).thenAnswer(invocation -> {
+            MDC.put("event", "llm_call_completed");
+            MDC.put("outcome", "success");
+            try {
+                ((Logger) LoggerFactory.getLogger(OllamaLlmProvider.class)).info(
+                        "event=llm_call_completed mode=sync timeout_ms=30000 elapsed_ms=34"
+                );
+            } finally {
+                MDC.remove("outcome");
+                MDC.remove("event");
+            }
+            return "GitHub PR 리뷰 요청이 중요합니다.";
+        });
+
+        final Logger chatLogger = (Logger) LoggerFactory.getLogger(ChatService.class);
+        final Logger ragLogger = (Logger) LoggerFactory.getLogger(PgvectorRagRetriever.class);
+        final Logger llmLogger = (Logger) LoggerFactory.getLogger(OllamaLlmProvider.class);
+        final Level previousChatLevel = chatLogger.getLevel();
+        final Level previousRagLevel = ragLogger.getLevel();
+        final Level previousLlmLevel = llmLogger.getLevel();
+        final ListAppender<ILoggingEvent> chatAppender = new ListAppender<>();
+        final ListAppender<ILoggingEvent> ragAppender = new ListAppender<>();
+        final ListAppender<ILoggingEvent> llmAppender = new ListAppender<>();
+        chatAppender.start();
+        ragAppender.start();
+        llmAppender.start();
+        chatLogger.setLevel(Level.INFO);
+        ragLogger.setLevel(Level.INFO);
+        llmLogger.setLevel(Level.INFO);
+        chatLogger.addAppender(chatAppender);
+        ragLogger.addAppender(ragAppender);
+        llmLogger.addAppender(llmAppender);
+        MDC.put("correlation_id", "corr-chat-sync");
+
+        final ChatMessageResponse response;
+        try {
+            response = chatService.chat(new ChatRequest("오늘 중요한 알림 알려줘"));
+        } finally {
+            MDC.clear();
+            chatLogger.detachAppender(chatAppender);
+            ragLogger.detachAppender(ragAppender);
+            llmLogger.detachAppender(llmAppender);
+            chatLogger.setLevel(previousChatLevel);
+            ragLogger.setLevel(previousRagLevel);
+            llmLogger.setLevel(previousLlmLevel);
+            chatAppender.stop();
+            ragAppender.stop();
+            llmAppender.stop();
+        }
+
+        assertThat(response.content()).isEqualTo("GitHub PR 리뷰 요청이 중요합니다.");
+        final List<ILoggingEvent> events = new ArrayList<>(chatAppender.list);
+        events.addAll(ragAppender.list);
+        events.addAll(llmAppender.list);
+        assertThat(events)
+                .extracting(event -> event.getMDCPropertyMap().get("correlation_id"))
+                .containsOnly("corr-chat-sync");
+        assertThat(events)
+                .extracting(event -> event.getMDCPropertyMap().get("event"))
+                .contains("chat_request_started", "chat_prompt_built", "rag_retrieve_completed", "llm_call_completed");
     }
 
     @Test

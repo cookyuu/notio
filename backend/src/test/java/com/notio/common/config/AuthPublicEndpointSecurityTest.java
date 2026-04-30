@@ -29,6 +29,8 @@ import com.notio.auth.service.LocalAuthService;
 import com.notio.auth.service.OAuthAuthService;
 import com.notio.auth.util.JwtTokenProvider;
 import com.notio.common.exception.GlobalExceptionHandler;
+import com.notio.common.logging.CorrelationIdGenerator;
+import com.notio.common.logging.RequestCorrelationFilter;
 import com.notio.common.ratelimit.RateLimitEvaluation;
 import com.notio.common.ratelimit.RateLimitFilter;
 import com.notio.common.ratelimit.RateLimitProperties;
@@ -224,6 +226,16 @@ class AuthPublicEndpointSecurityTest {
         @Bean
         JwtAuthenticationFilter jwtAuthenticationFilter(final JwtTokenProvider jwtTokenProvider) {
             return new JwtAuthenticationFilter(jwtTokenProvider);
+        }
+
+        @Bean
+        CorrelationIdGenerator correlationIdGenerator() {
+            return new CorrelationIdGenerator();
+        }
+
+        @Bean
+        RequestCorrelationFilter requestCorrelationFilter(final CorrelationIdGenerator correlationIdGenerator) {
+            return new RequestCorrelationFilter(correlationIdGenerator);
         }
 
         @Bean
