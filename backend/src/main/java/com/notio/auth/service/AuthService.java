@@ -19,6 +19,7 @@ import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AuthService {
+
+    private static final String EVENT_KEY = "event";
+    private static final String OUTCOME_KEY = "outcome";
 
     private final AuthIdentityRepository authIdentityRepository;
     private final UserRepository userRepository;
@@ -41,13 +45,18 @@ public class AuthService {
      */
     @Transactional
     public LoginResponse login(final LoginRequest request) {
+        final String maskedEmail = AuthMaskingUtils.maskEmail(request.getEmail());
         final AuthIdentity authIdentity = authIdentityRepository
                 .findActiveByProviderAndEmail(AuthProvider.LOCAL, request.getEmail())
-                .orElseThrow(() -> new NotioException(ErrorCode.INVALID_CREDENTIALS));
+                .orElseThrow(() -> {
+                    logLoginFailure(maskedEmail, "identity_not_found");
+                    return new NotioException(ErrorCode.INVALID_CREDENTIALS);
+                });
         final User user = authIdentity.getUser();
 
         if (authIdentity.getPasswordHash() == null
                 || !passwordEncoder.matches(request.getPassword(), authIdentity.getPasswordHash())) {
+            logLoginFailure(maskedEmail, "password_mismatch");
             throw new NotioException(ErrorCode.INVALID_CREDENTIALS);
         }
 
@@ -62,7 +71,7 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(refreshToken);
 
-        log.info("User logged in successfully: userId={}, email={}", userId, AuthMaskingUtils.maskEmail(user.getPrimaryEmail()));
+        logLoginSuccess(userId, AuthMaskingUtils.maskEmail(user.getPrimaryEmail()));
 
         return LoginResponse.builder()
                 .accessToken(accessToken)
@@ -79,14 +88,24 @@ public class AuthService {
     @Transactional
     public RefreshResponse refresh(final RefreshRequest request) {
         if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
+            logRefreshFailure(null, null, "token_invalid");
             throw new NotioException(ErrorCode.INVALID_TOKEN);
         }
 
         final RefreshToken refreshToken = refreshTokenRepository
                 .findByTokenAndRevokedAtIsNull(request.getRefreshToken())
-                .orElseThrow(() -> new NotioException(ErrorCode.INVALID_TOKEN));
+                .orElseThrow(() -> {
+                    logRefreshFailure(null, null, "refresh_token_not_found");
+                    return new NotioException(ErrorCode.INVALID_TOKEN);
+                });
 
         if (!refreshToken.isValid()) {
+            final User user = refreshToken.getUser();
+            logRefreshFailure(
+                    String.valueOf(user.getId()),
+                    AuthMaskingUtils.maskEmail(user.getPrimaryEmail()),
+                    "refresh_token_expired"
+            );
             throw new NotioException(ErrorCode.EXPIRED_TOKEN);
         }
 
@@ -105,7 +124,7 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(newRefreshToken);
 
-        log.info("Token refreshed successfully: userId={}", userId);
+        logRefreshSuccess(userId, AuthMaskingUtils.maskEmail(user.getPrimaryEmail()));
 
         return RefreshResponse.builder()
                 .accessToken(newAccessToken)
@@ -136,5 +155,74 @@ public class AuthService {
                 .displayName(user.getDisplayName())
                 .status(user.getStatus())
                 .build();
+    }
+
+    private void logLoginSuccess(final String userId, final String maskedEmail) {
+        MDC.put(EVENT_KEY, "auth_login_succeeded");
+        MDC.put(OUTCOME_KEY, "success");
+        try {
+            log.info(
+                    "event=auth_login_succeeded outcome=success provider={} user_id={} masked_email={}",
+                    AuthProvider.LOCAL,
+                    userId,
+                    maskedEmail
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logLoginFailure(final String maskedEmail, final String reasonCategory) {
+        MDC.put(EVENT_KEY, "auth_login_failed");
+        MDC.put(OUTCOME_KEY, "failure");
+        try {
+            log.warn(
+                    "event=auth_login_failed outcome=failure provider={} masked_email={} reason_category={}",
+                    AuthProvider.LOCAL,
+                    maskedEmail,
+                    reasonCategory
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logRefreshSuccess(final String userId, final String maskedEmail) {
+        MDC.put(EVENT_KEY, "auth_refresh_succeeded");
+        MDC.put(OUTCOME_KEY, "success");
+        try {
+            log.info(
+                    "event=auth_refresh_succeeded outcome=success provider={} user_id={} masked_email={}",
+                    AuthProvider.LOCAL,
+                    userId,
+                    maskedEmail
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logRefreshFailure(
+            final String userId,
+            final String maskedEmail,
+            final String reasonCategory
+    ) {
+        MDC.put(EVENT_KEY, "auth_refresh_failed");
+        MDC.put(OUTCOME_KEY, "failure");
+        try {
+            log.warn(
+                    "event=auth_refresh_failed outcome=failure provider={} user_id={} masked_email={} reason_category={}",
+                    AuthProvider.LOCAL,
+                    userId,
+                    maskedEmail,
+                    reasonCategory
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
     }
 }

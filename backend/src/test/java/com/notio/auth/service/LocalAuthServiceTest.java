@@ -9,6 +9,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.notio.auth.config.AuthProperties;
 import com.notio.auth.domain.AuthIdentity;
 import com.notio.auth.domain.AuthProvider;
@@ -37,6 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -119,6 +124,48 @@ class LocalAuthServiceTest {
     }
 
     @Test
+    void signupLogsMaskedEmailOnly() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
+        final SignupRequest request = SignupRequest.builder()
+                .displayName("Notio User")
+                .email("USER@example.com")
+                .password("password123")
+                .build();
+        when(authIdentityRepository.existsActiveLocalByEmail("user@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("password123")).thenReturn("encoded-password");
+        when(userRepository.save(any(User.class))).thenReturn(User.builder()
+                .id(1L)
+                .primaryEmail("user@example.com")
+                .displayName("Notio User")
+                .status(UserStatus.ACTIVE)
+                .build());
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(LocalAuthService.class);
+        final Level previousLevel = logger.getLevel();
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.setLevel(Level.INFO);
+        logger.addAppender(appender);
+
+        try {
+            localAuthService.signup(request);
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(previousLevel);
+            appender.stop();
+        }
+
+        assertThat(appender.list).hasSize(1);
+        final ILoggingEvent event = appender.list.getFirst();
+        assertThat(event.getFormattedMessage()).contains("event=auth_signup_succeeded");
+        assertThat(event.getFormattedMessage()).contains("masked_email=u***@example.com");
+        assertThat(event.getFormattedMessage()).doesNotContain("USER@example.com");
+        assertThat(event.getFormattedMessage()).doesNotContain("password123");
+        assertThat(event.getMDCPropertyMap()).containsEntry("event", "auth_signup_succeeded");
+        assertThat(event.getMDCPropertyMap()).containsEntry("outcome", "success");
+    }
+
+    @Test
     void signupRejectsDuplicateLocalEmail() {
         authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(30));
         when(authIdentityRepository.existsActiveLocalByEmail("user@example.com")).thenReturn(true);
@@ -197,6 +244,57 @@ class LocalAuthServiceTest {
         verify(passwordResetTokenRepository).save(tokenCaptor.capture());
         assertThat(tokenCaptor.getValue().getExpiresAt()).isAfter(OffsetDateTime.now().plusMinutes(14));
         verify(authMailSender).send(any(AuthMailMessage.class));
+    }
+
+    @Test
+    void requestPasswordResetLogsMaskedEmailWithoutTokenLeak() {
+        authProperties.getPasswordReset().setTokenTtl(Duration.ofMinutes(15));
+        final PasswordResetRequestRequest request = PasswordResetRequestRequest.builder()
+                .email("user@example.com")
+                .build();
+        final User user = User.builder()
+                .id(1L)
+                .primaryEmail("user@example.com")
+                .displayName("user")
+                .status(UserStatus.ACTIVE)
+                .build();
+        final AuthIdentity authIdentity = AuthIdentity.builder()
+                .id(10L)
+                .user(user)
+                .provider(AuthProvider.LOCAL)
+                .email("user@example.com")
+                .passwordHash("encoded")
+                .build();
+
+        when(authIdentityRepository.findActiveLocalByEmail("user@example.com"))
+                .thenReturn(Optional.of(authIdentity));
+        when(authMailTemplateService.buildPasswordResetMessage(eq(user), anyString()))
+                .thenReturn(new AuthMailMessage("user@example.com", "subject", "body", null));
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(LocalAuthService.class);
+        final Level previousLevel = logger.getLevel();
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.setLevel(Level.INFO);
+        logger.addAppender(appender);
+
+        try {
+            localAuthService.requestPasswordReset(request);
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(previousLevel);
+            appender.stop();
+        }
+
+        assertThat(appender.list).hasSize(1);
+        final ILoggingEvent event = appender.list.getFirst();
+        assertThat(event.getFormattedMessage()).contains("event=auth_password_reset_requested");
+        assertThat(event.getFormattedMessage()).contains("user_id=1");
+        assertThat(event.getFormattedMessage()).contains("masked_email=u***@example.com");
+        assertThat(event.getFormattedMessage()).doesNotContain("subject");
+        assertThat(event.getFormattedMessage()).doesNotContain("body");
+        assertThat(event.getMDCPropertyMap()).containsEntry("event", "auth_password_reset_requested");
+        assertThat(event.getMDCPropertyMap()).containsEntry("outcome", "accepted");
     }
 
     @Test

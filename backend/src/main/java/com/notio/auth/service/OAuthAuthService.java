@@ -18,6 +18,7 @@ import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -27,6 +28,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class OAuthAuthService {
+
+    private static final String EVENT_KEY = "event";
+    private static final String OUTCOME_KEY = "outcome";
 
     private final AuthProviderAdapterRegistry authProviderAdapterRegistry;
     private final AuthProviderStateRepository authProviderStateRepository;
@@ -48,7 +52,7 @@ public class OAuthAuthService {
 
         final String authorizationUrl = adapter.buildAuthorizationUrl(providerState);
         authAuditService.recordOAuthStart(request.getProvider(), request.getPlatform());
-        log.info("OAuth start initialized: provider={}", request.getProvider());
+        logOAuthStart(request.getProvider(), request.getPlatform());
 
         return OAuthStartResponse.builder()
                 .authorizationUrl(authorizationUrl)
@@ -75,6 +79,7 @@ public class OAuthAuthService {
         }
 
         authAuditService.recordOAuthCallbackSuccess(provider, providerState.getPlatform());
+        logOAuthCallbackValidated(provider, providerState.getPlatform());
         return UriComponentsBuilder.fromUriString(providerState.getRedirectUri())
                 .queryParam("provider", provider.name())
                 .queryParam("code", code.trim())
@@ -89,16 +94,21 @@ public class OAuthAuthService {
         final AuthProviderAdapter adapter = authProviderAdapterRegistry.get(request.getProvider());
 
         try {
-            return adapter.exchangeAuthorizationCode(request.getCode().trim(), providerState);
+            final OAuthExchangeResponse response = adapter.exchangeAuthorizationCode(request.getCode().trim(), providerState);
+            authAuditService.recordOAuthExchangeSucceeded(request.getProvider(), providerState.getPlatform());
+            logOAuthExchangeSucceeded(request.getProvider(), providerState.getPlatform());
+            return response;
         } catch (NotioException exception) {
-            authAuditService.recordOAuthCallbackFailure(
+            authAuditService.recordOAuthExchangeFailed(
                     request.getProvider(),
                     providerState.getPlatform(),
                     exception.getErrorCode().getCode()
             );
+            logOAuthExchangeFailed(request.getProvider(), providerState.getPlatform(), exception.getErrorCode().getCode());
             throw exception;
         } catch (RuntimeException exception) {
-            authAuditService.recordOAuthCallbackFailure(request.getProvider(), providerState.getPlatform(), "exchange_exception");
+            authAuditService.recordOAuthExchangeFailed(request.getProvider(), providerState.getPlatform(), "exchange_exception");
+            logOAuthExchangeFailed(request.getProvider(), providerState.getPlatform(), "exchange_exception");
             throw new NotioException(ErrorCode.OAUTH_CALLBACK_FAILED);
         }
     }
@@ -144,5 +154,58 @@ public class OAuthAuthService {
             return null;
         }
         return pkceVerifier.trim();
+    }
+
+    private void logOAuthStart(final AuthProvider provider, final AuthPlatform platform) {
+        MDC.put(EVENT_KEY, "oauth_start");
+        MDC.put(OUTCOME_KEY, "success");
+        try {
+            log.info("event=oauth_start outcome=success provider={} platform={}", provider, platform);
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logOAuthCallbackValidated(final AuthProvider provider, final AuthPlatform platform) {
+        MDC.put(EVENT_KEY, "oauth_callback_validated");
+        MDC.put(OUTCOME_KEY, "success");
+        try {
+            log.info("event=oauth_callback_validated outcome=success provider={} platform={}", provider, platform);
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logOAuthExchangeSucceeded(final AuthProvider provider, final AuthPlatform platform) {
+        MDC.put(EVENT_KEY, "oauth_exchange_succeeded");
+        MDC.put(OUTCOME_KEY, "success");
+        try {
+            log.info("event=oauth_exchange_succeeded outcome=success provider={} platform={}", provider, platform);
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logOAuthExchangeFailed(
+            final AuthProvider provider,
+            final AuthPlatform platform,
+            final String reasonCategory
+    ) {
+        MDC.put(EVENT_KEY, "oauth_exchange_failed");
+        MDC.put(OUTCOME_KEY, "failure");
+        try {
+            log.warn(
+                    "event=oauth_exchange_failed outcome=failure provider={} platform={} reason_category={}",
+                    provider,
+                    platform,
+                    reasonCategory
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
     }
 }

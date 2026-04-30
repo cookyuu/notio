@@ -28,6 +28,7 @@ import java.time.OffsetDateTime;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +43,8 @@ public class LocalAuthService {
     private static final String FIND_ID_MESSAGE = "입력한 이메일로 가입 정보 안내를 전송했습니다.";
     private static final String PASSWORD_RESET_REQUEST_MESSAGE = "비밀번호 재설정 안내를 전송했습니다.";
     private static final String PASSWORD_RESET_CONFIRM_MESSAGE = "비밀번호가 재설정되었습니다.";
+    private static final String EVENT_KEY = "event";
+    private static final String OUTCOME_KEY = "outcome";
 
     private final UserRepository userRepository;
     private final AuthIdentityRepository authIdentityRepository;
@@ -76,7 +79,7 @@ public class LocalAuthService {
                 .build());
 
         authAuditService.recordSignupSuccess(user.getId(), normalizedEmail);
-        log.info("Local signup completed: userId={}, email={}", user.getId(), AuthMaskingUtils.maskEmail(normalizedEmail));
+        logSignupSucceeded(user.getId(), AuthMaskingUtils.maskEmail(normalizedEmail));
 
         return SignupResponse.builder()
                 .message(SIGNUP_MESSAGE)
@@ -89,6 +92,7 @@ public class LocalAuthService {
         authIdentity.ifPresent(identity ->
                 authMailSender.send(authMailTemplateService.buildFindIdMessage(identity.getUser())));
         authAuditService.recordFindIdRequested(normalizedEmail, authIdentity.isPresent());
+        logFindIdRequested(normalizedEmail, authIdentity.isPresent());
         return FindIdResponse.builder()
                 .message(FIND_ID_MESSAGE)
                 .build();
@@ -112,9 +116,13 @@ public class LocalAuthService {
                     .build());
 
             authMailSender.send(authMailTemplateService.buildPasswordResetMessage(identity.getUser(), rawToken));
-            log.info("Password reset requested for userId={}", identity.getUser().getId());
         });
         authAuditService.recordPasswordResetRequested(
+                authIdentity.map(found -> found.getUser().getId()).orElse(null),
+                normalizedEmail,
+                authIdentity.isPresent()
+        );
+        logPasswordResetRequested(
                 authIdentity.map(found -> found.getUser().getId()).orElse(null),
                 normalizedEmail,
                 authIdentity.isPresent()
@@ -150,7 +158,10 @@ public class LocalAuthService {
         refreshTokenRepository.revokeAllByUser(passwordResetToken.getUser());
 
         authAuditService.recordPasswordResetConfirmed(passwordResetToken.getUser().getId());
-        log.info("Password reset confirmed for userId={}", passwordResetToken.getUser().getId());
+        logPasswordResetConfirmed(
+                passwordResetToken.getUser().getId(),
+                AuthMaskingUtils.maskEmail(passwordResetToken.getUser().getPrimaryEmail())
+        );
 
         return PasswordResetConfirmResponse.builder()
                 .message(PASSWORD_RESET_CONFIRM_MESSAGE)
@@ -163,5 +174,74 @@ public class LocalAuthService {
 
     private String normalizeDisplayName(final String displayName) {
         return displayName.trim();
+    }
+
+    private void logSignupSucceeded(final Long userId, final String maskedEmail) {
+        MDC.put(EVENT_KEY, "auth_signup_succeeded");
+        MDC.put(OUTCOME_KEY, "success");
+        try {
+            log.info(
+                    "event=auth_signup_succeeded outcome=success provider={} user_id={} masked_email={}",
+                    AuthProvider.LOCAL,
+                    userId,
+                    maskedEmail
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logFindIdRequested(final String email, final boolean accountFound) {
+        MDC.put(EVENT_KEY, "auth_find_id_requested");
+        MDC.put(OUTCOME_KEY, "accepted");
+        try {
+            log.info(
+                    "event=auth_find_id_requested outcome=accepted provider={} masked_email={} account_found={}",
+                    AuthProvider.LOCAL,
+                    AuthMaskingUtils.maskEmail(email),
+                    accountFound
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logPasswordResetRequested(
+            final Long userId,
+            final String email,
+            final boolean accountFound
+    ) {
+        MDC.put(EVENT_KEY, "auth_password_reset_requested");
+        MDC.put(OUTCOME_KEY, "accepted");
+        try {
+            log.info(
+                    "event=auth_password_reset_requested outcome=accepted provider={} user_id={} masked_email={} account_found={}",
+                    AuthProvider.LOCAL,
+                    userId,
+                    AuthMaskingUtils.maskEmail(email),
+                    accountFound
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logPasswordResetConfirmed(final Long userId, final String maskedEmail) {
+        MDC.put(EVENT_KEY, "auth_password_reset_confirmed");
+        MDC.put(OUTCOME_KEY, "success");
+        try {
+            log.info(
+                    "event=auth_password_reset_confirmed outcome=success provider={} user_id={} masked_email={}",
+                    AuthProvider.LOCAL,
+                    userId,
+                    maskedEmail
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
     }
 }

@@ -156,14 +156,14 @@
 
 ## Phase 5. Auth 도메인 로그 표준화
 
-- [ ] `AuthService`에 로그인 성공/실패 로그를 추가 또는 정리한다.
-- [ ] `AuthService`에 토큰 재발급 성공/실패 로그를 추가 또는 정리한다.
-- [ ] `OAuthAuthService`에 OAuth start/callback/exchange 로그를 표준화한다.
-- [ ] `LocalAuthService`의 signup/find-id/password-reset 흐름 로그를 표준화한다.
-- [ ] `AuthAuditService`의 이벤트명과 서비스 로그의 vocabulary를 맞춘다.
-- [ ] auth 로그에 `provider`, `platform`, `user_id`, `masked_email`, `outcome`을 필요한 범위에서 포함한다.
-- [ ] email은 반드시 마스킹된 값만 로그에 남긴다.
-- [ ] token, code, state 원문을 로그에 남기지 않는다.
+- [x] `AuthService`에 로그인 성공/실패 로그를 추가 또는 정리한다.
+- [x] `AuthService`에 토큰 재발급 성공/실패 로그를 추가 또는 정리한다.
+- [x] `OAuthAuthService`에 OAuth start/callback/exchange 로그를 표준화한다.
+- [x] `LocalAuthService`의 signup/find-id/password-reset 흐름 로그를 표준화한다.
+- [x] `AuthAuditService`의 이벤트명과 서비스 로그의 vocabulary를 맞춘다.
+- [x] auth 로그에 `provider`, `platform`, `user_id`, `masked_email`, `outcome`을 필요한 범위에서 포함한다.
+- [x] email은 반드시 마스킹된 값만 로그에 남긴다.
+- [x] token, code, state 원문을 로그에 남기지 않는다.
 
 상세 가이드:
 - auth 로그 이벤트명은 다음 기준으로 통일한다.
