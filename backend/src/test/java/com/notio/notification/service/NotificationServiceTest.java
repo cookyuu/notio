@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.connection.domain.Connection;
 import com.notio.common.exception.NotioException;
+import com.notio.common.metrics.NotioMetrics;
+import com.notio.common.metrics.NotioMetricsTagPolicy;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
@@ -73,7 +75,7 @@ class NotificationServiceTest {
                 pushService,
                 cacheManager,
                 notificationEmbeddingService,
-                new NotificationFlowMetrics(meterRegistry)
+                new NotificationFlowMetrics(new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy()))
         );
         lenient().when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
         lenient().when(cacheManager.getCache("dailySummary")).thenReturn(dailySummaryCache);

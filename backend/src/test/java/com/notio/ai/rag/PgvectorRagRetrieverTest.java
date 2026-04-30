@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 import com.notio.ai.embedding.EmbeddingProvider;
 import com.notio.chat.metrics.ChatMetrics;
 import com.notio.common.config.properties.NotioRagProperties;
+import com.notio.common.metrics.NotioMetrics;
+import com.notio.common.metrics.NotioMetricsTagPolicy;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -42,7 +44,7 @@ class PgvectorRagRetrieverTest {
                 embeddingProvider,
                 jdbcTemplate,
                 new NotioRagProperties(5, 3),
-                new ChatMetrics(new SimpleMeterRegistry())
+                new ChatMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
         );
     }
 

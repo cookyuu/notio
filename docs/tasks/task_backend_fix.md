@@ -262,14 +262,14 @@
 
 ## Phase 8. Prometheus 메트릭 계층 정리
 
-- [ ] 공용 메트릭 등록 방식을 정한다.
-- [ ] `MeterRegistry`를 직접 주입할지, 별도 metrics helper/component를 둘지 패턴을 고정한다.
-- [ ] HTTP 기본 메트릭(`http.server.requests`)이 유지되는지 확인한다.
-- [ ] 도메인 메트릭 이름 규칙을 `notio_*` prefix로 통일한다.
-- [ ] counter/timer/gauge 이름과 tag 체계를 문서 기준으로 고정한다.
-- [ ] 메트릭 tag에 `correlation_id`, `user_id`, `stream_id`를 넣지 않도록 방지한다.
-- [ ] 허용 tag는 `route`, `provider`, `source`, `mode`, `outcome`, `exception` 수준으로 제한한다.
-- [ ] 메트릭 생성이 비즈니스 로직을 오염시키지 않도록 helper layer를 두거나 호출 위치를 최소화한다.
+- [x] 공용 메트릭 등록 방식을 정한다.
+- [x] `MeterRegistry`를 직접 주입할지, 별도 metrics helper/component를 둘지 패턴을 고정한다.
+- [x] HTTP 기본 메트릭(`http.server.requests`)이 유지되는지 확인한다.
+- [x] 도메인 메트릭 이름 규칙을 `notio_*` prefix로 통일한다.
+- [x] counter/timer/gauge 이름과 tag 체계를 문서 기준으로 고정한다.
+- [x] 메트릭 tag에 `correlation_id`, `user_id`, `stream_id`를 넣지 않도록 방지한다.
+- [x] 허용 tag는 `route`, `provider`, `source`, `mode`, `outcome`, `exception`, `time_range_applied` 수준으로 제한한다.
+- [x] 메트릭 생성이 비즈니스 로직을 오염시키지 않도록 helper layer를 두거나 호출 위치를 최소화한다.
 
 상세 가이드:
 - 고카디널리티 값은 Prometheus 비용을 크게 올리므로 절대 tag로 넣지 않는다.

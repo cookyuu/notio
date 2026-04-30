@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.notio.chat.metrics.ChatMetrics;
 import com.notio.common.config.properties.NotioRagProperties;
+import com.notio.common.metrics.NotioMetrics;
+import com.notio.common.metrics.NotioMetricsTagPolicy;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
@@ -164,7 +166,7 @@ class PgvectorRagRetrieverIntegrationTest {
                 input -> new float[] {1.0f, 0.0f, 0.0f},
                 jdbcTemplate,
                 new NotioRagProperties(5, 3),
-                new ChatMetrics(new SimpleMeterRegistry())
+                new ChatMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
         );
 
         final List<RagDocument> documents = retriever.retrieve(1L, "PR 리뷰 요청 알려줘", Optional.empty());

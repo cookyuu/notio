@@ -22,6 +22,8 @@ import com.notio.chat.metrics.ChatMetrics;
 import com.notio.chat.repository.ChatMessageRepository;
 import com.notio.common.config.JacksonConfig;
 import com.notio.common.config.properties.NotioAiProperties;
+import com.notio.common.metrics.NotioMetrics;
+import com.notio.common.metrics.NotioMetricsTagPolicy;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.time.Instant;
@@ -297,6 +299,7 @@ class ChatServiceTest {
     }
 
     private ChatMetrics chatMetrics() {
-        return new ChatMetrics(new SimpleMeterRegistry());
+        final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        return new ChatMetrics(new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy()));
     }
 }

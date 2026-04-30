@@ -13,6 +13,8 @@ import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.common.exception.GlobalExceptionHandler;
 import com.notio.common.exception.NotioException;
+import com.notio.common.metrics.NotioMetrics;
+import com.notio.common.metrics.NotioMetricsTagPolicy;
 import com.notio.common.response.ApiResponse;
 import com.notio.connection.adapter.ConnectionProviderAdapter;
 import com.notio.connection.adapter.ConnectionProviderAdapterRegistry;
@@ -51,7 +53,7 @@ class WebhookControllerTest {
             notificationService,
             connectionService,
             new ObjectMapper(),
-            new NotificationFlowMetrics(new SimpleMeterRegistry())
+            new NotificationFlowMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
         );
         final NotificationEvent event = new NotificationEvent(
             com.notio.notification.domain.NotificationSource.CLAUDE,
@@ -119,7 +121,7 @@ class WebhookControllerTest {
                 notificationService,
                 connectionService,
                 new ObjectMapper(),
-                new NotificationFlowMetrics(new SimpleMeterRegistry())
+                new NotificationFlowMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
         );
 
         assertThatThrownBy(() -> controller.receiveWebhook(
@@ -152,7 +154,7 @@ class WebhookControllerTest {
             notificationService,
             connectionService,
             new ObjectMapper(),
-            new NotificationFlowMetrics(new SimpleMeterRegistry())
+            new NotificationFlowMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
         );
 
         assertThatThrownBy(() -> controller.receiveWebhook(

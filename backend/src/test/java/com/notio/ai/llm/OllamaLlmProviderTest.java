@@ -11,6 +11,8 @@ import com.notio.ai.prompt.LlmPrompt;
 import com.notio.chat.metrics.ChatMetrics;
 import com.notio.common.config.properties.NotioAiProperties;
 import com.notio.common.exception.AiExceptionTranslator;
+import com.notio.common.metrics.NotioMetrics;
+import com.notio.common.metrics.NotioMetricsTagPolicy;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
@@ -32,7 +34,7 @@ class OllamaLlmProviderTest {
                 chatModel,
                 exceptionTranslator,
                 aiProperties(),
-                new ChatMetrics(meterRegistry)
+                new ChatMetrics(new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy()))
         );
         final ChatResponse response = mock(ChatResponse.class, RETURNS_DEEP_STUBS);
         when(response.getResult().getOutput().getText()).thenReturn("응답입니다.");
@@ -57,7 +59,7 @@ class OllamaLlmProviderTest {
                 chatModel,
                 exceptionTranslator,
                 aiProperties(),
-                new ChatMetrics(meterRegistry)
+                new ChatMetrics(new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy()))
         );
         final ChatResponse response = mock(ChatResponse.class, RETURNS_DEEP_STUBS);
         when(response.getResult().getOutput().getText()).thenReturn("첫 청크");
