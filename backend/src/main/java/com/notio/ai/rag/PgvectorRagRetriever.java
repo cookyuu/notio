@@ -1,18 +1,24 @@
 package com.notio.ai.rag;
 
 import com.notio.ai.embedding.EmbeddingProvider;
+import com.notio.chat.metrics.ChatMetrics;
 import com.notio.common.config.properties.NotioRagProperties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class PgvectorRagRetriever implements RagRetriever {
@@ -22,6 +28,7 @@ public class PgvectorRagRetriever implements RagRetriever {
     private final EmbeddingProvider embeddingProvider;
     private final JdbcTemplate jdbcTemplate;
     private final NotioRagProperties ragProperties;
+    private final ChatMetrics chatMetrics;
 
     @Override
     public List<RagDocument> retrieve(
@@ -29,6 +36,7 @@ public class PgvectorRagRetriever implements RagRetriever {
             final String question,
             final Optional<TimeRange> timeRange
     ) {
+        final Instant startedAt = Instant.now();
         final float[] queryEmbedding = embeddingProvider.embed(question);
         validateDimension(queryEmbedding);
         final String vectorLiteral = toVectorLiteral(queryEmbedding);
@@ -75,7 +83,24 @@ public class PgvectorRagRetriever implements RagRetriever {
         parameters.add(vectorLiteral);
         parameters.add(ragProperties.topK());
 
-        return jdbcTemplate.query(sql.toString(), this::mapDocument, parameters.toArray());
+        final List<RagDocument> results = jdbcTemplate.query(sql.toString(), this::mapDocument, parameters.toArray());
+        final Duration elapsed = Duration.between(startedAt, Instant.now());
+        chatMetrics.recordRagRetrieval(timeRange.isPresent(), elapsed);
+        MDC.put("event", "rag_retrieve_completed");
+        MDC.put("outcome", "success");
+        try {
+            log.info(
+                    "event=rag_retrieve_completed time_range_applied={} top_k={} result_count={} elapsed_ms={}",
+                    timeRange.isPresent(),
+                    ragProperties.topK(),
+                    results.size(),
+                    elapsed.toMillis()
+            );
+        } finally {
+            MDC.remove("outcome");
+            MDC.remove("event");
+        }
+        return results;
     }
 
     private RagDocument mapDocument(final ResultSet resultSet, final int rowNumber) throws SQLException {

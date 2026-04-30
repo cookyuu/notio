@@ -185,19 +185,19 @@
 
 ## Phase 6. Chat / LLM / RAG / SSE 로그 및 메트릭
 
-- [ ] `ChatService.chat()` 시작 시 `event=chat_request_started` 로그를 남긴다.
-- [ ] `ChatService.streamChat()` 시작 시 `event=chat_stream_started` 로그를 남긴다.
-- [ ] chat 로그에 `correlation_id` 외에 `stream_id`, `time_range_applied`, `history_count`를 포함한다.
-- [ ] prompt 생성 완료 시 `event=chat_prompt_built` 로그를 남긴다.
-- [ ] prompt 관련 로그에는 `rag_result_count`, `prompt_chars`를 포함한다.
-- [ ] first chunk 수신 시 `event=chat_stream_first_chunk` 로그를 남긴다.
-- [ ] stream 완료 시 `event=chat_stream_completed` 로그를 남긴다.
-- [ ] stream cancel/timeout/failure 시 각각 별도 event로 로그를 남긴다.
-- [ ] `OllamaLlmProvider`에 `llm_call_started`, `llm_call_completed`, `llm_call_failed` 로그를 추가한다.
-- [ ] `OllamaLlmProvider` 로그에 `mode`, `timeout_ms`, `elapsed_ms`, `exception_type`를 포함한다.
-- [ ] `PgvectorRagRetriever`에 `event=rag_retrieve_completed` 로그를 추가한다.
-- [ ] RAG 로그에 `time_range_applied`, `top_k`, `result_count`, `elapsed_ms`를 포함한다.
-- [ ] chat 관련 Prometheus counter/timer/gauge를 추가한다.
+- [x] `ChatService.chat()` 시작 시 `event=chat_request_started` 로그를 남긴다.
+- [x] `ChatService.streamChat()` 시작 시 `event=chat_stream_started` 로그를 남긴다.
+- [x] chat 로그에 `correlation_id` 외에 `stream_id`, `time_range_applied`, `history_count`를 포함한다.
+- [x] prompt 생성 완료 시 `event=chat_prompt_built` 로그를 남긴다.
+- [x] prompt 관련 로그에는 `rag_result_count`, `prompt_chars`를 포함한다.
+- [x] first chunk 수신 시 `event=chat_stream_first_chunk` 로그를 남긴다.
+- [x] stream 완료 시 `event=chat_stream_completed` 로그를 남긴다.
+- [x] stream cancel/timeout/failure 시 각각 별도 event로 로그를 남긴다.
+- [x] `OllamaLlmProvider`에 `llm_call_started`, `llm_call_completed`, `llm_call_failed` 로그를 추가한다.
+- [x] `OllamaLlmProvider` 로그에 `mode`, `timeout_ms`, `elapsed_ms`, `exception_type`를 포함한다.
+- [x] `PgvectorRagRetriever`에 `event=rag_retrieve_completed` 로그를 추가한다.
+- [x] RAG 로그에 `time_range_applied`, `top_k`, `result_count`, `elapsed_ms`를 포함한다.
+- [x] chat 관련 Prometheus counter/timer/gauge를 추가한다.
 
 상세 가이드:
 - chunk 본문 전체를 로그에 찍지 않는다. `chunk_count`, `response_chars`, `first_chunk_elapsed_ms` 위주로 남긴다.

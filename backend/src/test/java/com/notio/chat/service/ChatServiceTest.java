@@ -18,9 +18,11 @@ import com.notio.chat.domain.ChatMessage;
 import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
 import com.notio.chat.dto.ChatRequest;
+import com.notio.chat.metrics.ChatMetrics;
 import com.notio.chat.repository.ChatMessageRepository;
 import com.notio.common.config.JacksonConfig;
 import com.notio.common.config.properties.NotioAiProperties;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -49,7 +51,8 @@ class ChatServiceTest {
                 promptBuilder,
                 llmProvider,
                 aiProperties(),
-                objectMapper()
+                objectMapper(),
+                chatMetrics()
         );
         final ChatMessage userMessage = message(
                 1L,
@@ -119,7 +122,8 @@ class ChatServiceTest {
                 promptBuilder,
                 llmProvider,
                 aiProperties(),
-                objectMapper()
+                objectMapper(),
+                chatMetrics()
         );
         final ChatMessage userMessage = message(
                 1L,
@@ -193,7 +197,8 @@ class ChatServiceTest {
                 promptBuilder,
                 llmProvider,
                 aiProperties(),
-                objectMapper()
+                objectMapper(),
+                chatMetrics()
         );
         final ChatMessage userMessage = message(
                 1L,
@@ -241,7 +246,8 @@ class ChatServiceTest {
                 promptBuilder,
                 llmProvider,
                 aiProperties(),
-                objectMapper()
+                objectMapper(),
+                chatMetrics()
         );
         final ChatMessage message = message(
                 10L,
@@ -288,5 +294,9 @@ class ChatServiceTest {
 
     private ObjectMapper objectMapper() {
         return new JacksonConfig().objectMapper();
+    }
+
+    private ChatMetrics chatMetrics() {
+        return new ChatMetrics(new SimpleMeterRegistry());
     }
 }

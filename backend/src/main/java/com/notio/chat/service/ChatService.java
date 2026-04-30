@@ -3,7 +3,6 @@ package com.notio.chat.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.ai.llm.LlmProvider;
-import com.notio.ai.prompt.LlmPrompt;
 import com.notio.ai.prompt.PromptBuilder;
 import com.notio.ai.rag.RagDocument;
 import com.notio.ai.rag.RagRetriever;
@@ -12,10 +11,12 @@ import com.notio.chat.domain.ChatMessage;
 import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
 import com.notio.chat.dto.ChatRequest;
+import com.notio.chat.metrics.ChatMetrics;
 import com.notio.chat.repository.ChatMessageRepository;
 import com.notio.common.config.properties.NotioAiProperties;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +46,7 @@ public class ChatService {
     private final LlmProvider llmProvider;
     private final NotioAiProperties aiProperties;
     private final ObjectMapper objectMapper;
+    private final ChatMetrics chatMetrics;
 
     public ChatService(
             final ChatMessageRepository chatMessageRepository,
@@ -52,7 +55,8 @@ public class ChatService {
             final PromptBuilder promptBuilder,
             final LlmProvider llmProvider,
             final NotioAiProperties aiProperties,
-            final ObjectMapper objectMapper
+            final ObjectMapper objectMapper,
+            final ChatMetrics chatMetrics
     ) {
         this.chatMessageRepository = chatMessageRepository;
         this.ragRetriever = ragRetriever;
@@ -61,98 +65,106 @@ public class ChatService {
         this.llmProvider = llmProvider;
         this.aiProperties = aiProperties;
         this.objectMapper = objectMapper;
+        this.chatMetrics = chatMetrics;
     }
 
     public ChatMessageResponse chat(final ChatRequest request) {
+        final Instant startedAt = Instant.now();
         final ChatMessage userMessage = appendMessage(ChatMessageRole.USER, request.content());
-        final LlmPrompt prompt = buildChatPrompt(request.content(), userMessage.getUserId());
-        final String responseText = llmProvider.chat(prompt);
-        return append(ChatMessageRole.ASSISTANT, responseText);
+        final ChatPromptContext promptContext = buildChatPromptContext(request.content(), userMessage.getUserId());
+
+        logChatRequestStarted(promptContext);
+        logChatPromptBuilt(promptContext, "sync");
+
+        try {
+            final String responseText = llmProvider.chat(promptContext.prompt());
+            final ChatMessageResponse response = append(ChatMessageRole.ASSISTANT, responseText);
+            chatMetrics.recordResponseChars("sync", responseText.length());
+            chatMetrics.recordChatRequest("sync", "success", Duration.between(startedAt, Instant.now()));
+            return response;
+        } catch (RuntimeException exception) {
+            chatMetrics.recordChatRequest("sync", "failure", Duration.between(startedAt, Instant.now()));
+            throw exception;
+        }
     }
 
     public SseEmitter streamChat(final ChatRequest request) {
         final String streamId = UUID.randomUUID().toString();
         final Instant startedAt = Instant.now();
-        log.info(
-                "Chat stream request received: streamId={}, contentLength={}",
-                streamId,
-                request.content().length()
-        );
-
         final ChatMessage userMessage = appendMessage(ChatMessageRole.USER, request.content());
-        log.info(
-                "Chat stream user message saved: streamId={}, userId={}, messageId={}, elapsedMs={}",
-                streamId,
-                userMessage.getUserId(),
-                userMessage.getId(),
-                elapsedMillis(startedAt)
-        );
+        final ChatPromptContext promptContext = buildChatPromptContext(request.content(), userMessage.getUserId());
 
-        final LlmPrompt prompt = buildChatPrompt(request.content(), userMessage.getUserId(), streamId, startedAt);
-        log.info(
-                "Chat stream prompt ready: streamId={}, elapsedMs={}",
-                streamId,
-                elapsedMillis(startedAt)
-        );
+        logChatStreamStarted(streamId, promptContext);
+        logChatPromptBuilt(promptContext, streamId);
 
         final SseEmitter emitter = new SseEmitter(aiProperties.streamingTimeout().toMillis());
         final AtomicBoolean active = new AtomicBoolean(true);
+        final AtomicBoolean finalized = new AtomicBoolean(false);
         final AtomicInteger chunkCount = new AtomicInteger();
         final AtomicLong responseCharacters = new AtomicLong();
         final AtomicLong firstChunkElapsedMs = new AtomicLong(-1);
+        final Map<String, String> loggingContext = captureLoggingContext(streamId);
+
+        chatMetrics.incrementActiveStreams();
 
         emitter.onCompletion(() -> {
             active.set(false);
-            log.info(
-                    "Chat stream emitter completed: streamId={}, chunks={}, responseChars={}, firstChunkElapsedMs={}, elapsedMs={}",
+            finalizeStream(
+                    finalized,
+                    loggingContext,
+                    "chat_stream_completed",
+                    "success",
                     streamId,
-                    chunkCount.get(),
-                    responseCharacters.get(),
-                    firstChunkElapsedMs.get(),
-                    elapsedMillis(startedAt)
+                    chunkCount,
+                    responseCharacters,
+                    firstChunkElapsedMs,
+                    startedAt,
+                    null
             );
         });
         emitter.onTimeout(() -> {
             active.set(false);
-            log.warn(
-                    "Chat stream emitter timed out: streamId={}, timeoutMs={}, chunks={}, responseChars={}, firstChunkElapsedMs={}, elapsedMs={}",
+            finalizeStream(
+                    finalized,
+                    loggingContext,
+                    "chat_stream_timed_out",
+                    "timeout",
                     streamId,
-                    aiProperties.streamingTimeout().toMillis(),
-                    chunkCount.get(),
-                    responseCharacters.get(),
-                    firstChunkElapsedMs.get(),
-                    elapsedMillis(startedAt)
+                    chunkCount,
+                    responseCharacters,
+                    firstChunkElapsedMs,
+                    startedAt,
+                    null
             );
         });
         emitter.onError(exception -> {
             active.set(false);
-            log.warn(
-                    "Chat stream emitter error: streamId={}, chunks={}, responseChars={}, firstChunkElapsedMs={}, elapsedMs={}",
+            finalizeStream(
+                    finalized,
+                    loggingContext,
+                    "chat_stream_failed",
+                    "failure",
                     streamId,
-                    chunkCount.get(),
-                    responseCharacters.get(),
-                    firstChunkElapsedMs.get(),
-                    elapsedMillis(startedAt),
+                    chunkCount,
+                    responseCharacters,
+                    firstChunkElapsedMs,
+                    startedAt,
                     exception
             );
         });
 
         Thread.startVirtualThread(() -> {
             final StringBuilder assistantContent = new StringBuilder();
+            applyLoggingContext(loggingContext);
             try {
-                log.info("Chat stream LLM call started: streamId={}, elapsedMs={}", streamId, elapsedMillis(startedAt));
-                llmProvider.stream(prompt, chunk -> {
+                llmProvider.stream(promptContext.prompt(), chunk -> {
                     if (!active.get()) {
                         throw new CancellationException("SSE client disconnected");
                     }
                     if (chunkCount.get() == 0) {
                         firstChunkElapsedMs.set(elapsedMillis(startedAt));
-                        log.info(
-                                "Chat stream first chunk received: streamId={}, firstChunkElapsedMs={}, chunkChars={}",
-                                streamId,
-                                firstChunkElapsedMs.get(),
-                                chunk.length()
-                        );
+                        chatMetrics.recordFirstChunk(Duration.ofMillis(firstChunkElapsedMs.get()));
+                        logStreamFirstChunk(streamId, promptContext, firstChunkElapsedMs.get(), chunk.length());
                     }
                     chunkCount.incrementAndGet();
                     responseCharacters.addAndGet(chunk.length());
@@ -161,12 +173,17 @@ public class ChatService {
                 });
 
                 if (!active.get()) {
-                    log.info(
-                            "Chat stream stopped after client disconnect: streamId={}, chunks={}, responseChars={}, elapsedMs={}",
+                    finalizeStream(
+                            finalized,
+                            loggingContext,
+                            "chat_stream_cancelled",
+                            "cancelled",
                             streamId,
-                            chunkCount.get(),
-                            responseCharacters.get(),
-                            elapsedMillis(startedAt)
+                            chunkCount,
+                            responseCharacters,
+                            firstChunkElapsedMs,
+                            startedAt,
+                            null
                     );
                     return;
                 }
@@ -175,40 +192,53 @@ public class ChatService {
                         ChatMessageRole.ASSISTANT,
                         assistantContent.toString().trim()
                 );
+                chatMetrics.recordResponseChars("stream", responseCharacters.get());
                 emitter.send(SseEmitter.event()
                         .data(toJson(Map.of("done", true, "message_id", assistantMessage.getId()))));
-                log.info(
-                        "Chat stream done sent: streamId={}, assistantMessageId={}, chunks={}, responseChars={}, firstChunkElapsedMs={}, elapsedMs={}",
+                finalizeStream(
+                        finalized,
+                        loggingContext,
+                        "chat_stream_completed",
+                        "success",
                         streamId,
-                        assistantMessage.getId(),
-                        chunkCount.get(),
-                        responseCharacters.get(),
-                        firstChunkElapsedMs.get(),
-                        elapsedMillis(startedAt)
+                        chunkCount,
+                        responseCharacters,
+                        firstChunkElapsedMs,
+                        startedAt,
+                        null
                 );
                 emitter.complete();
             } catch (CancellationException exception) {
                 active.set(false);
-                log.info(
-                        "Chat stream cancelled: streamId={}, chunks={}, responseChars={}, elapsedMs={}",
+                finalizeStream(
+                        finalized,
+                        loggingContext,
+                        "chat_stream_cancelled",
+                        "cancelled",
                         streamId,
-                        chunkCount.get(),
-                        responseCharacters.get(),
-                        elapsedMillis(startedAt)
+                        chunkCount,
+                        responseCharacters,
+                        firstChunkElapsedMs,
+                        startedAt,
+                        null
                 );
             } catch (Exception exception) {
-                log.warn(
-                        "Chat stream failed: streamId={}, chunks={}, responseChars={}, firstChunkElapsedMs={}, elapsedMs={}",
+                active.set(false);
+                finalizeStream(
+                        finalized,
+                        loggingContext,
+                        "chat_stream_failed",
+                        "failure",
                         streamId,
-                        chunkCount.get(),
-                        responseCharacters.get(),
-                        firstChunkElapsedMs.get(),
-                        elapsedMillis(startedAt),
+                        chunkCount,
+                        responseCharacters,
+                        firstChunkElapsedMs,
+                        startedAt,
                         exception
                 );
-                if (active.get()) {
-                    emitter.completeWithError(exception);
-                }
+                emitter.completeWithError(exception);
+            } finally {
+                MDC.clear();
             }
         });
 
@@ -234,38 +264,156 @@ public class ChatService {
         return chatMessageRepository.save(message);
     }
 
-    private LlmPrompt buildChatPrompt(final String userMessage, final Long userId) {
-        return buildChatPrompt(userMessage, userId, null, null);
-    }
-
-    private LlmPrompt buildChatPrompt(
-            final String userMessage,
-            final Long userId,
-            final String streamId,
-            final Instant startedAt
-    ) {
-        logTimed(streamId, startedAt, "Chat stream RAG retrieval started");
+    private ChatPromptContext buildChatPromptContext(final String userMessage, final Long userId) {
         final Optional<TimeRange> timeRange = timeRangeExtractor.extract(userMessage);
         final List<RagDocument> documents = ragRetriever.retrieve(userId, userMessage, timeRange);
-        logTimed(streamId, startedAt, "Chat stream RAG retrieval completed: documents=%d".formatted(documents.size()));
-        logTimed(streamId, startedAt, "Chat stream recent history retrieval started");
         final List<ChatMessage> recentMessages = chatMessageRepository.findRecentByUserId(
                 userId,
                 PageRequest.of(0, 10)
         );
-        logTimed(
-                streamId,
-                startedAt,
-                "Chat stream recent history retrieval completed: messages=%d".formatted(recentMessages.size())
+        final var prompt = promptBuilder.buildChatPrompt(userMessage, documents, recentMessages, timeRange);
+        return new ChatPromptContext(
+                prompt,
+                timeRange.isPresent(),
+                recentMessages.size(),
+                documents.size(),
+                prompt.system().length() + prompt.user().length()
         );
-        return promptBuilder.buildChatPrompt(userMessage, documents, recentMessages, timeRange);
     }
 
-    private void logTimed(final String streamId, final Instant startedAt, final String message) {
-        if (streamId == null || startedAt == null) {
+    private void logChatRequestStarted(final ChatPromptContext promptContext) {
+        putEventContext("chat_request_started", "started");
+        try {
+            log.info(
+                    "event=chat_request_started stream_id=sync time_range_applied={} history_count={}",
+                    promptContext.timeRangeApplied(),
+                    promptContext.historyCount()
+            );
+        } finally {
+            clearEventContext();
+        }
+    }
+
+    private void logChatStreamStarted(final String streamId, final ChatPromptContext promptContext) {
+        putEventContext("chat_stream_started", "started");
+        try {
+            log.info(
+                    "event=chat_stream_started stream_id={} time_range_applied={} history_count={}",
+                    streamId,
+                    promptContext.timeRangeApplied(),
+                    promptContext.historyCount()
+            );
+        } finally {
+            clearEventContext();
+        }
+    }
+
+    private void logChatPromptBuilt(final ChatPromptContext promptContext, final String streamId) {
+        putEventContext("chat_prompt_built", "success");
+        try {
+            log.info(
+                    "event=chat_prompt_built stream_id={} time_range_applied={} history_count={} rag_result_count={} prompt_chars={}",
+                    streamId,
+                    promptContext.timeRangeApplied(),
+                    promptContext.historyCount(),
+                    promptContext.ragResultCount(),
+                    promptContext.promptChars()
+            );
+        } finally {
+            clearEventContext();
+        }
+    }
+
+    private void logStreamFirstChunk(
+            final String streamId,
+            final ChatPromptContext promptContext,
+            final long firstChunkElapsedMs,
+            final int chunkChars
+    ) {
+        putEventContext("chat_stream_first_chunk", "success");
+        try {
+            log.info(
+                    "event=chat_stream_first_chunk stream_id={} time_range_applied={} history_count={} first_chunk_elapsed_ms={} chunk_chars={}",
+                    streamId,
+                    promptContext.timeRangeApplied(),
+                    promptContext.historyCount(),
+                    firstChunkElapsedMs,
+                    chunkChars
+            );
+        } finally {
+            clearEventContext();
+        }
+    }
+
+    private void finalizeStream(
+            final AtomicBoolean finalized,
+            final Map<String, String> loggingContext,
+            final String event,
+            final String outcome,
+            final String streamId,
+            final AtomicInteger chunkCount,
+            final AtomicLong responseCharacters,
+            final AtomicLong firstChunkElapsedMs,
+            final Instant startedAt,
+            final Throwable throwable
+    ) {
+        if (!finalized.compareAndSet(false, true)) {
             return;
         }
-        log.info("{}: streamId={}, elapsedMs={}", message, streamId, elapsedMillis(startedAt));
+
+        applyLoggingContext(loggingContext);
+        putEventContext(event, outcome);
+        try {
+            final String message =
+                    "event=%s stream_id=%s chunk_count=%d response_chars=%d first_chunk_elapsed_ms=%d elapsed_ms=%d"
+                            .formatted(
+                                    event,
+                                    streamId,
+                                    chunkCount.get(),
+                                    responseCharacters.get(),
+                                    firstChunkElapsedMs.get(),
+                                    elapsedMillis(startedAt)
+                            );
+            if (throwable == null) {
+                if ("failure".equals(outcome) || "timeout".equals(outcome)) {
+                    log.warn(message);
+                } else {
+                    log.info(message);
+                }
+            } else {
+                log.warn(message, throwable);
+            }
+        } finally {
+            clearEventContext();
+            chatMetrics.recordChatRequest("stream", outcome, Duration.between(startedAt, Instant.now()));
+            chatMetrics.decrementActiveStreams();
+            MDC.clear();
+        }
+    }
+
+    private Map<String, String> captureLoggingContext(final String streamId) {
+        final Map<String, String> context = MDC.getCopyOfContextMap();
+        final Map<String, String> copy = context == null ? new HashMap<>() : new HashMap<>(context);
+        copy.put("stream_id", streamId);
+        return copy;
+    }
+
+    private void applyLoggingContext(final Map<String, String> context) {
+        if (context == null || context.isEmpty()) {
+            MDC.clear();
+            return;
+        }
+        MDC.setContextMap(context);
+    }
+
+    private void putEventContext(final String event, final String outcome) {
+        MDC.put("event", event);
+        MDC.put("outcome", outcome);
+    }
+
+    private void clearEventContext() {
+        MDC.remove("outcome");
+        MDC.remove("event");
     }
 
     private long elapsedMillis(final Instant startedAt) {
@@ -288,4 +436,3 @@ public class ChatService {
         }
     }
 }
-

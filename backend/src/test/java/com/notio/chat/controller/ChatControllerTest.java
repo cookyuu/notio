@@ -23,12 +23,14 @@ import com.notio.chat.domain.ChatMessage;
 import com.notio.chat.domain.ChatMessageRole;
 import com.notio.chat.dto.ChatMessageResponse;
 import com.notio.chat.dto.DailySummaryResponse;
+import com.notio.chat.metrics.ChatMetrics;
 import com.notio.chat.repository.ChatMessageRepository;
 import com.notio.chat.service.ChatService;
 import com.notio.chat.service.ChatTimeRangeExtractor;
 import com.notio.chat.service.DailySummaryService;
 import com.notio.common.config.JacksonConfig;
 import com.notio.common.config.properties.NotioAiProperties;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -137,7 +139,8 @@ class ChatControllerTest {
                 promptBuilder,
                 llmProvider,
                 new NotioAiProperties(Duration.ofSeconds(30), Duration.ofSeconds(15), Duration.ofSeconds(5)),
-                objectMapper
+                objectMapper,
+                new ChatMetrics(new SimpleMeterRegistry())
         );
         final MockMvc mockMvc = mockMvc(new ChatController(chatService, dailySummaryService));
         final ChatMessage userMessage = message(1L, ChatMessageRole.USER, "오늘 중요한 알림 알려줘");
