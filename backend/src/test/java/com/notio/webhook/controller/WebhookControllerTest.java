@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notio.common.exception.GlobalExceptionHandler;
 import com.notio.common.exception.NotioException;
 import com.notio.common.response.ApiResponse;
+import org.springframework.mock.web.MockHttpServletRequest;
 import com.notio.connection.adapter.ConnectionProviderAdapter;
 import com.notio.connection.adapter.ConnectionProviderAdapterRegistry;
 import com.notio.connection.domain.ConnectionAuthType;
@@ -106,7 +107,7 @@ class WebhookControllerTest {
         )).isInstanceOf(NotioException.class)
                 .satisfies(exception -> {
                     final ResponseEntity<ApiResponse<Void>> response = new GlobalExceptionHandler()
-                            .handleNotioException((NotioException) exception);
+                            .handleNotioException((NotioException) exception, new MockHttpServletRequest("POST", "/api/v1/webhook/slack"));
                     assertThat(response.getStatusCode().value()).isEqualTo(401);
                     assertThat(response.getBody()).isNotNull();
                     assertThat(response.getBody().error().code()).isEqualTo("WEBHOOK_VERIFICATION_FAILED");

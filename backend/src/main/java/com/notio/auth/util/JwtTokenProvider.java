@@ -13,10 +13,8 @@ import java.time.OffsetDateTime;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
@@ -76,21 +74,24 @@ public class JwtTokenProvider {
      * JWT 토큰 유효성 검증
      */
     public boolean validateToken(final String token) {
+        return validateTokenWithReason(token).isValid();
+    }
+
+    public JwtValidationResult validateTokenWithReason(final String token) {
         try {
             getClaims(token);
-            return true;
+            return JwtValidationResult.success();
         } catch (final SignatureException e) {
-            log.error("Invalid JWT signature: {}", e.getMessage());
+            return JwtValidationResult.invalid("invalid_signature");
         } catch (final MalformedJwtException e) {
-            log.error("Invalid JWT token: {}", e.getMessage());
+            return JwtValidationResult.invalid("malformed_token");
         } catch (final ExpiredJwtException e) {
-            log.error("JWT token is expired: {}", e.getMessage());
+            return JwtValidationResult.invalid("expired_token");
         } catch (final UnsupportedJwtException e) {
-            log.error("JWT token is unsupported: {}", e.getMessage());
+            return JwtValidationResult.invalid("unsupported_token");
         } catch (final IllegalArgumentException e) {
-            log.error("JWT claims string is empty: {}", e.getMessage());
+            return JwtValidationResult.invalid("empty_claims");
         }
-        return false;
     }
 
     /**
@@ -118,5 +119,16 @@ public class JwtTokenProvider {
     private SecretKey getSigningKey() {
         final byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public record JwtValidationResult(boolean isValid, String reason) {
+
+        public static JwtValidationResult success() {
+            return new JwtValidationResult(true, "valid");
+        }
+
+        public static JwtValidationResult invalid(final String reason) {
+            return new JwtValidationResult(false, reason);
+        }
     }
 }

@@ -131,17 +131,17 @@
 
 ## Phase 4. HTTP / Security / Exception 로그 정규화
 
-- [ ] `JwtAuthenticationFilter`의 성공/실패 로그를 표준 필드 체계에 맞게 정리한다.
-- [ ] JWT 인증 성공은 `DEBUG`로 유지한다.
-- [ ] JWT 인증 실패는 `WARN`으로 표준화한다.
-- [ ] JWT 실패 로그에 `reason`, `route`, `correlation_id`를 포함한다.
-- [ ] `RateLimitFilter` 차단 시 `event=rate_limit_blocked` 로그를 남긴다.
-- [ ] rate limit 차단 로그에 `limit`, `remaining`, `reset_at`, `route`를 포함한다.
-- [ ] rate limit store 장애 시 `ERROR` 로그를 남긴다.
-- [ ] `GlobalExceptionHandler`의 `NotioException` 로그를 `WARN`으로 정리한다.
-- [ ] validation / bad request 로그를 `WARN`으로 정리한다.
-- [ ] 예기치 못한 예외 로그를 `ERROR`로 정리한다.
-- [ ] 예외 로그에 `event=request_failed`, `correlation_id`, `error_code`, `http_status`, `exception_type`, `root_cause`를 포함한다.
+- [x] `JwtAuthenticationFilter`의 성공/실패 로그를 표준 필드 체계에 맞게 정리한다.
+- [x] JWT 인증 성공은 `DEBUG`로 유지한다.
+- [x] JWT 인증 실패는 `WARN`으로 표준화한다.
+- [x] JWT 실패 로그에 `reason`, `route`, `correlation_id`를 포함한다.
+- [x] `RateLimitFilter` 차단 시 `event=rate_limit_blocked` 로그를 남긴다.
+- [x] rate limit 차단 로그에 `limit`, `remaining`, `reset_at`, `route`를 포함한다.
+- [x] rate limit store 장애 시 `ERROR` 로그를 남긴다.
+- [x] `GlobalExceptionHandler`의 `NotioException` 로그를 `WARN`으로 정리한다.
+- [x] validation / bad request 로그를 `WARN`으로 정리한다.
+- [x] 예기치 못한 예외 로그를 `ERROR`로 정리한다.
+- [x] 예외 로그에 `event=request_failed`, `correlation_id`, `error_code`, `http_status`, `exception_type`, `root_cause`를 포함한다.
 
 상세 가이드:
 - 보안 관련 로그는 민감정보를 직접 출력하지 않고 실패 사유의 category만 남긴다.

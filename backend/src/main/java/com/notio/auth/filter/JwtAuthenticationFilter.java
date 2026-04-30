@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -29,6 +30,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String WEBHOOK_PATH_PREFIX = "/api/v1/webhook/";
+    private static final String EVENT_KEY = "event";
+    private static final String OUTCOME_KEY = "outcome";
+    private static final String CORRELATION_ID_KEY = "correlation_id";
 
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -39,27 +43,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            // JWT 토큰 추출
             final String jwt = extractJwtFromRequest(request);
 
-            // 토큰이 있고 유효한 경우 인증 설정
-            if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
+            if (StringUtils.hasText(jwt)) {
+                final JwtTokenProvider.JwtValidationResult validationResult = jwtTokenProvider.validateTokenWithReason(jwt);
+                if (!validationResult.isValid()) {
+                    logAuthenticationFailure(request, validationResult.reason());
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 final String userId = jwtTokenProvider.getUserId(jwt);
                 final String email = jwtTokenProvider.getEmail(jwt);
 
-                // Authentication 객체 생성 (authorities는 현재 null, 필요시 추가)
                 final UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userId, null, null);
-
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // SecurityContext에 인증 정보 설정
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                log.debug("Set authentication for user: userId={}, email={}", userId, email);
+                logAuthenticationSuccess(request, userId, email);
             }
         } catch (final Exception ex) {
-            log.error("Could not set user authentication in security context", ex);
+            logAuthenticationFailure(request, "authentication_processing_error");
         }
 
         filterChain.doFilter(request, response);
@@ -81,5 +85,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(final HttpServletRequest request) {
         return request.getRequestURI().startsWith(WEBHOOK_PATH_PREFIX);
+    }
+
+    private void logAuthenticationSuccess(
+            final HttpServletRequest request,
+            final String userId,
+            final String email
+    ) {
+        MDC.put(EVENT_KEY, "jwt_authentication_succeeded");
+        MDC.put(OUTCOME_KEY, "success");
+        try {
+            log.debug(
+                    "event=jwt_authentication_succeeded user_id={} email={} route={}",
+                    userId,
+                    email,
+                    request.getRequestURI()
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logAuthenticationFailure(final HttpServletRequest request, final String reason) {
+        MDC.put(EVENT_KEY, "jwt_authentication_failed");
+        MDC.put(OUTCOME_KEY, "failure");
+        try {
+            log.warn(
+                    "event=jwt_authentication_failed reason={} route={} correlation_id={}",
+                    reason,
+                    request.getRequestURI(),
+                    MDC.get(CORRELATION_ID_KEY)
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
     }
 }

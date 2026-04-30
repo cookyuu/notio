@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
 @RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
+
+    private static final String EVENT_KEY = "event";
+    private static final String OUTCOME_KEY = "outcome";
 
     private final RateLimitService rateLimitService;
     private final RateLimitProperties properties;
@@ -44,6 +48,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             final RateLimitEvaluation evaluation = rateLimitService.evaluate(wrappedRequest);
             applyRateLimitHeaders(response, evaluation.decision());
             if (!evaluation.allowed()) {
+                logRateLimitBlocked(wrappedRequest, evaluation.decision());
                 writeErrorResponse(response, HttpStatus.TOO_MANY_REQUESTS.value(), ErrorCode.RATE_LIMIT_EXCEEDED);
                 return;
             }
@@ -52,7 +57,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } catch (PayloadTooLargeException exception) {
             writeErrorResponse(response, HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, ErrorCode.PAYLOAD_TOO_LARGE);
         } catch (RateLimitStoreException exception) {
-            log.error("Rate limit store unavailable for fail-closed endpoint path={}", request.getRequestURI(), exception);
+            logRateLimitStoreUnavailable(request, exception);
             writeErrorResponse(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
@@ -134,5 +139,41 @@ public class RateLimitFilter extends OncePerRequestFilter {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         final ApiResponse<Void> body = ApiResponse.error(new ApiError(errorCode.getCode(), errorCode.getMessage()));
         objectMapper.writeValue(response.getWriter(), body);
+    }
+
+    private void logRateLimitBlocked(final HttpServletRequest request, final RateLimitDecision decision) {
+        MDC.put(EVENT_KEY, "rate_limit_blocked");
+        MDC.put(OUTCOME_KEY, "failure");
+        try {
+            log.warn(
+                "event=rate_limit_blocked limit={} remaining={} reset_at={} route={}",
+                decision.limit(),
+                decision.remaining(),
+                decision.resetAt(),
+                request.getRequestURI()
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
+    }
+
+    private void logRateLimitStoreUnavailable(
+        final HttpServletRequest request,
+        final RateLimitStoreException exception
+    ) {
+        MDC.put(EVENT_KEY, "rate_limit_store_failed");
+        MDC.put(OUTCOME_KEY, "error");
+        try {
+            log.error(
+                "event=rate_limit_store_failed route={} correlation_id={}",
+                request.getRequestURI(),
+                MDC.get("correlation_id"),
+                exception
+            );
+        } finally {
+            MDC.remove(OUTCOME_KEY);
+            MDC.remove(EVENT_KEY);
+        }
     }
 }
