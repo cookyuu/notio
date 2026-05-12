@@ -48,31 +48,31 @@
 ## Phase 2: DB 마이그레이션
 
 ### 2-1. V12 — push → channel 전환
-- [ ] `resources/db/migration/V12__migrate_push_to_channels.sql` 파일 생성
-- [ ] `devices` 테이블 → `devices_deprecated` rename + COMMENT 추가
-- [ ] `notification_channels` 테이블 생성 (channel_type CHECK, status CHECK 포함)
-- [ ] `idx_notification_channels_user_id` 부분 인덱스 생성 (`deleted_at IS NULL`)
-- [ ] `idx_notification_channels_status` 부분 인덱스 생성
-- [ ] `routing_rules` 테이블 생성 (JSONB conditions, channel_ids 포함)
-- [ ] `idx_routing_rules_user_priority` 부분 인덱스 생성
+- [x] `resources/db/migration/V12__migrate_push_to_channels.sql` 파일 생성
+- [x] `devices` 테이블 → `devices_deprecated` rename + COMMENT 추가
+- [x] `notification_channels` 테이블 생성 (channel_type CHECK, status CHECK 포함)
+- [x] `idx_notification_channels_user_id` 부분 인덱스 생성 (`deleted_at IS NULL`)
+- [x] `idx_notification_channels_status` 부분 인덱스 생성
+- [x] `routing_rules` 테이블 생성 (JSONB conditions, channel_ids 포함)
+- [x] `idx_routing_rules_user_priority` 부분 인덱스 생성
 
 ### 2-2. V13 — 채널 전달 로그
-- [ ] `resources/db/migration/V13__create_channel_delivery_logs.sql` 파일 생성
-- [ ] `channel_delivery_logs` 테이블 생성 (status CHECK: PENDING/SUCCESS/FAILED/RETRY/DEAD)
-- [ ] `idx_delivery_logs_notification_id` 인덱스 생성
-- [ ] `idx_delivery_logs_retry` 부분 인덱스 생성 (`status = 'RETRY'`)
-- [ ] `uq_delivery_logs_active` UNIQUE 인덱스 생성 (PENDING/RETRY 상태)
+- [x] `resources/db/migration/V13__create_channel_delivery_logs.sql` 파일 생성
+- [x] `channel_delivery_logs` 테이블 생성 (status CHECK: PENDING/SUCCESS/FAILED/RETRY/DEAD)
+- [x] `idx_delivery_logs_notification_id` 인덱스 생성
+- [x] `idx_delivery_logs_retry` 부분 인덱스 생성 (`status = 'RETRY'`)
+- [x] `uq_delivery_logs_active` UNIQUE 인덱스 생성 (PENDING/RETRY 상태)
 
 ### 2-3. V14 — AI 요약 + Digest 모드 + chat_messages 폐기 (Phase 3 완료 후)
-- [ ] `resources/db/migration/V14__add_ai_summary_digest_mode.sql` 파일 생성
-- [ ] `notifications.ai_summary TEXT` 컬럼 추가 + COMMENT
-- [ ] `routing_rules.delivery_mode VARCHAR(20)`, `digest_interval_min INT` 컬럼 추가
-- [ ] `chk_delivery_mode` CHECK 제약 추가 (IMMEDIATE / DIGEST)
-- [ ] `channel_delivery_logs` CHECK 제약 삭제 후 `DIGEST_PENDING` 포함 재생성
-- [ ] `uq_delivery_logs_active` UNIQUE 인덱스 삭제 후 DIGEST_PENDING 포함 재생성
-- [ ] `idx_delivery_logs_digest_pending` 인덱스 생성
-- [ ] `idx_delivery_logs_delivered_at` 인덱스 생성
-- [ ] `chat_messages` → `chat_messages_deprecated` rename + COMMENT
+- [x] `resources/db/migration/V14__add_ai_summary_digest_mode.sql` 파일 생성
+- [x] `notifications.ai_summary TEXT` 컬럼 추가 + COMMENT
+- [x] `routing_rules.delivery_mode VARCHAR(20)`, `digest_interval_min INT` 컬럼 추가
+- [x] `chk_delivery_mode` CHECK 제약 추가 (IMMEDIATE / DIGEST)
+- [x] `channel_delivery_logs` CHECK 제약 삭제 후 `DIGEST_PENDING` 포함 재생성
+- [x] `uq_delivery_logs_active` UNIQUE 인덱스 삭제 후 DIGEST_PENDING 포함 재생성
+- [x] `idx_delivery_logs_digest_pending` 인덱스 생성
+- [x] `idx_delivery_logs_delivered_at` 인덱스 생성
+- [x] `chat_messages` → `chat_messages_deprecated` rename + COMMENT
 
 ---
 
