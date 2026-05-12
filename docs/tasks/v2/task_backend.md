@@ -17,31 +17,31 @@
 - [x] `PgvectorRagRetriever` — `ChatMetrics` → `NotificationFlowMetrics`로 교체
 
 ### 1-2. `chat/` 패키지 삭제
-- [ ] `chat/controller/ChatController.java` 삭제
-- [ ] `chat/domain/ChatMessage.java` 삭제
-- [ ] `chat/domain/ChatMessageRole.java` 삭제
-- [ ] `chat/dto/ChatMessageResponse.java` 삭제
-- [ ] `chat/dto/ChatRequest.java` 삭제
-- [ ] `chat/dto/DailySummaryResponse.java` 삭제
-- [ ] `chat/metrics/ChatMetrics.java` 삭제
-- [ ] `chat/repository/ChatMessageRepository.java` 삭제
-- [ ] `chat/service/ChatPromptContext.java` 삭제
-- [ ] `chat/service/ChatService.java` 삭제
-- [ ] `chat/service/ChatTimeRangeExtractor.java` 삭제
-- [ ] `chat/service/DailySummaryService.java` 삭제
-- [ ] `./gradlew compileJava` 오류 없음 확인
+- [x] `chat/controller/ChatController.java` 삭제
+- [x] `chat/domain/ChatMessage.java` 삭제
+- [x] `chat/domain/ChatMessageRole.java` 삭제
+- [x] `chat/dto/ChatMessageResponse.java` 삭제
+- [x] `chat/dto/ChatRequest.java` 삭제
+- [x] `chat/dto/DailySummaryResponse.java` 삭제
+- [x] `chat/metrics/ChatMetrics.java` 삭제
+- [x] `chat/repository/ChatMessageRepository.java` 삭제
+- [x] `chat/service/ChatPromptContext.java` 삭제
+- [x] `chat/service/ChatService.java` 삭제
+- [x] `chat/service/ChatTimeRangeExtractor.java` 삭제
+- [x] `chat/service/DailySummaryService.java` 삭제
+- [x] `./gradlew compileJava` 오류 없음 확인
 
 ### 1-3. `push/` 패키지 삭제
-- [ ] `push/controller/DeviceController.java` 삭제
-- [ ] `push/domain/Device.java` 삭제
-- [ ] `push/domain/DevicePlatform.java` 삭제
-- [ ] `push/dto/DeviceResponse.java` 삭제
-- [ ] `push/dto/RegisterDeviceRequest.java` 삭제
-- [ ] `push/repository/DeviceRepository.java` 삭제
-- [ ] `push/service/DeviceService.java` 삭제
-- [ ] `push/service/PushService.java` 삭제
-- [ ] `common/config/FirebaseConfig.java` 삭제
-- [ ] `build.gradle.kts`에서 `firebase-admin:9.4.2` 의존성 제거
+- [x] `push/controller/DeviceController.java` 삭제
+- [x] `push/domain/Device.java` 삭제
+- [x] `push/domain/DevicePlatform.java` 삭제
+- [x] `push/dto/DeviceResponse.java` 삭제
+- [x] `push/dto/RegisterDeviceRequest.java` 삭제
+- [x] `push/repository/DeviceRepository.java` 삭제
+- [x] `push/service/DeviceService.java` 삭제
+- [x] `push/service/PushService.java` 삭제
+- [x] `common/config/FirebaseConfig.java` 삭제
+- [x] `build.gradle.kts`에서 `firebase-admin:9.4.2` 의존성 제거
 
 ---
 

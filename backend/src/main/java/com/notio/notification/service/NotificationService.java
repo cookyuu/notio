@@ -11,7 +11,6 @@ import com.notio.notification.dto.NotificationSummaryResponse;
 import com.notio.notification.embedding.NotificationEmbeddingService;
 import com.notio.notification.metrics.NotificationFlowMetrics;
 import com.notio.notification.repository.NotificationRepository;
-import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -40,7 +39,6 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
-    private final PushService pushService;
     private final CacheManager cacheManager;
     private final NotificationEmbeddingService notificationEmbeddingService;
     private final NotificationFlowMetrics notificationFlowMetrics;
@@ -115,20 +113,6 @@ public class NotificationService {
                 saved.getUserId(),
                 saved.getSource().name().toLowerCase(),
                 e.getClass().getSimpleName()
-            );
-        }
-
-        // 푸시 알림 발송 (동기 - Phase 0)
-        try {
-            pushService.sendPush(saved.getId(), saved.getUserId());
-        } catch (Exception e) {
-            // 푸시 발송 실패해도 알림 생성은 성공으로 처리
-            log.error(
-                "event=push_dispatch_failed notification_id={} user_id={} exception_type={}",
-                saved.getId(),
-                saved.getUserId(),
-                e.getClass().getSimpleName(),
-                e
             );
         }
 

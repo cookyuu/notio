@@ -1,23 +1,18 @@
 package com.notio.ai.prompt;
 
 import com.notio.ai.rag.RagDocument;
-import com.notio.ai.rag.TimeRange;
-import com.notio.chat.domain.ChatMessage;
 import com.notio.notification.domain.Notification;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PromptBuilder {
 
-    private static final int CHAT_RESPONSE_MAX_CHARS = 4_000;
     private static final int DAILY_SUMMARY_MAX_CHARS = 2_000;
-    private static final int MAX_HISTORY_MESSAGES = 10;
     private static final int MAX_CONTEXT_TEXT_LENGTH = 500;
     private static final int MAX_DAILY_NOTIFICATIONS = 50;
 
@@ -28,48 +23,6 @@ public class PromptBuilder {
             기본 응답 언어는 한국어다.
             중요한 알림을 언급할 때는 source, title, priority 근거를 함께 제시하라.
             """;
-
-    public LlmPrompt buildChatPrompt(
-            final String userMessage,
-            final List<RagDocument> documents,
-            final List<ChatMessage> recentMessages
-    ) {
-        return buildChatPrompt(userMessage, documents, recentMessages, Optional.empty());
-    }
-
-    public LlmPrompt buildChatPrompt(
-            final String userMessage,
-            final List<RagDocument> documents,
-            final List<ChatMessage> recentMessages,
-            final Optional<TimeRange> timeRange
-    ) {
-        final String userPrompt = """
-                다음 RAG context와 최근 대화 히스토리를 바탕으로 사용자 질문에 답하라.
-                RAG context가 비어 있으면 %s
-                답변은 한국어로 작성하고 %d자 이하로 제한하라.
-
-                Applied time filter:
-                %s
-
-                RAG context:
-                %s
-
-                Recent conversation:
-                %s
-
-                User:
-                %s
-                """.formatted(
-                emptyRagContextInstruction(timeRange),
-                CHAT_RESPONSE_MAX_CHARS,
-                formatAppliedTimeFilter(timeRange),
-                formatRagContext(documents),
-                formatRecentMessages(recentMessages),
-                normalize(userMessage)
-        );
-
-        return new LlmPrompt(SYSTEM_PROMPT, userPrompt);
-    }
 
     public LlmPrompt buildDailySummaryPrompt(
             final LocalDate date,
@@ -111,48 +64,6 @@ public class PromptBuilder {
                     .append("  created_at: ").append(document.createdAt()).append('\n')
                     .append("  similarity_score: ")
                     .append(String.format(Locale.ROOT, "%.4f", document.similarityScore()))
-                    .append('\n');
-        }
-        return builder.toString().trim();
-    }
-
-    private String formatAppliedTimeFilter(final Optional<TimeRange> timeRange) {
-        if (timeRange.isEmpty()) {
-            return "- 기간 필터 없음";
-        }
-
-        final TimeRange range = timeRange.get();
-        return """
-                - startInclusive <= notification.created_at < endExclusive
-                - startInclusive: %s
-                - endExclusive: %s
-                """.formatted(range.startInclusive(), range.endExclusive()).trim();
-    }
-
-    private String emptyRagContextInstruction(final Optional<TimeRange> timeRange) {
-        if (timeRange.isPresent()) {
-            return "적용된 기간 조건에 맞는 관련 알림을 찾지 못했다고 명확히 말하라.";
-        }
-        return "현재 검색 가능한 관련 알림이 없다고 명확히 말하라.";
-    }
-
-    private String formatRecentMessages(final List<ChatMessage> messages) {
-        if (messages == null || messages.isEmpty()) {
-            return "- 최근 대화 없음";
-        }
-
-        final List<ChatMessage> orderedMessages = messages.stream()
-                .sorted(Comparator.comparing(ChatMessage::getCreatedAt)
-                        .thenComparing(ChatMessage::getId, Comparator.nullsLast(Comparator.naturalOrder())))
-                .skip(Math.max(0, messages.size() - MAX_HISTORY_MESSAGES))
-                .toList();
-
-        final StringBuilder builder = new StringBuilder();
-        for (final ChatMessage message : orderedMessages) {
-            builder.append("- ")
-                    .append(message.getRole().name().toLowerCase(Locale.ROOT))
-                    .append(": ")
-                    .append(truncate(message.getContent()))
                     .append('\n');
         }
         return builder.toString().trim();
