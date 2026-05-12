@@ -106,7 +106,26 @@
       "Bash(/mnt/c/Windows/System32/cmd.exe /c \"flutter analyze 2>&1\")",
       "Bash(cmd.exe /c \"cd C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend &amp;&amp; flutter analyze 2>&1 | findstr /C:\"\"issues found\"\" /C:\"\"error\"\" /C:\"\"No issues found\"\"\")",
       "Bash(GRADLE_USER_HOME=/tmp/notio-gradle-home JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 ./gradlew:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git -C /mnt/c/users/user/documents/dev/notio diff --stat)",
+      "Bash(git -C /mnt/c/users/user/documents/dev/notio log --oneline -5)",
+      "Bash(git *)",
+      "Bash(flutter test *)",
+      "Bash(/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin/flutter test *)",
+      "Bash(cmd.exe *)",
+      "Bash(bash --norc -c 'export PATH=\"/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin:$PATH\"; flutter test test/features/chat/presentation/providers/chat_notifier_empty_and_error_test.dart --no-pub')",
+      "Bash(dart --version)",
+      "Bash(powershell.exe -Command \"cd 'C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend'; flutter analyze\")",
+      "Bash(powershell.exe -Command \"cd 'C:\\\\users\\\\user\\\\documents\\\\dev\\\\notio\\\\frontend'; flutter test 2>&1\")",
+      "Bash(powershell.exe *)",
+      "Bash(grep -E \"\\\\.dart$\")",
+      "Bash(dart analyze *)",
+      "Bash(tee /tmp/bootrun_output.txt)",
+      "Bash(tee /tmp/bootrun2.txt)",
+      "Read(//tmp/**)",
+      "Bash(/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin/dart analyze *)",
+      "Bash(grep -E \"^[^/]*\\(/[^/]*\\)?$|pubspec|main\")",
+      "Bash(awk -F/ '{if\\(NF>1\\) {for\\(i=1;i<NF;i++\\) printf \"  \"; print \"├── \" $NF} else print $0}')"
     ]
   },
   "hooks": {
