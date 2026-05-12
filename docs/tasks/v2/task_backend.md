@@ -9,12 +9,12 @@
 ## Phase 1: 패키지 및 의존성 제거
 
 ### 1-1. AI 메트릭 의존성 해소 (chat/ 삭제 전 필수)
-- [ ] `ai/metrics/LlmMetrics.java` 신규 생성
-- [ ] `NotificationFlowMetrics`에 `recordAiSummarization()` 메서드 추가
-- [ ] `NotificationFlowMetrics`에 `recordRagRetrieval()` 메서드 추가
-- [ ] `OllamaLlmProvider` — `ChatMetrics` → `LlmMetrics`로 교체
-- [ ] `OllamaLlmProvider` — 스트리밍 메트릭 제거 (`recordFirstChunk`, `incrementActiveStreams`, `decrementActiveStreams`)
-- [ ] `PgvectorRagRetriever` — `ChatMetrics` → `NotificationFlowMetrics`로 교체
+- [x] `ai/metrics/LlmMetrics.java` 신규 생성
+- [x] `NotificationFlowMetrics`에 `recordAiSummarization()` 메서드 추가
+- [x] `NotificationFlowMetrics`에 `recordRagRetrieval()` 메서드 추가
+- [x] `OllamaLlmProvider` — `ChatMetrics` → `LlmMetrics`로 교체
+- [x] `OllamaLlmProvider` — 스트리밍 메트릭 제거 (`recordFirstChunk`, `incrementActiveStreams`, `decrementActiveStreams`)
+- [x] `PgvectorRagRetriever` — `ChatMetrics` → `NotificationFlowMetrics`로 교체
 
 ### 1-2. `chat/` 패키지 삭제
 - [ ] `chat/controller/ChatController.java` 삭제

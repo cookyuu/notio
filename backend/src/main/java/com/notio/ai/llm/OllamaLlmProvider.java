@@ -1,7 +1,7 @@
 package com.notio.ai.llm;
 
+import com.notio.ai.metrics.LlmMetrics;
 import com.notio.ai.prompt.LlmPrompt;
-import com.notio.chat.metrics.ChatMetrics;
 import com.notio.common.config.properties.NotioAiProperties;
 import com.notio.common.exception.AiExceptionTranslator;
 import java.time.Duration;
@@ -32,7 +32,7 @@ public class OllamaLlmProvider implements LlmProvider {
     private final ChatModel chatModel;
     private final AiExceptionTranslator exceptionTranslator;
     private final NotioAiProperties aiProperties;
-    private final ChatMetrics chatMetrics;
+    private final LlmMetrics llmMetrics;
 
     @Override
     public String chat(final LlmPrompt prompt) {
@@ -153,7 +153,7 @@ public class OllamaLlmProvider implements LlmProvider {
             MDC.remove("outcome");
             MDC.remove("event");
         }
-        chatMetrics.recordLlmCall(mode, "success", elapsed);
+        llmMetrics.recordLlmCall(mode, "success", elapsed);
     }
 
     private void logLlmFailed(final String mode, final Instant startedAt, final Throwable exception) {
@@ -174,7 +174,7 @@ public class OllamaLlmProvider implements LlmProvider {
             MDC.remove("outcome");
             MDC.remove("event");
         }
-        chatMetrics.recordLlmCall(mode, outcome, elapsed);
+        llmMetrics.recordLlmCall(mode, outcome, elapsed);
     }
 
     private long resolveTimeoutMs(final String mode) {

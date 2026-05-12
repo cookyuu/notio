@@ -31,4 +31,17 @@ public class NotificationFlowMetrics {
         notioMetrics.incrementCounter("notio_push_send_total", Tags.of("outcome", outcome));
         notioMetrics.recordTimer("notio_push_send_duration", Tags.empty(), duration);
     }
+
+    public void recordAiSummarization(final String outcome, final Duration duration) {
+        notioMetrics.incrementCounter("notio_ai_summarization_total", Tags.of("outcome", outcome));
+        notioMetrics.recordTimer("notio_ai_summarization_duration", Tags.empty(), duration);
+    }
+
+    public void recordRagRetrieval(final boolean timeRangeApplied, final Duration duration) {
+        notioMetrics.incrementCounter(
+                "notio_rag_retrieval_total",
+                Tags.of("time_range_applied", String.valueOf(timeRangeApplied))
+        );
+        notioMetrics.recordTimer("notio_rag_retrieval_duration", Tags.empty(), duration);
+    }
 }

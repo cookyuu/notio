@@ -1,8 +1,8 @@
 package com.notio.ai.rag;
 
 import com.notio.ai.embedding.EmbeddingProvider;
-import com.notio.chat.metrics.ChatMetrics;
 import com.notio.common.config.properties.NotioRagProperties;
+import com.notio.notification.metrics.NotificationFlowMetrics;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -28,7 +28,7 @@ public class PgvectorRagRetriever implements RagRetriever {
     private final EmbeddingProvider embeddingProvider;
     private final JdbcTemplate jdbcTemplate;
     private final NotioRagProperties ragProperties;
-    private final ChatMetrics chatMetrics;
+    private final NotificationFlowMetrics notificationFlowMetrics;
 
     @Override
     public List<RagDocument> retrieve(
@@ -85,7 +85,7 @@ public class PgvectorRagRetriever implements RagRetriever {
 
         final List<RagDocument> results = jdbcTemplate.query(sql.toString(), this::mapDocument, parameters.toArray());
         final Duration elapsed = Duration.between(startedAt, Instant.now());
-        chatMetrics.recordRagRetrieval(timeRange.isPresent(), elapsed);
+        notificationFlowMetrics.recordRagRetrieval(timeRange.isPresent(), elapsed);
         MDC.put("event", "rag_retrieve_completed");
         MDC.put("outcome", "success");
         try {
