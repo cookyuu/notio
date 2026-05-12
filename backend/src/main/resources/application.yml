@@ -49,6 +49,12 @@ spring:
         pull-model-strategy: never
         timeout: ${NOTIO_OLLAMA_INIT_TIMEOUT:5m}
         max-retries: ${NOTIO_OLLAMA_INIT_MAX_RETRIES:0}
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: claude-haiku-4-5
+          max-tokens: 1024
     retry:
       max-attempts: ${NOTIO_LLM_RETRY_MAX_ATTEMPTS:3}
       backoff:
@@ -143,6 +149,8 @@ notio:
     enabled: ${NOTIO_FIREBASE_ENABLED:false}
     service-account-path: ${NOTIO_FIREBASE_SERVICE_ACCOUNT_PATH:}
   ai:
+    provider: ${NOTIO_AI_PROVIDER:ollama}
+    summarize-sources: ${NOTIO_AI_SUMMARIZE_SOURCES:CLAUDE,CODEX}
     llm-timeout: ${NOTIO_LLM_TIMEOUT:120s}
     embedding-timeout: ${NOTIO_EMBED_TIMEOUT:15s}
     streaming-timeout: ${NOTIO_STREAMING_TIMEOUT:120s}

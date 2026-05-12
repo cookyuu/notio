@@ -61,6 +61,9 @@ public class Notification {
     @JdbcTypeCode(SqlTypes.JSON)
     private String metadata;
 
+    @Column(name = "ai_summary", columnDefinition = "TEXT")
+    private String aiSummary;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

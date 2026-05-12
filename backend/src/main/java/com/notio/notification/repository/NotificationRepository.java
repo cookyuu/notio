@@ -85,4 +85,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
            "WHERE n.deletedAt IS NULL AND n.userId = :userId AND n.read = false")
     int markAllAsRead(@Param("userId") Long userId);
 
+    @Modifying
+    @Query("UPDATE Notification n SET n.aiSummary = :summary WHERE n.id = :id")
+    void updateAiSummary(@Param("id") Long id, @Param("summary") String summary);
+
 }

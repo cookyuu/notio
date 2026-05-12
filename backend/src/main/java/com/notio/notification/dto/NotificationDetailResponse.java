@@ -34,7 +34,10 @@ public record NotificationDetailResponse(
     @JsonProperty("external_url")
     String externalUrl,
 
-    Object metadata
+    Object metadata,
+
+    @JsonProperty("ai_summary")
+    String aiSummary
 ) {
     public static NotificationDetailResponse from(Notification notification, NotificationService service) {
         Map<String, Object> metadata = service.parseMetadataFromJson(notification.getMetadata());
@@ -52,6 +55,7 @@ public record NotificationDetailResponse(
             .externalId(notification.getExternalId())
             .externalUrl(notification.getExternalUrl())
             .metadata(metadata)
+            .aiSummary(notification.getAiSummary())
             .build();
     }
 }

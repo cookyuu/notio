@@ -19,17 +19,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "notio.ai.provider", havingValue = "ollama", matchIfMissing = true)
 @RequiredArgsConstructor
 public class OllamaLlmProvider implements LlmProvider {
 
-    private final ChatModel chatModel;
+    private final OllamaChatModel chatModel;
     private final AiExceptionTranslator exceptionTranslator;
     private final NotioAiProperties aiProperties;
     private final LlmMetrics llmMetrics;

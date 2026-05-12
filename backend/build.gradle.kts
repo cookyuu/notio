@@ -52,6 +52,7 @@ dependencies {
 
     // AI
     implementation("org.springframework.ai:spring-ai-starter-model-ollama")
+    implementation("org.springframework.ai:spring-ai-starter-model-anthropic")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")

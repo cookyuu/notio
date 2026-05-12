@@ -79,42 +79,42 @@
 ## Phase 3: AI 파이프라인 구현
 
 ### 3-1. NotioAiProperties 변경
-- [ ] `summarizeSources` 필드 추가 (`@DefaultValue("CLAUDE,CODEX")`)
-- [ ] `application.yml`에 `notio.ai.provider`, `notio.ai.summarize-sources`, `notio.ai.llm-timeout` 설정 추가
+- [x] `summarizeSources` 필드 추가 (`@DefaultValue("CLAUDE,CODEX")`)
+- [x] `application.yml`에 `notio.ai.provider`, `notio.ai.summarize-sources`, `notio.ai.llm-timeout` 설정 추가
 
 ### 3-2. PromptBuilder 수정
-- [ ] `buildChatPrompt()`, `buildDailySummaryPrompt()`, `formatRecentMessages()` 제거
-- [ ] `ChatMessage` import 제거
-- [ ] `buildNotificationSummaryPrompt(Notification, List<RagDocument>)` 구현
-  - [ ] 시스템 프롬프트: 2~4문장, 500자 제한, 마크다운 활용 규칙
-  - [ ] 유저 프롬프트: 소스/제목/우선순위/내용/링크 포맷
-  - [ ] RAG context 상위 3개 유사 알림 포함
-- [ ] `buildDigestSummaryPrompt(List<Notification>)` 구현
-  - [ ] 시스템 프롬프트: 첫 줄 요약 + 각 알림 1줄 목록, 1000자 제한
-  - [ ] `COALESCE(aiSummary, body)` 사용, 300자 truncate
-- [ ] `truncate(String, int)` private 유틸 메서드 추가
+- [x] `buildChatPrompt()`, `buildDailySummaryPrompt()`, `formatRecentMessages()` 제거
+- [x] `ChatMessage` import 제거
+- [x] `buildNotificationSummaryPrompt(Notification, List<RagDocument>)` 구현
+  - [x] 시스템 프롬프트: 2~4문장, 500자 제한, 마크다운 활용 규칙
+  - [x] 유저 프롬프트: 소스/제목/우선순위/내용/링크 포맷
+  - [x] RAG context 상위 3개 유사 알림 포함
+- [x] `buildDigestSummaryPrompt(List<Notification>)` 구현
+  - [x] 시스템 프롬프트: 첫 줄 요약 + 각 알림 1줄 목록, 1000자 제한
+  - [x] `COALESCE(aiSummary, body)` 사용, 300자 truncate
+- [x] `truncate(String, int)` private 유틸 메서드 추가
 
 ### 3-3. NotificationSummaryService 구현
-- [ ] `notification/service/NotificationSummaryService.java` 생성
-- [ ] `summarize(Notification)` — `@Nullable` 반환
-- [ ] `shouldSummarize()` — `summarizeSources` 기반 필터링
-- [ ] RAG 조회 → 프롬프트 빌드 → LLM 호출 → `notificationRepository.updateAiSummary()` 저장
-- [ ] 성공/실패 시 `metrics.recordAiSummarization()` 기록
-- [ ] 실패 시 null 반환 (예외 전파 없음)
+- [x] `notification/service/NotificationSummaryService.java` 생성
+- [x] `summarize(Notification)` — `@Nullable` 반환
+- [x] `shouldSummarize()` — `summarizeSources` 기반 필터링
+- [x] RAG 조회 → 프롬프트 빌드 → LLM 호출 → `notificationRepository.updateAiSummary()` 저장
+- [x] 성공/실패 시 `metrics.recordAiSummarization()` 기록
+- [x] 실패 시 null 반환 (예외 전파 없음)
 
 ### 3-4. Notification 엔티티 변경
-- [ ] `aiSummary` 필드 추가 (`@Column(name = "ai_summary", columnDefinition = "TEXT")`)
-- [ ] `NotificationDetailResponse`에 `aiSummary` 필드 추가
+- [x] `aiSummary` 필드 추가 (`@Column(name = "ai_summary", columnDefinition = "TEXT")`)
+- [x] `NotificationDetailResponse`에 `aiSummary` 필드 추가
 
 ### 3-5. NotificationRepository 수정
-- [ ] `@Modifying @Query` — `updateAiSummary(@Param("id"), @Param("summary"))` 추가
+- [x] `@Modifying @Query` — `updateAiSummary(@Param("id"), @Param("summary"))` 추가
 
 ### 3-6. AnthropicLlmProvider 구현
-- [ ] `ai/llm/AnthropicLlmProvider.java` 생성
-- [ ] `@ConditionalOnProperty(name = "notio.ai.provider", havingValue = "anthropic")` 적용
-- [ ] `chat(LlmPrompt)` — Spring AI `ChatModel.call()` 동기 구현
-- [ ] `stream()` — `UnsupportedOperationException` stub
-- [ ] `application.yml` — Spring AI Anthropic 설정 추가 (model: `claude-haiku-4-5`, max-tokens: 1024)
+- [x] `ai/llm/AnthropicLlmProvider.java` 생성
+- [x] `@ConditionalOnProperty(name = "notio.ai.provider", havingValue = "anthropic")` 적용
+- [x] `chat(LlmPrompt)` — Spring AI `ChatModel.call()` 동기 구현
+- [x] `stream()` — `UnsupportedOperationException` stub
+- [x] `application.yml` — Spring AI Anthropic 설정 추가 (model: `claude-haiku-4-5`, max-tokens: 1024)
 
 ---
 

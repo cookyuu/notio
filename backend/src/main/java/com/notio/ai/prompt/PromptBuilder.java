@@ -2,104 +2,79 @@ package com.notio.ai.prompt;
 
 import com.notio.ai.rag.RagDocument;
 import com.notio.notification.domain.Notification;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PromptBuilder {
 
-    private static final int DAILY_SUMMARY_MAX_CHARS = 2_000;
-    private static final int MAX_CONTEXT_TEXT_LENGTH = 500;
-    private static final int MAX_DAILY_NOTIFICATIONS = 50;
+    public LlmPrompt buildNotificationSummaryPrompt(
+            Notification notification,
+            List<RagDocument> ragContext) {
 
-    private static final String SYSTEM_PROMPT = """
-            너는 개발자를 위한 알림 관리 AI 어시스턴트다.
-            사용자의 알림 데이터를 근거로 요약, 우선순위 판단, 할일 후보 제안을 도와라.
-            제공된 컨텍스트에 없는 사실은 추측하거나 단정하지 마라.
-            기본 응답 언어는 한국어다.
-            중요한 알림을 언급할 때는 source, title, priority 근거를 함께 제시하라.
-            """;
+        String systemPrompt = """
+                당신은 개발자 알림을 채팅 플랫폼(Slack/Telegram/Discord)용으로 간결하게 요약하는 AI입니다.
+                규칙:
+                1. 2~4문장으로 핵심 내용과 필요한 조치를 명확히 설명하세요.
+                2. 마크다운 굵게(**)와 코드 인라인(`)을 적절히 활용하세요.
+                3. 유사한 과거 알림이 있다면 "이전과 동일한 유형" 임을 언급하세요.
+                4. 최대 500자를 초과하지 마세요.
+                5. 불필요한 인사말, 부연 설명을 생략하세요.
+                """;
 
-    public LlmPrompt buildDailySummaryPrompt(
-            final LocalDate date,
-            final List<Notification> notifications
-    ) {
-        final String userPrompt = """
-                %s에 수집된 알림 목록을 바탕으로 다음을 요약하라.
-                제공된 알림 목록에 없는 사실은 추측하거나 단정하지 마라.
-                응답은 간결한 한국어로 작성하고 summary 본문은 %d자 이하로 제한하라.
+        StringBuilder userPrompt = new StringBuilder();
+        userPrompt.append("## 알림 정보\n");
+        userPrompt.append("- **소스**: ").append(notification.getSource()).append("\n");
+        userPrompt.append("- **제목**: ").append(notification.getTitle()).append("\n");
+        userPrompt.append("- **우선순위**: ").append(notification.getPriority()).append("\n");
+        userPrompt.append("- **내용**:\n").append(notification.getBody()).append("\n");
+        if (notification.getExternalUrl() != null) {
+            userPrompt.append("- **링크**: ").append(notification.getExternalUrl()).append("\n");
+        }
 
-                포함할 내용:
-                1. 전체 요약
-                2. 중요한 알림
-                3. 사용자가 바로 처리하면 좋은 항목
-                4. 주요 topic
+        if (!ragContext.isEmpty()) {
+            userPrompt.append("\n## 유사 과거 알림 (참고용)\n");
+            ragContext.stream().limit(3).forEach(doc ->
+                userPrompt.append("- [").append(doc.source()).append("] ")
+                          .append(doc.title()).append(" (유사도: ")
+                          .append(String.format("%.2f", doc.similarityScore())).append(")\n")
+            );
+        }
 
-                Today's notifications:
-                %s
-                """.formatted(
-                date.format(DateTimeFormatter.ISO_LOCAL_DATE),
-                DAILY_SUMMARY_MAX_CHARS,
-                formatDailyNotifications(notifications)
-        );
+        userPrompt.append("\n위 알림을 채팅 플랫폼 전달용으로 요약해주세요.");
 
-        return new LlmPrompt(SYSTEM_PROMPT, userPrompt);
+        return new LlmPrompt(systemPrompt, userPrompt.toString());
     }
 
-    private String formatRagContext(final List<RagDocument> documents) {
-        if (documents == null || documents.isEmpty()) {
-            return "- 관련 알림 컨텍스트 없음";
-        }
+    public LlmPrompt buildDigestSummaryPrompt(List<Notification> notifications) {
 
-        final StringBuilder builder = new StringBuilder();
-        for (final RagDocument document : documents) {
-            builder.append("- source: ").append(normalize(document.source())).append('\n')
-                    .append("  title: ").append(normalize(document.title())).append('\n')
-                    .append("  body_summary: ").append(truncate(document.bodySummary())).append('\n')
-                    .append("  priority: ").append(normalize(document.priority())).append('\n')
-                    .append("  created_at: ").append(document.createdAt()).append('\n')
-                    .append("  similarity_score: ")
-                    .append(String.format(Locale.ROOT, "%.4f", document.similarityScore()))
-                    .append('\n');
-        }
-        return builder.toString().trim();
+        String systemPrompt = """
+                당신은 여러 개발자 알림을 하나의 묶음 요약 메시지로 작성하는 AI입니다.
+                규칙:
+                1. 첫 줄: 전체 요약 1~2문장 (총 N개 알림, 주요 주제 포함).
+                2. 이후: 각 알림을 1줄로 요약 (- [소스] 제목: 핵심 내용 형식).
+                3. 마크다운 목록(-)을 사용하세요.
+                4. 최대 1000자를 초과하지 마세요.
+                """;
+
+        StringBuilder userPrompt = new StringBuilder();
+        userPrompt.append("## 묶음 전달할 알림 목록 (").append(notifications.size()).append("개)\n\n");
+
+        notifications.forEach(n -> {
+            userPrompt.append("### [").append(n.getSource()).append("] ")
+                      .append(n.getTitle()).append("\n");
+            userPrompt.append("- 우선순위: ").append(n.getPriority()).append("\n");
+            String body = n.getAiSummary() != null ? n.getAiSummary() : n.getBody();
+            userPrompt.append("- 내용: ").append(truncate(body, 300)).append("\n\n");
+        });
+
+        userPrompt.append("위 알림들을 하나의 묶음 요약 메시지로 작성해주세요.");
+
+        return new LlmPrompt(systemPrompt, userPrompt.toString());
     }
 
-    private String formatDailyNotifications(final List<Notification> notifications) {
-        if (notifications == null || notifications.isEmpty()) {
-            return "- 오늘 수집된 알림 없음";
-        }
-
-        final StringBuilder builder = new StringBuilder();
-        notifications.stream()
-                .sorted(Comparator.comparing(Notification::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                .limit(MAX_DAILY_NOTIFICATIONS)
-                .forEach(notification -> builder
-                        .append("- source: ").append(notification.getSource().name()).append('\n')
-                        .append("  title: ").append(normalize(notification.getTitle())).append('\n')
-                        .append("  body_summary: ").append(truncate(notification.getBody())).append('\n')
-                        .append("  priority: ").append(notification.getPriority().name()).append('\n')
-                        .append("  created_at: ").append(notification.getCreatedAt()).append('\n')
-                        .append("  is_read: ").append(notification.isRead()).append('\n'));
-        return builder.toString().trim();
-    }
-
-    private String truncate(final String value) {
-        final String normalized = normalize(value);
-        if (normalized.length() <= MAX_CONTEXT_TEXT_LENGTH) {
-            return normalized;
-        }
-        return normalized.substring(0, MAX_CONTEXT_TEXT_LENGTH - 3) + "...";
-    }
-
-    private String normalize(final String value) {
-        if (value == null || value.isBlank()) {
-            return "";
-        }
-        return value.replaceAll("\\s+", " ").trim();
+    private String truncate(String text, int maxLen) {
+        if (text == null || text.isBlank()) return "";
+        return text.length() <= maxLen ? text : text.substring(0, maxLen) + "...";
     }
 }
