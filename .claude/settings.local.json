@@ -125,7 +125,20 @@
       "Read(//tmp/**)",
       "Bash(/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin/dart analyze *)",
       "Bash(grep -E \"^[^/]*\\(/[^/]*\\)?$|pubspec|main\")",
-      "Bash(awk -F/ '{if\\(NF>1\\) {for\\(i=1;i<NF;i++\\) printf \"  \"; print \"├── \" $NF} else print $0}')"
+      "Bash(awk -F/ '{if\\(NF>1\\) {for\\(i=1;i<NF;i++\\) printf \"  \"; print \"├── \" $NF} else print $0}')",
+      "Bash(/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin/flutter pub *)",
+      "Bash(/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin/flutter.bat pub *)",
+      "Bash(/mnt/c/Windows/System32/cmd.exe /c \"echo hello\")",
+      "Bash(dart run *)",
+      "Bash(/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin/dart run *)",
+      "Bash(grep -v \"bin/dart$\")",
+      "Bash(/mnt/c/Users/USER/Documents/flutter/flutter/bin/cache/dart-sdk/bin/dart.exe run *)",
+      "Bash(bash -s -- run build_runner build --delete-conflicting-outputs)",
+      "Bash(sed 's/\\\\r//' /mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin/flutter)",
+      "Bash(FLUTTER_ROOT=/mnt/c/Users/USER/Documents/flutter/flutter/flutter bash /tmp/flutter_fixed.sh analyze lib/features/delivery_feed/)",
+      "Bash(export PATH=\"$PATH:/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin\")",
+      "Bash(/mnt/c/Users/USER/Documents/flutter/flutter/flutter/bin/cache/dart-sdk/bin/dart.exe --version)",
+      "Bash(dart.exe --version)"
     ]
   },
   "hooks": {

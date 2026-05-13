@@ -3,7 +3,7 @@ set -eu
 
 INPUT="$(cat)"
 
-BACKEND_URL="${NOTIO_BACKEND_WEBHOOK_URL:-http://172.28.6.247:8080/api/v1/webhook/claude}"
+BACKEND_URL="${NOTIO_BACKEND_WEBHOOK_URL:-http://192.168.0.87:8080/api/v1/webhook/claude}"
 TOKEN="${NOTIO_WEBHOOK_CLAUDE_TOKEN:-ntio_wh_TJTjpX4cnPpe_iJFT209XqNxtzx9Kt2gosS40snSfnY0QzqyM_OWXc8g}"
 
 PAYLOAD="$(python3 -c "
