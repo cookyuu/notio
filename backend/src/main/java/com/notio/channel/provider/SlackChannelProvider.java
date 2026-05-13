@@ -6,6 +6,7 @@ import com.notio.connection.security.CredentialEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -39,6 +40,7 @@ public class SlackChannelProvider implements NotificationChannelProvider {
             Map<String, Object> response = restClient.post()
                 .uri(CHAT_POST_URL)
                 .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(payload)
                 .retrieve()
                 .body(Map.class);
@@ -51,6 +53,7 @@ public class SlackChannelProvider implements NotificationChannelProvider {
                 return ChannelDeliveryResult.success((String) response.get("ts"));
             }
             String error = (String) response.get("error");
+            log.warn("Slack delivery failed: channel={}, error={}", channel.getTargetIdentifier(), error);
             boolean retryable = "ratelimited".equals(error);
             return ChannelDeliveryResult.failure(error, retryable);
 

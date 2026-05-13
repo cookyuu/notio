@@ -77,6 +77,10 @@ class ChannelRemoteDataSource {
       if (response.data['success'] != true) {
         throw Exception(response.data['error']['message']);
       }
+      final deliveryData = response.data['data'] as Map<String, dynamic>?;
+      if (deliveryData != null && deliveryData['success'] != true) {
+        throw Exception(deliveryData['errorMessage'] ?? '채널 전송 실패');
+      }
     } on DioException catch (e) {
       throw Exception('네트워크 오류: ${e.message}');
     }
