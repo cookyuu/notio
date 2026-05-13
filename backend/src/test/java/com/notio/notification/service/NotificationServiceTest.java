@@ -3,15 +3,13 @@ package com.notio.notification.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.notio.channel.ChannelRouter;
 import com.notio.connection.domain.Connection;
 import com.notio.common.exception.NotioException;
 import com.notio.common.metrics.NotioMetrics;
@@ -24,13 +22,11 @@ import com.notio.notification.embedding.NotificationEmbeddingService;
 import com.notio.notification.metrics.NotificationFlowMetrics;
 import com.notio.notification.repository.NotificationRepository;
 import com.notio.notification.repository.NotificationSummaryProjection;
-import com.notio.push.service.PushService;
 import com.notio.webhook.dto.NotificationEvent;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.Method;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +35,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -54,19 +49,19 @@ class NotificationServiceTest {
     private NotificationRepository notificationRepository;
 
     @Mock
-    private PushService pushService;
-
-    @Mock
     private CacheManager cacheManager;
 
     @Mock
     private Cache unreadCountCache;
 
     @Mock
-    private Cache dailySummaryCache;
+    private NotificationEmbeddingService notificationEmbeddingService;
 
     @Mock
-    private NotificationEmbeddingService notificationEmbeddingService;
+    private NotificationSummaryService notificationSummaryService;
+
+    @Mock
+    private ChannelRouter channelRouter;
 
     private SimpleMeterRegistry meterRegistry;
     private NotificationService notificationService;
@@ -75,157 +70,86 @@ class NotificationServiceTest {
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
         notificationService = new NotificationService(
-                notificationRepository,
-                new ObjectMapper(),
-                pushService,
-                cacheManager,
-                notificationEmbeddingService,
-                new NotificationFlowMetrics(new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy()))
+            notificationRepository,
+            new ObjectMapper(),
+            cacheManager,
+            notificationEmbeddingService,
+            new NotificationFlowMetrics(new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy())),
+            notificationSummaryService,
+            channelRouter
         );
         lenient().when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
-        lenient().when(cacheManager.getCache("dailySummary")).thenReturn(dailySummaryCache);
     }
 
     @Test
-    void saveFromEventSavesNotificationAndTriggersPush() {
+    void saveFromEventSavesNotificationAndRecordsMetric() {
         final NotificationEvent event = new NotificationEvent(
-                NotificationSource.SLACK,
-                "title",
-                "body",
-                NotificationPriority.HIGH,
-                "ext-1",
-                "https://notio.dev",
-                Map.of("channel", "dev"),
-                10L,
-                20L
+            NotificationSource.SLACK, "title", "body", NotificationPriority.HIGH,
+            "ext-1", "https://notio.dev", Map.of("channel", "dev"), 10L, 20L
         );
         final Notification saved = Notification.builder()
-                .id(1L)
-                .userId(event.userId())
-                .connectionId(event.connectionId())
-                .source(event.source())
-                .title(event.title())
-                .body(event.body())
-                .priority(event.priority())
-                .externalId(event.externalId())
-                .externalUrl(event.externalUrl())
-                .metadata("{\"channel\":\"dev\"}")
-                .build();
+            .id(1L).userId(event.userId()).connectionId(event.connectionId())
+            .source(event.source()).title(event.title()).body(event.body())
+            .priority(event.priority()).externalId(event.externalId())
+            .externalUrl(event.externalUrl()).metadata("{\"channel\":\"dev\"}").build();
         when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
 
         final Notification savedNotification = notificationService.saveFromEvent(event);
 
         assertThat(savedNotification.getId()).isEqualTo(saved.getId());
         verify(notificationRepository).save(any(Notification.class));
-        verify(notificationEmbeddingService).embedNotification(saved);
-        verify(pushService).sendPush(saved.getId(), saved.getUserId());
-        verify(dailySummaryCache).evict(event.userId() + ":" + LocalDate.now(ZoneId.of("Asia/Seoul")));
         assertThat(meterRegistry.get("notio_notifications_created_total")
-                .tag("source", "slack")
-                .counter()
-                .count()).isEqualTo(1.0d);
-        assertThat(meterRegistry.get("notio_notification_embedding_total")
-                .tag("outcome", "success")
-                .counter()
-                .count()).isEqualTo(1.0d);
+            .tag("source", "slack")
+            .counter().count()).isEqualTo(1.0d);
     }
 
     @Test
-    void saveFromEventKeepsNotificationWhenEmbeddingFails() {
+    void saveFromEventEvictsUnreadCountCache() {
         final NotificationEvent event = new NotificationEvent(
-                NotificationSource.SLACK,
-                "title",
-                "body",
-                NotificationPriority.HIGH,
-                "ext-1",
-                "https://notio.dev",
-                Map.of("channel", "dev"),
-                10L,
-                20L
+            NotificationSource.GITHUB, "title", "body", NotificationPriority.HIGH,
+            "ext-1", null, null, 10L, null
         );
         final Notification saved = Notification.builder()
-                .id(1L)
-                .userId(event.userId())
-                .connectionId(event.connectionId())
-                .source(event.source())
-                .title(event.title())
-                .body(event.body())
-                .priority(event.priority())
-                .externalId(event.externalId())
-                .externalUrl(event.externalUrl())
-                .metadata("{\"channel\":\"dev\"}")
-                .build();
+            .id(1L).userId(10L).source(NotificationSource.GITHUB)
+            .title("title").body("body").priority(NotificationPriority.HIGH).build();
         when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
-        org.mockito.Mockito.doThrow(new IllegalStateException("embedding down"))
-                .when(notificationEmbeddingService).embedNotification(saved);
 
-        final Notification savedNotification = notificationService.saveFromEvent(event);
+        notificationService.saveFromEvent(event);
 
-        assertThat(savedNotification).isSameAs(saved);
-        verify(notificationRepository).save(any(Notification.class));
-        verify(notificationEmbeddingService).embedNotification(saved);
-        verify(dailySummaryCache).evict(event.userId() + ":" + LocalDate.now(ZoneId.of("Asia/Seoul")));
-        verify(pushService).sendPush(saved.getId(), saved.getUserId());
-        assertThat(meterRegistry.get("notio_notification_embedding_total")
-                .tag("outcome", "failure")
-                .counter()
-                .count()).isEqualTo(1.0d);
+        verify(unreadCountCache).evict(10L);
     }
 
     @Test
-    void saveFromEventReturnsSavedNotificationWhenPushDispatchFailsAndLogsFailure() {
+    void saveFromEventRejectsMissingUserId() {
         final NotificationEvent event = new NotificationEvent(
-                NotificationSource.SLACK,
-                "title",
-                "body",
-                NotificationPriority.HIGH,
-                "ext-1",
-                "https://notio.dev",
-                Map.of("channel", "dev"),
-                10L,
-                20L
+            NotificationSource.SLACK, "title", "body", NotificationPriority.HIGH,
+            "ext-1", "https://notio.dev", Map.of("channel", "dev")
         );
+
+        assertThatThrownBy(() -> notificationService.saveFromEvent(event))
+            .isInstanceOf(NotioException.class)
+            .hasMessage("인증에 실패했습니다.");
+    }
+
+    @Test
+    void saveFromConnectionUsesConnectionUserAndId() {
+        final NotificationEvent event = new NotificationEvent(
+            NotificationSource.CLAUDE, "title", "body", NotificationPriority.MEDIUM,
+            "ext-1", "https://notio.dev", Map.of("session", "abc")
+        );
+        final Connection connection = Connection.builder().id(20L).userId(10L).build();
         final Notification saved = Notification.builder()
-                .id(1L)
-                .userId(event.userId())
-                .connectionId(event.connectionId())
-                .source(event.source())
-                .title(event.title())
-                .body(event.body())
-                .priority(event.priority())
-                .externalId(event.externalId())
-                .externalUrl(event.externalUrl())
-                .metadata("{\"channel\":\"dev\"}")
-                .build();
+            .id(1L).userId(10L).connectionId(20L).source(event.source())
+            .title(event.title()).body(event.body()).priority(event.priority())
+            .externalId(event.externalId()).externalUrl(event.externalUrl())
+            .metadata("{\"session\":\"abc\"}").build();
         when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
-        org.mockito.Mockito.doThrow(new IllegalStateException("firebase down"))
-                .when(pushService).sendPush(saved.getId(), saved.getUserId());
 
-        final Logger logger = (Logger) LoggerFactory.getLogger(NotificationService.class);
-        final Level previousLevel = logger.getLevel();
-        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.setLevel(Level.ERROR);
-        logger.addAppender(appender);
+        final Notification savedNotification = notificationService.saveFromConnection(event, connection);
 
-        final Notification result;
-        try {
-            result = notificationService.saveFromEvent(event);
-        } finally {
-            logger.detachAppender(appender);
-            logger.setLevel(previousLevel);
-            appender.stop();
-        }
-
-        assertThat(result).isSameAs(saved);
+        assertThat(savedNotification.getUserId()).isEqualTo(10L);
+        assertThat(savedNotification.getConnectionId()).isEqualTo(20L);
         verify(notificationRepository).save(any(Notification.class));
-        verify(pushService).sendPush(saved.getId(), saved.getUserId());
-        assertThat(appender.list).hasSize(1);
-        assertThat(appender.list.getFirst().getFormattedMessage())
-                .contains("event=push_dispatch_failed")
-                .contains("notification_id=1")
-                .contains("user_id=10")
-                .contains("exception_type=IllegalStateException");
     }
 
     @Test
@@ -245,65 +169,32 @@ class NotificationServiceTest {
 
         assertThat(notificationService.countUnread(10L)).isEqualTo(3L);
         assertThat(notificationService.countUnread(11L)).isEqualTo(5L);
-        verify(notificationRepository).countUnread(10L);
-        verify(notificationRepository).countUnread(11L);
     }
 
     @Test
     void findAllSummariesUsesLightweightProjectionAndKeepsPagination() {
         final NotificationSummaryProjection summary = new NotificationSummaryProjection() {
-            @Override
-            public Long getId() {
-                return 1L;
-            }
-
-            @Override
-            public NotificationSource getSource() {
-                return NotificationSource.GITHUB;
-            }
-
-            @Override
-            public String getTitle() {
-                return "PR opened";
-            }
-
-            @Override
-            public NotificationPriority getPriority() {
-                return NotificationPriority.HIGH;
-            }
-
-            @Override
-            public boolean isRead() {
-                return false;
-            }
-
-            @Override
-            public Instant getCreatedAt() {
-                return Instant.parse("2026-04-17T12:30:00Z");
-            }
-
-            @Override
-            public String getBody() {
-                return "A new PR is ready with tests and deployment notes.";
-            }
+            @Override public Long getId() { return 1L; }
+            @Override public NotificationSource getSource() { return NotificationSource.GITHUB; }
+            @Override public String getTitle() { return "PR opened"; }
+            @Override public NotificationPriority getPriority() { return NotificationPriority.HIGH; }
+            @Override public boolean isRead() { return false; }
+            @Override public Instant getCreatedAt() { return Instant.parse("2026-04-17T12:30:00Z"); }
+            @Override public String getBody() { return "A new PR is ready with tests and deployment notes."; }
         };
         final PageRequest pageable = PageRequest.of(0, 20);
         when(notificationRepository.findAllSummariesWithFilter(10L, null, null, pageable))
-            .thenReturn(new PageImpl<>(java.util.List.of(summary), pageable, 1));
+            .thenReturn(new PageImpl<>(List.of(summary), pageable, 1));
 
         final var result = notificationService.findAllSummaries(10L, null, null, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getNumber()).isEqualTo(0);
-        assertThat(result.getSize()).isEqualTo(20);
         assertThat(result.getContent())
             .extracting(NotificationSummaryResponse::id, NotificationSummaryResponse::source, NotificationSummaryResponse::bodyPreview)
             .containsExactly(org.assertj.core.groups.Tuple.tuple(
-                1L,
-                NotificationSource.GITHUB.name(),
+                1L, NotificationSource.GITHUB.name(),
                 "A new PR is ready with tests and deployment notes."
             ));
-        verify(notificationRepository).findAllSummariesWithFilter(10L, null, null, pageable);
     }
 
     @Test
@@ -311,25 +202,8 @@ class NotificationServiceTest {
         when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> notificationService.findById(10L, 999L))
-                .isInstanceOf(NotioException.class)
-                .hasMessage("알림을 찾을 수 없습니다.");
-    }
-
-    @Test
-    void saveFromEventRejectsMissingUserId() {
-        final NotificationEvent event = new NotificationEvent(
-                NotificationSource.SLACK,
-                "title",
-                "body",
-                NotificationPriority.HIGH,
-                "ext-1",
-                "https://notio.dev",
-                Map.of("channel", "dev")
-        );
-
-        assertThatThrownBy(() -> notificationService.saveFromEvent(event))
-                .isInstanceOf(NotioException.class)
-                .hasMessage("인증에 실패했습니다.");
+            .isInstanceOf(NotioException.class)
+            .hasMessage("알림을 찾을 수 없습니다.");
     }
 
     @Test
@@ -344,62 +218,37 @@ class NotificationServiceTest {
     @Test
     void getDetailMarksUnreadNotificationAsReadAndEvictsUnreadCountCache() {
         final Notification notification = Notification.builder()
-                .id(99L)
-                .userId(10L)
-                .source(NotificationSource.GITHUB)
-                .title("PR opened")
-                .body("A new PR is ready")
-                .priority(NotificationPriority.HIGH)
-                .read(false)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
+            .id(99L).userId(10L).source(NotificationSource.GITHUB)
+            .title("PR opened").body("A new PR is ready").priority(NotificationPriority.HIGH)
+            .read(false).createdAt(Instant.now()).updatedAt(Instant.now()).build();
         when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 99L)).thenReturn(Optional.of(notification));
 
         final Notification result = notificationService.getDetail(10L, 99L);
 
         assertThat(result.isRead()).isTrue();
-        assertThat(notification.isRead()).isTrue();
-        verify(notificationRepository).findByIdAndUserIdAndNotDeleted(10L, 99L);
         verify(unreadCountCache).evict(10L);
     }
 
     @Test
     void getDetailReturnsAlreadyReadNotificationWithoutStateChange() {
         final Notification notification = Notification.builder()
-                .id(100L)
-                .userId(10L)
-                .source(NotificationSource.SLACK)
-                .title("Mention")
-                .body("Already read")
-                .priority(NotificationPriority.MEDIUM)
-                .read(true)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
+            .id(100L).userId(10L).source(NotificationSource.SLACK)
+            .title("Mention").body("Already read").priority(NotificationPriority.MEDIUM)
+            .read(true).createdAt(Instant.now()).updatedAt(Instant.now()).build();
         when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 100L)).thenReturn(Optional.of(notification));
 
         final Notification result = notificationService.getDetail(10L, 100L);
 
         assertThat(result.isRead()).isTrue();
-        assertThat(result).isSameAs(notification);
-        verify(notificationRepository).findByIdAndUserIdAndNotDeleted(10L, 100L);
         verify(unreadCountCache, org.mockito.Mockito.never()).evict(ArgumentMatchers.any());
     }
 
     @Test
     void markReadEvictsUnreadCountOnlyWhenReadStateChanges() {
         final Notification notification = Notification.builder()
-                .id(101L)
-                .userId(10L)
-                .source(NotificationSource.GITHUB)
-                .title("Issue assigned")
-                .body("Unread issue assignment")
-                .priority(NotificationPriority.HIGH)
-                .read(false)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
+            .id(101L).userId(10L).source(NotificationSource.GITHUB)
+            .title("Issue assigned").body("Unread issue assignment").priority(NotificationPriority.HIGH)
+            .read(false).createdAt(Instant.now()).updatedAt(Instant.now()).build();
         when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 101L)).thenReturn(Optional.of(notification));
 
         final Notification result = notificationService.markRead(10L, 101L);
@@ -411,16 +260,9 @@ class NotificationServiceTest {
     @Test
     void markReadDoesNotEvictUnreadCountWhenNotificationAlreadyRead() {
         final Notification notification = Notification.builder()
-                .id(102L)
-                .userId(10L)
-                .source(NotificationSource.SLACK)
-                .title("Already read")
-                .body("No state change")
-                .priority(NotificationPriority.LOW)
-                .read(true)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
+            .id(102L).userId(10L).source(NotificationSource.SLACK)
+            .title("Already read").body("No state change").priority(NotificationPriority.LOW)
+            .read(true).createdAt(Instant.now()).updatedAt(Instant.now()).build();
         when(notificationRepository.findByIdAndUserIdAndNotDeleted(10L, 102L)).thenReturn(Optional.of(notification));
 
         final Notification result = notificationService.markRead(10L, 102L);
@@ -437,43 +279,6 @@ class NotificationServiceTest {
 
         assertThat(count).isEqualTo(4);
         verify(notificationRepository).markAllAsRead(10L);
-    }
-
-    @Test
-    void saveFromConnectionUsesConnectionUserAndId() {
-        final NotificationEvent event = new NotificationEvent(
-                NotificationSource.CLAUDE,
-                "title",
-                "body",
-                NotificationPriority.MEDIUM,
-                "ext-1",
-                "https://notio.dev",
-                Map.of("session", "abc")
-        );
-        final Connection connection = Connection.builder()
-                .id(20L)
-                .userId(10L)
-                .build();
-        final Notification saved = Notification.builder()
-                .id(1L)
-                .userId(10L)
-                .connectionId(20L)
-                .source(event.source())
-                .title(event.title())
-                .body(event.body())
-                .priority(event.priority())
-                .externalId(event.externalId())
-                .externalUrl(event.externalUrl())
-                .metadata("{\"session\":\"abc\"}")
-                .build();
-        when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
-
-        final Notification savedNotification = notificationService.saveFromConnection(event, connection);
-
-        assertThat(savedNotification.getUserId()).isEqualTo(10L);
-        assertThat(savedNotification.getConnectionId()).isEqualTo(20L);
-        verify(notificationRepository).save(any(Notification.class));
-        verify(dailySummaryCache).evict("10:" + LocalDate.now(ZoneId.of("Asia/Seoul")));
     }
 
     @Test

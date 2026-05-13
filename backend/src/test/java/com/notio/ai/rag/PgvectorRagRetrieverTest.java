@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.notio.ai.embedding.EmbeddingProvider;
-import com.notio.chat.metrics.ChatMetrics;
+import com.notio.notification.metrics.NotificationFlowMetrics;
 import com.notio.common.config.properties.NotioRagProperties;
 import com.notio.common.metrics.NotioMetrics;
 import com.notio.common.metrics.NotioMetricsTagPolicy;
@@ -44,7 +44,7 @@ class PgvectorRagRetrieverTest {
                 embeddingProvider,
                 jdbcTemplate,
                 new NotioRagProperties(5, 3),
-                new ChatMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
+                new NotificationFlowMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
         );
     }
 

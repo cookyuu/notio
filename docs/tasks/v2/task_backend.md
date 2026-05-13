@@ -253,22 +253,22 @@
 ## Phase 7: 테스트
 
 ### 단위 테스트
-- [ ] `RoutingRuleEvaluatorTest` — source/priority AND 매칭, null=전체 매칭
-- [ ] `ChannelRouterTest` — IMMEDIATE/DIGEST 분기, stop_on_match, 비활성 채널 skip
-- [ ] `DigestChannelRouterTest` — 윈도우 신규 생성, 기존 윈도우 재사용
-- [ ] `SlackBlockKitFormatterTest` — 우선순위별 색상, 특수문자 처리
-- [ ] `TelegramMarkdownFormatterTest` — MarkdownV2 이스케이프
-- [ ] `DiscordEmbedFormatterTest` — 색상 십진수 매핑
-- [ ] `NotificationSummaryServiceTest` — `shouldSummarize()` CLAUDE/CODEX 포함 시 true, GITHUB 시 false
-- [ ] `NotificationSummaryServiceTest` — LLM 실패 시 null 반환 (예외 비전파)
-- [ ] `PromptBuilderTest` — `buildNotificationSummaryPrompt` RAG context 포함/미포함 프롬프트 구조
-- [ ] `PromptBuilderTest` — `buildDigestSummaryPrompt` 복수 알림 목록 프롬프트 구조
+- [x] `RoutingRuleEvaluatorTest` — source/priority AND 매칭, null=전체 매칭
+- [x] `ChannelRouterTest` — IMMEDIATE/DIGEST 분기, stop_on_match, 비활성 채널 skip
+- [x] `DigestChannelRouterTest` — 윈도우 신규 생성, 기존 윈도우 재사용
+- [x] `SlackBlockKitFormatterTest` — 우선순위별 색상, 특수문자 처리
+- [x] `TelegramMarkdownFormatterTest` — MarkdownV2 이스케이프
+- [x] `DiscordEmbedFormatterTest` — 색상 십진수 매핑
+- [x] `NotificationSummaryServiceTest` — `shouldSummarize()` CLAUDE/CODEX 포함 시 true, GITHUB 시 false
+- [x] `NotificationSummaryServiceTest` — LLM 실패 시 null 반환 (예외 비전파)
+- [x] `PromptBuilderTest` — `buildNotificationSummaryPrompt` RAG context 포함/미포함 프롬프트 구조
+- [x] `PromptBuilderTest` — `buildDigestSummaryPrompt` 복수 알림 목록 프롬프트 구조
 
 ### 통합 테스트 (Testcontainers)
-- [ ] `ChannelDeliverySchedulerTest` — RETRY 백오프 3회 후 DEAD 전환
-- [ ] `NotificationDigestSchedulerTest` — DIGEST_PENDING → 만료 → LLM 묶음 요약 → SUCCESS
-- [ ] `DeliveryFeedControllerTest` — `@WebMvcTest` 페이지네이션, channelType 필터
-- [ ] `V14MigrationTest` — Flyway V14 마이그레이션 후 스키마 검증
-- [ ] `NotificationSummaryServiceIntegrationTest` — CLAUDE 소스 알림 → `ai_summary` DB 저장 확인
-- [ ] `NotificationSummaryServiceIntegrationTest` — GITHUB 소스 알림 → 요약 skip 확인
-- [ ] `OllamaLlmProviderTest` — LLM 타임아웃 시 `AiException` 발생 확인
+- [x] `ChannelDeliverySchedulerTest` — RETRY 백오프 3회 후 DEAD 전환
+- [x] `NotificationDigestSchedulerTest` — DIGEST_PENDING → 만료 → LLM 묶음 요약 → SUCCESS
+- [x] `DeliveryFeedControllerTest` — `@WebMvcTest` 페이지네이션, channelType 필터
+- [x] `V14MigrationTest` — Flyway V14 마이그레이션 후 스키마 검증
+- [x] `NotificationSummaryServiceIntegrationTest` — CLAUDE 소스 알림 → `ai_summary` DB 저장 확인
+- [x] `NotificationSummaryServiceIntegrationTest` — GITHUB 소스 알림 → 요약 skip 확인
+- [x] `OllamaLlmProviderTest` — LLM 타임아웃 시 `AiException` 발생 확인

@@ -3,18 +3,11 @@ package com.notio.ai.prompt;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.notio.ai.rag.RagDocument;
-import com.notio.ai.rag.TimeRange;
-import com.notio.chat.domain.ChatMessage;
-import com.notio.chat.domain.ChatMessageRole;
 import com.notio.notification.domain.Notification;
 import com.notio.notification.domain.NotificationPriority;
 import com.notio.notification.domain.NotificationSource;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -23,172 +16,163 @@ class PromptBuilderTest {
     private final PromptBuilder promptBuilder = new PromptBuilder();
 
     @Test
-    void buildChatPromptIncludesSystemInstructionsRagContextAndHistory() {
-        final RagDocument document = new RagDocument(
-                10L,
-                "GITHUB",
-                "PR 리뷰 요청",
-                "결제 모듈 변경에 대한 리뷰가 요청되었습니다.",
-                "HIGH",
-                Instant.parse("2026-04-22T01:00:00Z"),
-                0.91321
-        );
-        final ChatMessage userMessage = chatMessage(
-                1L,
-                ChatMessageRole.USER,
-                "오늘 중요한 알림 알려줘",
-                OffsetDateTime.parse("2026-04-22T01:01:00Z")
-        );
-        final ChatMessage assistantMessage = chatMessage(
-                2L,
-                ChatMessageRole.ASSISTANT,
-                "GitHub 리뷰 요청이 중요합니다.",
-                OffsetDateTime.parse("2026-04-22T01:02:00Z")
-        );
-
-        final LlmPrompt prompt = promptBuilder.buildChatPrompt(
-                "내가 먼저 처리할 일은?",
-                List.of(document),
-                List.of(assistantMessage, userMessage)
-        );
+    void buildNotificationSummaryPromptIncludesSystemRules() {
+        Notification notification = notification();
+        LlmPrompt prompt = promptBuilder.buildNotificationSummaryPrompt(notification, List.of());
 
         assertThat(prompt.system())
-                .contains("개발자를 위한 알림 관리 AI 어시스턴트")
-                .contains("기본 응답 언어는 한국어")
-                .contains("컨텍스트에 없는 사실은 추측하거나 단정하지 마라");
-        assertThat(prompt.user())
-                .contains("source: GITHUB")
-                .contains("title: PR 리뷰 요청")
-                .contains("body_summary: 결제 모듈 변경에 대한 리뷰가 요청되었습니다.")
-                .contains("priority: HIGH")
-                .contains("created_at: 2026-04-22T01:00:00Z")
-                .contains("similarity_score: 0.9132")
-                .contains("Applied time filter:")
-                .contains("기간 필터 없음")
-                .contains("- user: 오늘 중요한 알림 알려줘")
-                .contains("- assistant: GitHub 리뷰 요청이 중요합니다.")
-                .contains("답변은 한국어로 작성하고 4000자 이하로 제한하라")
-                .contains("User:\n내가 먼저 처리할 일은?");
+            .contains("2~4문장")
+            .contains("500자")
+            .contains("마크다운");
     }
 
     @Test
-    void buildChatPromptIncludesAppliedTimeFilterWhenPresent() {
-        final TimeRange timeRange = new TimeRange(
-                Instant.parse("2026-04-22T00:00:00Z"),
-                Instant.parse("2026-04-23T00:00:00Z")
-        );
+    void buildNotificationSummaryPromptIncludesNotificationFields() {
+        Notification notification = Notification.builder()
+            .id(1L).userId(1L)
+            .source(NotificationSource.GITHUB)
+            .title("PR #123 merged")
+            .body("The feature branch has been merged into main.")
+            .priority(NotificationPriority.HIGH)
+            .build();
 
-        final LlmPrompt prompt = promptBuilder.buildChatPrompt(
-                "오늘 알림 요약해줘",
-                List.of(),
-                List.of(),
-                Optional.of(timeRange)
-        );
+        LlmPrompt prompt = promptBuilder.buildNotificationSummaryPrompt(notification, List.of());
 
         assertThat(prompt.user())
-                .contains("Applied time filter:")
-                .contains("startInclusive <= notification.created_at < endExclusive")
-                .contains("startInclusive: 2026-04-22T00:00:00Z")
-                .contains("endExclusive: 2026-04-23T00:00:00Z")
-                .contains("적용된 기간 조건에 맞는 관련 알림을 찾지 못했다고 명확히 말하라")
-                .contains("관련 알림 컨텍스트 없음");
+            .contains("GITHUB")
+            .contains("PR #123 merged")
+            .contains("HIGH")
+            .contains("The feature branch has been merged into main.");
     }
 
     @Test
-    void buildChatPromptIncludesNoTimeFilterWhenAbsent() {
-        final LlmPrompt prompt = promptBuilder.buildChatPrompt(
-                "중요한 알림 알려줘",
-                List.of(),
-                List.of(),
-                Optional.empty()
-        );
+    void buildNotificationSummaryPromptIncludesExternalUrlWhenPresent() {
+        Notification notification = Notification.builder()
+            .id(1L).userId(1L)
+            .source(NotificationSource.GITHUB)
+            .title("PR opened")
+            .body("body")
+            .priority(NotificationPriority.MEDIUM)
+            .externalUrl("https://github.com/pr/123")
+            .build();
 
-        assertThat(prompt.user())
-                .contains("Applied time filter:")
-                .contains("- 기간 필터 없음")
-                .doesNotContain("startInclusive <= notification.created_at < endExclusive");
+        LlmPrompt prompt = promptBuilder.buildNotificationSummaryPrompt(notification, List.of());
+
+        assertThat(prompt.user()).contains("https://github.com/pr/123");
     }
 
     @Test
-    void buildChatPromptKeepsRagCreatedAtOutputFormat() {
-        final RagDocument document = new RagDocument(
-                10L,
-                "GITHUB",
-                "PR 리뷰 요청",
-                "결제 모듈 변경에 대한 리뷰가 요청되었습니다.",
-                "HIGH",
-                Instant.parse("2026-04-22T01:00:00Z"),
-                0.91321
-        );
+    void buildNotificationSummaryPromptIncludesRagContextWhenPresent() {
+        Notification notification = notification();
+        RagDocument doc1 = new RagDocument(2L, "GITHUB", "Similar PR", "summary1", "HIGH",
+            Instant.parse("2026-05-01T10:00:00Z"), 0.93);
+        RagDocument doc2 = new RagDocument(3L, "SLACK", "Alert", "summary2", "URGENT",
+            Instant.parse("2026-05-02T10:00:00Z"), 0.87);
 
-        final LlmPrompt prompt = promptBuilder.buildChatPrompt(
-                "알림 요약해줘",
-                List.of(document),
-                List.of()
-        );
+        LlmPrompt prompt = promptBuilder.buildNotificationSummaryPrompt(notification, List.of(doc1, doc2));
 
         assertThat(prompt.user())
-                .contains("created_at: 2026-04-22T01:00:00Z")
-                .contains("similarity_score: 0.9132");
+            .contains("유사 과거 알림")
+            .contains("Similar PR")
+            .contains("0.93")
+            .contains("Alert");
     }
 
     @Test
-    void buildChatPromptIncludesFallbackInstructionWhenRagContextIsEmpty() {
-        final LlmPrompt prompt = promptBuilder.buildChatPrompt(
-                "관련 알림이 있어?",
-                List.of(),
-                List.of()
+    void buildNotificationSummaryPromptLimitsRagContextToThreeDocuments() {
+        Notification notification = notification();
+        List<RagDocument> docs = List.of(
+            ragDocument(10L, "Doc1", 0.99),
+            ragDocument(11L, "Doc2", 0.95),
+            ragDocument(12L, "Doc3", 0.90),
+            ragDocument(13L, "Doc4", 0.85)
         );
 
+        LlmPrompt prompt = promptBuilder.buildNotificationSummaryPrompt(notification, docs);
+
         assertThat(prompt.user())
-                .contains("관련 알림 컨텍스트 없음")
-                .contains("현재 검색 가능한 관련 알림이 없다고 명확히 말하라")
-                .contains("최근 대화 없음");
+            .contains("Doc1").contains("Doc2").contains("Doc3")
+            .doesNotContain("Doc4");
     }
 
     @Test
-    void buildDailySummaryPromptIncludesNotificationsAndSummaryConstraints() {
-        final Notification notification = Notification.builder()
-                .id(20L)
-                .userId(1L)
-                .source(NotificationSource.SLACK)
-                .title("장애 대응 채널 호출")
-                .body("API 오류율이 상승해 온콜 확인이 필요합니다.")
-                .priority(NotificationPriority.HIGH)
-                .read(false)
-                .build();
-        ReflectionTestUtils.setField(notification, "createdAt", Instant.parse("2026-04-22T02:00:00Z"));
+    void buildNotificationSummaryPromptExcludesRagSectionWhenEmpty() {
+        Notification notification = notification();
 
-        final LlmPrompt prompt = promptBuilder.buildDailySummaryPrompt(
-                LocalDate.of(2026, 4, 22),
-                List.of(notification)
-        );
+        LlmPrompt prompt = promptBuilder.buildNotificationSummaryPrompt(notification, List.of());
 
-        assertThat(prompt.user())
-                .contains("2026-04-22에 수집된 알림 목록")
-                .contains("전체 요약")
-                .contains("중요한 알림")
-                .contains("사용자가 바로 처리하면 좋은 항목")
-                .contains("주요 topic")
-                .contains("source: SLACK")
-                .contains("title: 장애 대응 채널 호출")
-                .contains("body_summary: API 오류율이 상승해 온콜 확인이 필요합니다.")
-                .contains("priority: HIGH")
-                .contains("created_at: 2026-04-22T02:00:00Z")
-                .contains("summary 본문은 2000자 이하로 제한하라")
-                .contains("제공된 알림 목록에 없는 사실은 추측하거나 단정하지 마라");
+        assertThat(prompt.user()).doesNotContain("유사 과거 알림");
     }
 
-    private ChatMessage chatMessage(
-            final Long id,
-            final ChatMessageRole role,
-            final String content,
-            final OffsetDateTime createdAt
-    ) {
-        final ChatMessage message = new ChatMessage(1L, role, content);
-        ReflectionTestUtils.setField(message, "id", id);
-        ReflectionTestUtils.setField(message, "createdAt", createdAt.withOffsetSameInstant(ZoneOffset.UTC));
-        ReflectionTestUtils.setField(message, "updatedAt", createdAt.withOffsetSameInstant(ZoneOffset.UTC));
-        return message;
+    @Test
+    void buildDigestSummaryPromptIncludesSystemRules() {
+        List<Notification> notifications = List.of(notification());
+
+        LlmPrompt prompt = promptBuilder.buildDigestSummaryPrompt(notifications);
+
+        assertThat(prompt.system())
+            .contains("첫 줄")
+            .contains("1000자")
+            .contains("마크다운 목록");
+    }
+
+    @Test
+    void buildDigestSummaryPromptIncludesAllNotifications() {
+        Notification n1 = Notification.builder()
+            .id(1L).userId(1L).source(NotificationSource.GITHUB)
+            .title("PR merged").body("Feature branch merged").priority(NotificationPriority.HIGH).build();
+        Notification n2 = Notification.builder()
+            .id(2L).userId(1L).source(NotificationSource.SLACK)
+            .title("Alert").body("Server is down").priority(NotificationPriority.URGENT).build();
+
+        LlmPrompt prompt = promptBuilder.buildDigestSummaryPrompt(List.of(n1, n2));
+
+        assertThat(prompt.user())
+            .contains("2개")
+            .contains("PR merged")
+            .contains("GITHUB")
+            .contains("Alert")
+            .contains("SLACK");
+    }
+
+    @Test
+    void buildDigestSummaryPromptUsesAiSummaryWhenAvailable() {
+        Notification notification = Notification.builder()
+            .id(1L).userId(1L).source(NotificationSource.CLAUDE)
+            .title("title").body("original body").priority(NotificationPriority.MEDIUM)
+            .aiSummary("AI generated summary").build();
+
+        LlmPrompt prompt = promptBuilder.buildDigestSummaryPrompt(List.of(notification));
+
+        assertThat(prompt.user()).contains("AI generated summary");
+        assertThat(prompt.user()).doesNotContain("original body");
+    }
+
+    @Test
+    void buildDigestSummaryPromptTruncatesBodyAt300Characters() {
+        String longBody = "x".repeat(400);
+        Notification notification = Notification.builder()
+            .id(1L).userId(1L).source(NotificationSource.GITHUB)
+            .title("title").body(longBody).priority(NotificationPriority.LOW).build();
+
+        LlmPrompt prompt = promptBuilder.buildDigestSummaryPrompt(List.of(notification));
+
+        assertThat(prompt.user()).contains("x".repeat(300) + "...");
+    }
+
+    private Notification notification() {
+        Notification n = Notification.builder()
+            .id(1L).userId(1L)
+            .source(NotificationSource.GITHUB)
+            .title("Test notification")
+            .body("Test body content")
+            .priority(NotificationPriority.HIGH)
+            .build();
+        ReflectionTestUtils.setField(n, "createdAt", Instant.parse("2026-05-13T10:00:00Z"));
+        return n;
+    }
+
+    private RagDocument ragDocument(Long id, String title, double score) {
+        return new RagDocument(id, "GITHUB", title, "summary", "HIGH", Instant.now(), score);
     }
 }

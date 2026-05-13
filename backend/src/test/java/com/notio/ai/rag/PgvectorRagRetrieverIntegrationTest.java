@@ -2,7 +2,7 @@ package com.notio.ai.rag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.notio.chat.metrics.ChatMetrics;
+import com.notio.notification.metrics.NotificationFlowMetrics;
 import com.notio.common.config.properties.NotioRagProperties;
 import com.notio.common.metrics.NotioMetrics;
 import com.notio.common.metrics.NotioMetricsTagPolicy;
@@ -13,37 +13,42 @@ import com.notio.notification.repository.NotificationEmbeddingRepository;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers(disabledWithoutDocker = true)
 class PgvectorRagRetrieverIntegrationTest {
 
     private static final DockerImageName PGVECTOR_IMAGE = DockerImageName
             .parse("pgvector/pgvector:pg16")
             .asCompatibleSubstituteFor("postgres");
 
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(PGVECTOR_IMAGE)
-            .withDatabaseName("notio_test")
-            .withUsername("notio")
-            .withPassword("notio");
-
     private JdbcTemplate jdbcTemplate;
     private NotificationEmbeddingRepository embeddingRepository;
 
+    @SuppressWarnings("resource")
     @BeforeEach
     void setUp() {
+        PostgreSQLContainer<?> postgres;
+        try {
+            postgres = new PostgreSQLContainer<>(PGVECTOR_IMAGE)
+                    .withDatabaseName("notio_test")
+                    .withUsername("notio")
+                    .withPassword("notio");
+            postgres.start();
+        } catch (Exception e) {
+            Assumptions.abort("Docker not available or container failed to start: " + e.getMessage());
+            return;
+        }
+
         final DriverManagerDataSource dataSource = new DriverManagerDataSource(
-                POSTGRES.getJdbcUrl(),
-                POSTGRES.getUsername(),
-                POSTGRES.getPassword()
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword()
         );
         jdbcTemplate = new JdbcTemplate(dataSource);
         embeddingRepository = new NotificationEmbeddingRepository(jdbcTemplate);
@@ -166,7 +171,7 @@ class PgvectorRagRetrieverIntegrationTest {
                 input -> new float[] {1.0f, 0.0f, 0.0f},
                 jdbcTemplate,
                 new NotioRagProperties(5, 3),
-                new ChatMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
+                new NotificationFlowMetrics(new NotioMetrics(new SimpleMeterRegistry(), new NotioMetricsTagPolicy()))
         );
 
         final List<RagDocument> documents = retriever.retrieve(1L, "PR 리뷰 요청 알려줘", Optional.empty());
