@@ -35,6 +35,12 @@ public enum ErrorCode {
     TODO_NOT_FOUND(HttpStatus.NOT_FOUND, "TODO_NOT_FOUND", "할일을 찾을 수 없습니다."),
     DEVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "DEVICE_NOT_FOUND", "디바이스를 찾을 수 없습니다."),
     CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "CONNECTION_NOT_FOUND", "연결을 찾을 수 없습니다."),
+    CHANNEL_NOT_FOUND(HttpStatus.NOT_FOUND, "CHANNEL_NOT_FOUND", "채널을 찾을 수 없습니다."),
+    ROUTING_RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTING_RULE_NOT_FOUND", "라우팅 규칙을 찾을 수 없습니다."),
+
+    // 400 Channel-specific
+    CHANNEL_CREDENTIAL_INVALID(HttpStatus.BAD_REQUEST, "CHANNEL_CREDENTIAL_INVALID", "채널 자격증명이 유효하지 않습니다."),
+    DIGEST_INTERVAL_REQUIRED(HttpStatus.BAD_REQUEST, "DIGEST_INTERVAL_REQUIRED", "묶음 전송 시 간격 설정이 필요합니다."),
 
     // 429 Too Many Requests
     RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT_EXCEEDED", "요청 횟수 제한을 초과했습니다."),

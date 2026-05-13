@@ -121,89 +121,89 @@
 ## Phase 4: channel/ 모듈 구현
 
 ### 4-1. 도메인 엔티티 및 Enum
-- [ ] `channel/domain/NotificationChannel.java` — `@SQLDelete`, `@Where` soft delete 구현
-  - [ ] `recordSuccess()` — status ACTIVE, errorCount 0, lastDeliveredAt 갱신
-  - [ ] `recordFailure(String)` — errorCount 증가, 5회 이상 ERROR 전환
-  - [ ] `isDeliverable()`, `pause()`, `resume()` 구현
-- [ ] `channel/domain/RoutingRule.java` — JSONB 컨버터 포함 구현
-- [ ] `channel/domain/ChannelDeliveryLog.java` 구현
-- [ ] `channel/domain/ChannelType.java` Enum (SLACK, TELEGRAM, DISCORD)
-- [ ] `channel/domain/ChannelStatus.java` Enum (ACTIVE, PAUSED, ERROR)
-- [ ] `channel/domain/DeliveryMode.java` Enum (IMMEDIATE, DIGEST)
-- [ ] `channel/domain/DeliveryStatus.java` Enum (PENDING, SUCCESS, FAILED, RETRY, DEAD, DIGEST_PENDING)
-- [ ] `RoutingConditionConverter` (JSONB ↔ RoutingCondition) 구현
-- [ ] `LongListConverter` (JSONB ↔ List<Long>) 구현
+- [x] `channel/domain/NotificationChannel.java` — `@SQLDelete`, `@SQLRestriction` soft delete 구현
+  - [x] `recordSuccess()` — status ACTIVE, errorCount 0, lastDeliveredAt 갱신
+  - [x] `recordFailure(String)` — errorCount 증가, 5회 이상 ERROR 전환
+  - [x] `isDeliverable()`, `pause()`, `resume()` 구현
+- [x] `channel/domain/RoutingRule.java` — JSONB 컨버터 포함 구현
+- [x] `channel/domain/ChannelDeliveryLog.java` 구현
+- [x] `channel/domain/ChannelType.java` Enum (SLACK, TELEGRAM, DISCORD)
+- [x] `channel/domain/ChannelStatus.java` Enum (ACTIVE, PAUSED, ERROR)
+- [x] `channel/domain/DeliveryMode.java` Enum (IMMEDIATE, DIGEST)
+- [x] `channel/domain/DeliveryStatus.java` Enum (PENDING, SUCCESS, FAILED, RETRY, DEAD, DIGEST_PENDING)
+- [x] `RoutingConditionConverter` (JSONB ↔ RoutingCondition) 구현
+- [x] `LongListConverter` (JSONB ↔ List<Long>) 구현
 
 ### 4-2. Provider 인터페이스 및 Value Objects
-- [ ] `channel/provider/NotificationChannelProvider.java` 인터페이스 정의
-- [ ] `channel/provider/ChannelMessage.java` record 구현
-- [ ] `channel/provider/ChannelDeliveryResult.java` record + `success()`, `failure()` 정적 팩토리 구현
-- [ ] `channel/provider/ChannelValidationResult.java` record + `valid()`, `invalid()` 정적 팩토리 구현
+- [x] `channel/provider/NotificationChannelProvider.java` 인터페이스 정의
+- [x] `channel/provider/ChannelMessage.java` record 구현
+- [x] `channel/provider/ChannelDeliveryResult.java` record + `success()`, `failure()` 정적 팩토리 구현
+- [x] `channel/provider/ChannelValidationResult.java` record + `valid()`, `invalid()` 정적 팩토리 구현
 
 ### 4-3. SlackChannelProvider 구현
-- [ ] `channel/provider/SlackChannelProvider.java` 구현
-- [ ] `chat.postMessage` API 호출 + `ok` 필드 체크
-- [ ] HTTP 429 → `retryable=true`, 기타 에러 → `retryable=false`
-- [ ] `auth.test` API를 통한 `validate()` 구현
-- [ ] `SlackBlockKitFormatter` — 우선순위별 색상 Block Kit 포맷터 구현
-  - [ ] URGENT `#FF0000` / HIGH `#FF8C00` / MEDIUM `#4A90E2` / LOW `#9B9B9B`
-  - [ ] section(제목), section(본문), context(Source/Priority/링크) 블록
+- [x] `channel/provider/SlackChannelProvider.java` 구현
+- [x] `chat.postMessage` API 호출 + `ok` 필드 체크
+- [x] HTTP 429 → `retryable=true`, 기타 에러 → `retryable=false`
+- [x] `auth.test` API를 통한 `validate()` 구현
+- [x] `SlackBlockKitFormatter` — 우선순위별 색상 Block Kit 포맷터 구현
+  - [x] URGENT `#FF0000` / HIGH `#FF8C00` / MEDIUM `#4A90E2` / LOW `#9B9B9B`
+  - [x] section(제목), section(본문), context(Source/Priority/링크) 블록
 
 ### 4-4. TelegramChannelProvider 구현
-- [ ] `channel/provider/TelegramChannelProvider.java` 구현
-- [ ] `sendMessage` API 호출 (`parse_mode: MarkdownV2`)
-- [ ] HTTP 429 → `retryable=true`, HTTP 400 → `retryable=false`
-- [ ] `getMe` API를 통한 `validate()` 구현
-- [ ] `TelegramMarkdownFormatter` — MarkdownV2 특수문자 이스케이프 유틸 구현 (`_ * [ ] ( ) ~ > # + - = | { } . !`)
+- [x] `channel/provider/TelegramChannelProvider.java` 구현
+- [x] `sendMessage` API 호출 (`parse_mode: MarkdownV2`)
+- [x] HTTP 429 → `retryable=true`, HTTP 400 → `retryable=false`
+- [x] `getMe` API를 통한 `validate()` 구현
+- [x] `TelegramMarkdownFormatter` — MarkdownV2 특수문자 이스케이프 유틸 구현 (`_ * [ ] ( ) ~ > # + - = | { } . !`)
 
 ### 4-5. DiscordChannelProvider 구현
-- [ ] `channel/provider/DiscordChannelProvider.java` 구현
-- [ ] `credential_encrypted` = Webhook URL 전체 저장 (`target_identifier` = null)
-- [ ] `POST {WEBHOOK_URL}?wait=true` → `message_id` 응답 수신
-- [ ] HTTP 429 → `retryable=true`, 400/401/404 → `retryable=false`, 5xx → `retryable=true`
-- [ ] `GET {WEBHOOK_URL}`로 `validate()` 구현
-- [ ] 우선순위별 색상 십진수 매핑 (URGENT: 16711680 / HIGH: 16744448 / MEDIUM: 4886754 / LOW: 10197915)
+- [x] `channel/provider/DiscordChannelProvider.java` 구현
+- [x] `credential_encrypted` = Webhook URL 전체 저장 (`target_identifier` = null)
+- [x] `POST {WEBHOOK_URL}?wait=true` → `message_id` 응답 수신
+- [x] HTTP 429 → `retryable=true`, 400/401/404 → `retryable=false`, 5xx → `retryable=true`
+- [x] `GET {WEBHOOK_URL}`로 `validate()` 구현
+- [x] 우선순위별 색상 십진수 매핑 (URGENT: 16711680 / HIGH: 16744448 / MEDIUM: 4886754 / LOW: 10197915)
 
 ### 4-6. Registry 및 Evaluator
-- [ ] `channel/ChannelProviderRegistry.java` — `List<NotificationChannelProvider>` 자동 수집 Map 구현
-- [ ] `channel/RoutingRuleEvaluator.java` — source/priority AND 매칭, null/빈 목록 = 전체 매칭
+- [x] `channel/ChannelProviderRegistry.java` — `List<NotificationChannelProvider>` 자동 수집 Map 구현
+- [x] `channel/RoutingRuleEvaluator.java` — source/priority AND 매칭, null/빈 목록 = 전체 매칭
 
 ### 4-7. ChannelRouter (IMMEDIATE)
-- [ ] `channel/ChannelRouter.java` 구현
-- [ ] priority_order 순 규칙 평가 루프
-- [ ] IMMEDIATE / DIGEST 분기 처리
-- [ ] `stop_on_match` 로직 구현
-- [ ] 비활성 채널 skip (`isDeliverable()`)
-- [ ] `deliverImmediate()` — 성공/실패/재시도 상태 저장 + 메트릭 기록
-- [ ] `computeNextRetry()` — 1분/5분/25분 백오프 구현
-- [ ] `buildMessage()` — `COALESCE(aiSummary, body)` 사용
+- [x] `channel/ChannelRouter.java` 구현
+- [x] priority_order 순 규칙 평가 루프
+- [x] IMMEDIATE / DIGEST 분기 처리
+- [x] `stop_on_match` 로직 구현
+- [x] 비활성 채널 skip (`isDeliverable()`)
+- [x] `deliverImmediate()` — 성공/실패/재시도 상태 저장 + 메트릭 기록
+- [x] `computeNextRetry()` — 1분/5분/25분 백오프 구현
+- [x] `buildMessage()` — `COALESCE(aiSummary, body)` 사용
 
 ### 4-8. DigestChannelRouter
-- [ ] `channel/DigestChannelRouter.java` 구현
-- [ ] 기존 DIGEST_PENDING 윈도우 있으면 기존 만료 시각 재사용, 없으면 신규 생성
+- [x] `channel/DigestChannelRouter.java` 구현
+- [x] 기존 DIGEST_PENDING 윈도우 있으면 기존 만료 시각 재사용, 없으면 신규 생성
 
 ### 4-9. ChannelDeliveryScheduler (RETRY 백오프)
-- [ ] `channel/ChannelDeliveryScheduler.java` 구현
-- [ ] `@Scheduled(fixedDelay = 5 * 60 * 1000)` — RETRY 항목 Top50 처리
-- [ ] attemptCount >= 3 시 DEAD 전환
+- [x] `channel/ChannelDeliveryScheduler.java` 구현
+- [x] `@Scheduled(fixedDelay = 5 * 60 * 1000)` — RETRY 항목 Top50 처리
+- [x] attemptCount >= 3 시 DEAD 전환
 
 ### 4-10. NotificationDigestScheduler
-- [ ] `channel/NotificationDigestScheduler.java` 구현
-- [ ] `@Scheduled(fixedDelay = 60 * 1000)` — 만료된 DIGEST_PENDING 처리
-- [ ] channel_id별 그룹화 → `buildDigestSummaryPrompt()` → LLM 요약 → 채널 전달
-- [ ] 전달 성공 → DeliveryLog SUCCESS 일괄 업데이트 + `channel.recordSuccess()`
-- [ ] 전달 실패 → RETRY 또는 DEAD 상태 업데이트
+- [x] `channel/NotificationDigestScheduler.java` 구현
+- [x] `@Scheduled(fixedDelay = 60 * 1000)` — 만료된 DIGEST_PENDING 처리
+- [x] channel_id별 그룹화 → `buildDigestSummaryPrompt()` → LLM 요약 → 채널 전달
+- [x] 전달 성공 → DeliveryLog SUCCESS 일괄 업데이트 + `channel.recordSuccess()`
+- [x] 전달 실패 → RETRY 또는 DEAD 상태 업데이트
 
 ### 4-11. NotificationService 수정
-- [ ] `PushService` 의존성 제거
-- [ ] `evictDailySummaryCache()` 메서드 및 호출 완전 제거
-- [ ] `NotificationSummaryService`, `ChannelRouter` 의존성 추가
-- [ ] Branch A: `notificationEmbeddingService.embedNotification()` 비동기 실행
-- [ ] Branch B: `summarize()` → `channelRouter.route()` 순차 비동기 실행 (A와 병렬)
+- [x] `PushService` 의존성 제거
+- [x] `evictDailySummaryCache()` 메서드 및 호출 완전 제거
+- [x] `NotificationSummaryService`, `ChannelRouter` 의존성 추가
+- [x] Branch A: `notificationEmbeddingService.embedNotification()` 비동기 실행
+- [x] Branch B: `summarize()` → `channelRouter.route()` 순차 비동기 실행 (A와 병렬)
 
 ### 4-12. Service 계층
-- [ ] `NotificationChannelService` — CRUD + pause/resume + test 전송 구현
-- [ ] `RoutingRuleService` — CRUD + `reorder(List<Long> orderedIds)` 구현
+- [x] `NotificationChannelService` — CRUD + pause/resume + test 전송 구현
+- [x] `RoutingRuleService` — CRUD + `reorder(List<Long> orderedIds)` 구현
 
 ---
 

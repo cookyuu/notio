@@ -2,6 +2,7 @@ package com.notio.notification.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.notio.channel.ChannelRouter;
 import com.notio.connection.domain.Connection;
 import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.NotioException;
@@ -13,9 +14,10 @@ import com.notio.notification.metrics.NotificationFlowMetrics;
 import com.notio.notification.repository.NotificationRepository;
 import com.notio.webhook.dto.NotificationEvent;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -34,19 +36,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
 
     private static final Long DEFAULT_PHASE0_USER_ID = 1L;
-    private static final String DAILY_SUMMARY_CACHE_NAME = "dailySummary";
-    private static final ZoneId SUMMARY_ZONE = ZoneId.of("Asia/Seoul");
+
+    private static final Executor VIRTUAL_THREAD_EXECUTOR =
+        Executors.newVirtualThreadPerTaskExecutor();
 
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
     private final CacheManager cacheManager;
     private final NotificationEmbeddingService notificationEmbeddingService;
     private final NotificationFlowMetrics notificationFlowMetrics;
+    private final NotificationSummaryService notificationSummaryService;
+    private final ChannelRouter channelRouter;
 
-    /**
-     * Webhook 이벤트로부터 알림 생성.
-     * Phase 0부터 사용자 식별 없는 저장은 금지한다.
-     */
     @Transactional
     @CacheEvict(value = "unreadCount", key = "#event.userId()")
     public Notification saveFromEvent(NotificationEvent event) {
@@ -61,9 +62,6 @@ public class NotificationService {
         );
     }
 
-    /**
-     * Connection으로 식별된 webhook 이벤트로부터 알림 생성
-     */
     @Transactional
     @CacheEvict(value = "unreadCount", key = "#connection.userId")
     public Notification saveFromConnection(NotificationEvent event, Connection connection) {
@@ -100,28 +98,39 @@ public class NotificationService {
             saved.getSource().name().toLowerCase()
         );
         notificationFlowMetrics.recordNotificationCreated(saved.getSource().name().toLowerCase());
-        evictDailySummaryCache(saved.getUserId());
+        evictUnreadCountCache(saved.getUserId());
 
-        try {
-            notificationEmbeddingService.embedNotification(saved);
-            notificationFlowMetrics.recordNotificationEmbedding("success");
-        } catch (Exception e) {
-            notificationFlowMetrics.recordNotificationEmbedding("failure");
-            log.warn(
-                "event=notification_embedding_failed notification_id={} user_id={} source={} exception_type={}",
-                saved.getId(),
-                saved.getUserId(),
-                saved.getSource().name().toLowerCase(),
-                e.getClass().getSimpleName()
-            );
-        }
+        // Branch A: pgvector 임베딩 (비동기)
+        CompletableFuture.runAsync(() -> {
+            try {
+                notificationEmbeddingService.embedNotification(saved);
+                notificationFlowMetrics.recordNotificationEmbedding("success");
+            } catch (Exception e) {
+                notificationFlowMetrics.recordNotificationEmbedding("failure");
+                log.warn(
+                    "event=notification_embedding_failed notification_id={} user_id={} source={} exception_type={}",
+                    saved.getId(),
+                    saved.getUserId(),
+                    saved.getSource().name().toLowerCase(),
+                    e.getClass().getSimpleName()
+                );
+            }
+        }, VIRTUAL_THREAD_EXECUTOR);
+
+        // Branch B: LLM 요약 → 채널 라우팅 (순차, Branch A와 병렬)
+        CompletableFuture.runAsync(() -> {
+            try {
+                notificationSummaryService.summarize(saved);
+                channelRouter.route(saved);
+            } catch (Exception e) {
+                log.error("event=notification_pipeline_failed notification_id={} user_id={}",
+                    saved.getId(), saved.getUserId(), e);
+            }
+        }, VIRTUAL_THREAD_EXECUTOR);
 
         return saved;
     }
 
-    /**
-     * 알림 목록 조회 (필터링 지원)
-     */
     public Page<Notification> findAll(Long userId, NotificationSource source, Boolean isRead, Pageable pageable) {
         return notificationRepository.findAllWithFilter(userId, source, isRead, pageable);
     }
@@ -150,9 +159,6 @@ public class NotificationService {
             .map(NotificationSummaryResponse::from);
     }
 
-    /**
-     * Phase 0 legacy internal callers. User-facing Notification API must use the user-scoped overload.
-     */
     @Deprecated
     public Page<Notification> findAll(NotificationSource source, Boolean isRead, Pageable pageable) {
         return findAll(DEFAULT_PHASE0_USER_ID, source, isRead, pageable);
@@ -163,33 +169,21 @@ public class NotificationService {
             .orElseThrow(() -> new NotioException(ErrorCode.NOTIFICATION_NOT_FOUND));
     }
 
-    /**
-     * Phase 0 legacy internal callers. User-facing Notification API must use the user-scoped overload.
-     */
     @Deprecated
     public Notification findById(Long id) {
         return findById(DEFAULT_PHASE0_USER_ID, id);
     }
 
-    /**
-     * 알림 상세 조회. 미읽음 상태면 읽음 처리 후 반환한다.
-     */
     @Transactional
     public Notification getDetail(Long userId, Long id) {
         return getDetailAndMarkReadIfUnread(userId, id);
     }
 
-    /**
-     * 알림을 읽음 상태로 변경
-     */
     @Transactional
     public Notification markRead(Long userId, Long id) {
         return markReadIfUnread(userId, id);
     }
 
-    /**
-     * 모든 알림 읽음 처리
-     */
     @Transactional
     @CacheEvict(value = "unreadCount", key = "#userId")
     public int markAllRead(Long userId) {
@@ -198,9 +192,6 @@ public class NotificationService {
         return count;
     }
 
-    /**
-     * 알림 삭제 (Soft Delete)
-     */
     @Transactional
     @CacheEvict(value = "unreadCount", key = "#userId")
     public void delete(Long userId, Long id) {
@@ -209,9 +200,6 @@ public class NotificationService {
         log.info("Notification soft deleted: id={}, userId={}", id, userId);
     }
 
-    /**
-     * 미읽음 알림 개수 조회 (Redis 캐싱)
-     */
     @Cacheable(value = "unreadCount", key = "#userId")
     public long countUnread(Long userId) {
         return notificationRepository.countUnread(userId);
@@ -247,20 +235,6 @@ public class NotificationService {
         cache.evict(userId);
     }
 
-    private void evictDailySummaryCache(Long userId) {
-        Cache cache = cacheManager.getCache(DAILY_SUMMARY_CACHE_NAME);
-        if (cache == null) {
-            log.warn("Daily summary cache is not configured; skip eviction for userId={}", userId);
-            return;
-        }
-
-        final LocalDate today = LocalDate.now(SUMMARY_ZONE);
-        cache.evict(userId + ":" + today);
-    }
-
-    /**
-     * Metadata Map을 JSON 문자열로 변환
-     */
     private String convertMetadataToJson(Map<String, Object> metadata) {
         if (metadata == null || metadata.isEmpty()) {
             return null;
@@ -274,9 +248,6 @@ public class NotificationService {
         }
     }
 
-    /**
-     * JSON 문자열을 Map으로 변환
-     */
     @SuppressWarnings("unchecked")
     public Map<String, Object> parseMetadataFromJson(String json) {
         if (json == null || json.isBlank()) {
