@@ -115,6 +115,18 @@ public class NotificationChannelService {
         return channelRepository.save(channel);
     }
 
+    public String getKeyPreview(NotificationChannel channel) {
+        try {
+            String plaintext = encryptionService.decrypt(channel.getCredentialEncrypted());
+            if (plaintext == null || plaintext.length() < 4) {
+                return "****";
+            }
+            return "****" + plaintext.substring(plaintext.length() - 4);
+        } catch (Exception e) {
+            return "****";
+        }
+    }
+
     public ChannelDeliveryResult test(Long userId, Long channelId) {
         NotificationChannel channel = findById(userId, channelId);
         NotificationChannelProvider provider = providerRegistry.get(channel.getChannelType());

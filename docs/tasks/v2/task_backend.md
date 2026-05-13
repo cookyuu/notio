@@ -210,31 +210,31 @@
 ## Phase 5: REST API 구현
 
 ### 5-1. NotificationChannelController
-- [ ] `POST /api/v1/channels` — 채널 생성 (Provider.validate() → 성공 시 암호화 저장)
-- [ ] `GET /api/v1/channels` — 채널 목록
-- [ ] `GET /api/v1/channels/{id}` — 채널 상세
-- [ ] `PUT /api/v1/channels/{id}` — 채널 수정
-- [ ] `DELETE /api/v1/channels/{id}` — soft delete
-- [ ] `PATCH /api/v1/channels/{id}/pause` — 일시중지
-- [ ] `PATCH /api/v1/channels/{id}/resume` — 재개
-- [ ] `POST /api/v1/channels/{id}/test` — 테스트 전송
-- [ ] `CreateChannelRequest` record 구현 (`@NotBlank displayName`, `@NotNull channelType`, `@NotBlank credentialPlaintext`)
-- [ ] `ChannelResponse` record 구현 (credential 미포함, `keyPreview` = 마지막 4자리)
+- [x] `POST /api/v1/channels` — 채널 생성 (Provider.validate() → 성공 시 암호화 저장)
+- [x] `GET /api/v1/channels` — 채널 목록
+- [x] `GET /api/v1/channels/{id}` — 채널 상세
+- [x] `PUT /api/v1/channels/{id}` — 채널 수정
+- [x] `DELETE /api/v1/channels/{id}` — soft delete
+- [x] `PATCH /api/v1/channels/{id}/pause` — 일시중지
+- [x] `PATCH /api/v1/channels/{id}/resume` — 재개
+- [x] `POST /api/v1/channels/{id}/test` — 테스트 전송
+- [x] `CreateChannelRequest` record 구현 (`@NotBlank displayName`, `@NotNull channelType`, `@NotBlank credentialPlaintext`)
+- [x] `ChannelResponse` record 구현 (credential 미포함, `keyPreview` = 마지막 4자리)
 
 ### 5-2. RoutingRuleController
-- [ ] `POST /api/v1/routing-rules` — 규칙 생성
-- [ ] `GET /api/v1/routing-rules` — 규칙 목록 (priority_order 오름차순)
-- [ ] `PUT /api/v1/routing-rules/{id}` — 규칙 수정
-- [ ] `DELETE /api/v1/routing-rules/{id}` — 규칙 삭제
-- [ ] `PATCH /api/v1/routing-rules/reorder` — 순서 변경
-- [ ] `CreateRoutingRuleRequest` record 구현 (DIGEST 시 `digestIntervalMin` 필수 검증)
-- [ ] `RoutingRuleResponse` record 구현
+- [x] `POST /api/v1/routing-rules` — 규칙 생성
+- [x] `GET /api/v1/routing-rules` — 규칙 목록 (priority_order 오름차순)
+- [x] `PUT /api/v1/routing-rules/{id}` — 규칙 수정
+- [x] `DELETE /api/v1/routing-rules/{id}` — 규칙 삭제
+- [x] `PATCH /api/v1/routing-rules/reorder` — 순서 변경
+- [x] `CreateRoutingRuleRequest` record 구현 (DIGEST 시 `digestIntervalMin` 필수 검증)
+- [x] `RoutingRuleResponse` record 구현
 
 ### 5-3. DeliveryFeedController
-- [ ] `GET /api/v1/channels/delivery-feed` — `page`, `size`, `channelType` 파라미터 처리
-- [ ] `size` 최대 50 제한 (`Math.min(size, 50)`)
-- [ ] `DeliveryFeedItem` record 구현 (`COALESCE(n.aiSummary, n.body)` 포함)
-- [ ] `DeliveryFeedRepository` JPQL 쿼리 구현 (JOIN Notification + NotificationChannel, status='SUCCESS')
+- [x] `GET /api/v1/channels/delivery-feed` — `page`, `size`, `channelType` 파라미터 처리
+- [x] `size` 최대 50 제한 (`Math.min(size, 50)`)
+- [x] `DeliveryFeedItem` record 구현 (`COALESCE(n.aiSummary, n.body)` 포함)
+- [x] `DeliveryFeedRepository` JPQL 쿼리 구현 (JOIN Notification + NotificationChannel, status='SUCCESS')
 
 ---
 
