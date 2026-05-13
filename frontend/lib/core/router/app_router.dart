@@ -11,7 +11,6 @@ import 'package:notio_app/features/auth/presentation/screens/password_reset_requ
 import 'package:notio_app/features/auth/presentation/screens/password_reset_confirm_screen.dart';
 import 'package:notio_app/features/auth/presentation/screens/auth_oauth_callback_screen.dart';
 import 'package:notio_app/features/notification/presentation/screens/notifications_screen.dart';
-import 'package:notio_app/features/chat/presentation/screens/chat_screen.dart';
 import 'package:notio_app/features/analytics/presentation/analytics_screen.dart';
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
 import 'package:notio_app/features/connections/presentation/screens/connections_screen.dart';
@@ -131,7 +130,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.chat,
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: ChatScreen(),
+              child: _DeliveriesPlaceholder(),
             ),
           ),
           GoRoute(
@@ -229,5 +228,14 @@ class _BottomNavBar extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _DeliveriesPlaceholder extends StatelessWidget {
+  const _DeliveriesPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: SizedBox.shrink());
   }
 }

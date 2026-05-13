@@ -9,41 +9,41 @@
 ## Phase 1: 패키지 제거 및 정리
 
 ### 1-1. pubspec.yaml 패키지 제거
-- [ ] `firebase_core: ^2.27.2` 제거
-- [ ] `firebase_messaging: ^14.7.20` 제거
-- [ ] `flutter_local_notifications: ^17.2.3` 제거
-- [ ] `sqlite3_flutter_libs: ^0.5.0` 제거
-- [ ] `flutter pub get` 실행
+- [x] `firebase_core: ^2.27.2` 제거 (이미 주석처리 상태였음)
+- [x] `firebase_messaging: ^14.7.20` 제거 (이미 주석처리 상태였음)
+- [x] `flutter_local_notifications: ^17.2.3` 제거
+- [x] `sqlite3_flutter_libs: ^0.5.0` 제거
+- [x] `flutter pub get` 실행
 
 ### 1-2. chat/ 피처 삭제
-- [ ] `lib/features/chat/data/datasources/chat_local_datasource.dart` 삭제
-- [ ] `lib/features/chat/data/datasources/chat_mock_data.dart` 삭제
-- [ ] `lib/features/chat/data/datasources/chat_remote_datasource.dart` 삭제
-- [ ] `lib/features/chat/data/models/chat_message_model.dart` 삭제
-- [ ] `lib/features/chat/data/models/chat_request.dart` 삭제
-- [ ] `lib/features/chat/data/models/chat_response.dart` 삭제
-- [ ] `lib/features/chat/data/models/daily_summary_model.dart` 삭제
-- [ ] `lib/features/chat/data/repository/chat_repository_impl.dart` 삭제
-- [ ] `lib/features/chat/domain/entities/chat_message_entity.dart` 삭제
-- [ ] `lib/features/chat/domain/entities/message_role.dart` 삭제
-- [ ] `lib/features/chat/domain/repository/chat_repository.dart` 삭제
-- [ ] `lib/features/chat/presentation/providers/chat_notifier.dart` 삭제
-- [ ] `lib/features/chat/presentation/providers/chat_providers.dart` 삭제
-- [ ] `lib/features/chat/presentation/providers/chat_state.dart` 삭제
-- [ ] `lib/features/chat/presentation/screens/chat_screen.dart` 삭제
-- [ ] `lib/features/chat/presentation/widgets/chat_input_field.dart` 삭제
-- [ ] `lib/features/chat/presentation/widgets/chat_message_bubble.dart` 삭제
-- [ ] `lib/features/chat/presentation/widgets/daily_summary_card.dart` 삭제
-- [ ] `lib/features/chat/presentation/widgets/streaming_message_bubble.dart` 삭제
+- [x] `lib/features/chat/data/datasources/chat_local_datasource.dart` 삭제
+- [x] `lib/features/chat/data/datasources/chat_mock_data.dart` 삭제
+- [x] `lib/features/chat/data/datasources/chat_remote_datasource.dart` 삭제
+- [x] `lib/features/chat/data/models/chat_message_model.dart` 삭제
+- [x] `lib/features/chat/data/models/chat_request.dart` 삭제
+- [x] `lib/features/chat/data/models/chat_response.dart` 삭제
+- [x] `lib/features/chat/data/models/daily_summary_model.dart` 삭제
+- [x] `lib/features/chat/data/repository/chat_repository_impl.dart` 삭제
+- [x] `lib/features/chat/domain/entities/chat_message_entity.dart` 삭제
+- [x] `lib/features/chat/domain/entities/message_role.dart` 삭제
+- [x] `lib/features/chat/domain/repository/chat_repository.dart` 삭제
+- [x] `lib/features/chat/presentation/providers/chat_notifier.dart` 삭제
+- [x] `lib/features/chat/presentation/providers/chat_providers.dart` 삭제
+- [x] `lib/features/chat/presentation/providers/chat_state.dart` 삭제
+- [x] `lib/features/chat/presentation/screens/chat_screen.dart` 삭제
+- [x] `lib/features/chat/presentation/widgets/chat_input_field.dart` 삭제
+- [x] `lib/features/chat/presentation/widgets/chat_message_bubble.dart` 삭제
+- [x] `lib/features/chat/presentation/widgets/daily_summary_card.dart` 삭제
+- [x] `lib/features/chat/presentation/widgets/streaming_message_bubble.dart` 삭제
 
 ### 1-3. Drift 및 FCM 정리
-- [ ] `lib/core/database/tables/chat_message_table.dart` 삭제
-- [ ] `AppDatabase`에서 `ChatMessageTable` 참조 제거
-- [ ] `AppDatabase`에서 `chatMessages` getter 제거
-- [ ] `main.dart` / `LocalNotificationService` — `Firebase.initializeApp()` 제거
-- [ ] `FirebaseMessaging.onMessage.listen()` 제거
-- [ ] `FirebaseMessaging.onMessageOpenedApp.listen()` 제거
-- [ ] `flutter analyze` — 오류 없음 확인
+- [x] `lib/core/database/tables/chat_message_table.dart` 삭제
+- [x] `AppDatabase`에서 `ChatMessageTable` 참조 제거
+- [x] `AppDatabase`에서 `chatMessages` getter 제거
+- [x] `main.dart` / `LocalNotificationService` — `Firebase.initializeApp()` 제거 (원래 코드에 없었음, LocalNotificationService 자체를 삭제)
+- [x] `FirebaseMessaging.onMessage.listen()` 제거 (원래 코드에 없었음)
+- [x] `FirebaseMessaging.onMessageOpenedApp.listen()` 제거 (원래 코드에 없었음)
+- [x] `flutter analyze` — 오류 없음 확인
 
 ---
 

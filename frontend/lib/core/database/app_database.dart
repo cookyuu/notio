@@ -1,12 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:notio_app/core/database/tables/notification_table.dart';
-import 'package:notio_app/core/database/tables/chat_message_table.dart';
 import 'connection/connection.dart' as impl;
 
 part 'app_database.g.dart';
 
-/// Main database class for the app
-@DriftDatabase(tables: [NotificationTable, ChatMessageTable])
+@DriftDatabase(tables: [NotificationTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(impl.connect());
 
@@ -22,21 +20,16 @@ class AppDatabase extends _$AppDatabase {
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
-          // Migration from version 1 to 2
           await m.createTable(notificationTable);
-          await m.createTable(chatMessageTable);
         }
         if (from < 3) {
-          // Migration from version 2 to 3: Add indexes
           await _createIndexes();
         }
       },
     );
   }
 
-  /// Create indexes for performance optimization
   Future<void> _createIndexes() async {
-    // Notification indexes
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_notifications_source ON notifications(source)',
     );
@@ -48,11 +41,6 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_notifications_source_created_at ON notifications(source, created_at DESC)',
-    );
-
-    // Chat message indexes
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at ASC)',
     );
   }
 
@@ -152,67 +140,4 @@ class AppDatabase extends _$AppDatabase {
     return result.read(notificationTable.id.count()) ?? 0;
   }
 
-  // ========== Chat Message Queries ==========
-
-  /// Get all chat messages
-  Future<List<ChatMessageTableData>> getAllChatMessages({int limit = 50}) {
-    return (select(chatMessageTable)
-          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)])
-          ..limit(limit))
-        .get();
-  }
-
-  /// Insert a chat message
-  Future<int> insertChatMessage(ChatMessageTableCompanion message) {
-    return into(chatMessageTable).insert(message);
-  }
-
-  /// Insert multiple chat messages
-  Future<void> insertChatMessages(
-      List<ChatMessageTableCompanion> messages) async {
-    if (messages.isEmpty) {
-      return;
-    }
-
-    await batch((batch) {
-      batch.insertAll(chatMessageTable, messages);
-    });
-  }
-
-  /// Delete all chat messages
-  Future<void> deleteAllChatMessages() {
-    return delete(chatMessageTable).go();
-  }
-
-  /// Clean old chat messages (keep only recent 50)
-  Future<void> cleanOldChatMessages() async {
-    final allMessages = await (select(chatMessageTable)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
-
-    if (allMessages.length > 50) {
-      final toDelete = allMessages.skip(50).map((m) => m.id).toList();
-      await (delete(chatMessageTable)..where((tbl) => tbl.id.isIn(toDelete)))
-          .go();
-    }
-  }
-
-  /// Delete chat messages older than specified hours (TTL-based cleanup)
-  Future<int> cleanExpiredChatMessages({int ttlHours = 72}) async {
-    final expirationDate = DateTime.now().subtract(Duration(hours: ttlHours));
-    final query = delete(chatMessageTable)
-      ..where((tbl) => tbl.createdAt.isSmallerThanValue(expirationDate));
-    return await query.go();
-  }
-
-  /// Comprehensive cleanup: Remove both old and expired chat messages
-  Future<void> cleanupChatMessages({
-    int maxCount = 50,
-    int ttlHours = 72,
-  }) async {
-    // First, remove expired messages
-    await cleanExpiredChatMessages(ttlHours: ttlHours);
-    // Then, limit to max count
-    await cleanOldChatMessages();
-  }
 }
