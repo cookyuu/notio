@@ -143,10 +143,10 @@ class _RoutingRulesScreenState extends ConsumerState<RoutingRulesScreen> {
 
 class _RuleCard extends StatelessWidget {
   const _RuleCard({
-    super.key,
     required this.rule,
     required this.onEdit,
     required this.onDelete,
+    super.key,
   });
 
   final RoutingRuleEntity rule;
@@ -277,7 +277,7 @@ class _DeliveryModeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = mode == DeliveryModeEnum.digest && intervalMin != null
-        ? '묶음 ${intervalMin! >= 60 ? '1시간' : '${intervalMin}분'}'
+        ? '묶음 ${intervalMin! >= 60 ? '1시간' : '$intervalMin분'}'
         : mode.displayName;
 
     final color = mode == DeliveryModeEnum.digest
@@ -442,7 +442,7 @@ class _RoutingRuleFormState extends ConsumerState<_RoutingRuleForm> {
                 ),
                 value: _stopOnMatch,
                 onChanged: (val) => setState(() => _stopOnMatch = val),
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
               const SizedBox(height: AppSpacing.s16),
 

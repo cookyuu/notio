@@ -88,7 +88,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('채널 타입 선택', style: AppTextStyles.headlineMedium),
+          const Text('채널 타입 선택', style: AppTextStyles.headlineMedium),
           const SizedBox(height: AppSpacing.s8),
           Text(
             '연결할 메시징 플랫폼을 선택하세요',
@@ -152,7 +152,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('자격증명 입력', style: AppTextStyles.headlineMedium),
+          const Text('자격증명 입력', style: AppTextStyles.headlineMedium),
           const SizedBox(height: AppSpacing.s8),
           Text(
             '${_selectedType!.displayName} 채널 연결에 필요한 정보를 입력하세요',
@@ -233,7 +233,9 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
     if (_displayNameController.text.trim().isEmpty) return false;
     if (_credentialController.text.trim().isEmpty) return false;
     if (_selectedType != ChannelTypeEnum.discord &&
-        _targetIdController.text.trim().isEmpty) return false;
+        _targetIdController.text.trim().isEmpty) {
+      return false;
+    }
     return true;
   }
 
@@ -243,7 +245,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('검증 및 저장', style: AppTextStyles.headlineMedium),
+          const Text('검증 및 저장', style: AppTextStyles.headlineMedium),
           const SizedBox(height: AppSpacing.s8),
           Text(
             '입력한 정보를 검증하고 채널을 저장합니다',

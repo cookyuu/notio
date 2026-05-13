@@ -162,7 +162,7 @@ class _ChannelCard extends ConsumerWidget {
                         : (val) => ref
                             .read(channelNotifierProvider.notifier)
                             .toggleStatus(channel.id, val),
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                   ),
                   IconButton(
                     icon: const Icon(Icons.send_outlined),

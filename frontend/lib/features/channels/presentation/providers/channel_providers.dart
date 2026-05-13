@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:notio_app/features/channels/data/datasource/channel_remote_datasource.dart';
 import 'package:notio_app/features/channels/data/repository/channel_repository_impl.dart';

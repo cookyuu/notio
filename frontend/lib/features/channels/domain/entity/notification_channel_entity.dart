@@ -39,11 +39,11 @@ class NotificationChannelEntity {
     required this.id,
     required this.channelType,
     required this.displayName,
-    this.keyPreview,
     required this.status,
     required this.errorCount,
+    required this.createdAt,
+    this.keyPreview,
     this.lastError,
     this.lastDeliveredAt,
-    required this.createdAt,
   });
 }

@@ -206,11 +206,11 @@
 
 ## Phase 6: Flutter Web 빌드 검증
 
-- [ ] `flutter pub get` 실행
-- [ ] `flutter analyze` — 경고 0개 확인
-- [ ] `dart run build_runner build --delete-conflicting-outputs` 실행
-- [ ] `flutter build web --release --web-renderer html --dart-define=API_BASE_URL=...` 성공
-- [ ] `build/web/` — `index.html`, `main.dart.js`, `flutter.js` 존재 확인
+- [x] `flutter pub get` 실행
+- [x] `flutter analyze` — 경고 0개 확인
+- [x] `dart run build_runner build --delete-conflicting-outputs` 실행
+- [x] `flutter build web --release --dart-define=API_BASE_URL=https://api.notio.dev` 성공
+- [x] `build/web/` — `index.html`, `main.dart.js`, `flutter.js` 존재 확인
 
 ---
 

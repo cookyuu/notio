@@ -1,12 +1,13 @@
 import 'dart:async';
-import 'dart:html' as html;
+
+import 'package:web/web.dart' as web;
 
 class SseClient {
-  html.EventSource? _eventSource;
+  web.EventSource? _eventSource;
   StreamSubscription? _subscription;
 
   void connect(String url, void Function() onMessage) {
-    _eventSource = html.EventSource(url, withCredentials: true);
+    _eventSource = web.EventSource(url, web.EventSourceInit(withCredentials: true));
     _subscription = _eventSource!.onMessage.listen((_) => onMessage());
   }
 
