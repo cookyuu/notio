@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:notio_app/core/network/connectivity_service.dart';
 import 'package:notio_app/core/network/sync_service.dart';
+import 'package:notio_app/core/services/realtime_notification_service.dart';
 import 'package:notio_app/core/router/app_router.dart';
 import 'package:notio_app/core/theme/app_theme.dart';
 import 'package:notio_app/features/settings/presentation/providers/settings_providers.dart';
@@ -40,6 +41,7 @@ class _NotioAppState extends ConsumerState<NotioApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(connectivityServiceProvider);
       ref.read(syncServiceProvider);
+      ref.read(realtimeNotificationServiceProvider);
     });
   }
 

@@ -195,12 +195,12 @@
 
 ## Phase 5: SSE 실시간 업데이트
 
-- [ ] `lib/core/services/realtime_notification_service.dart` 구현
-- [ ] `kIsWeb` 조건부 — 웹 전용 SSE 연결 (`dart:html` 사용)
-- [ ] `html.EventSource('/api/v1/notifications/stream', withCredentials: true)` 연결
-- [ ] `onMessage` 수신 시 `ref.invalidate(notificationsProvider)` 호출
-- [ ] `onMessage` 수신 시 `ref.invalidate(unreadCountProvider)` 호출
-- [ ] `disconnect()` — `_subscription?.cancel()` 처리
+- [x] `lib/core/services/realtime_notification_service.dart` 구현
+- [x] `kIsWeb` 조건부 — 웹 전용 SSE 연결 (`dart:html` 사용)
+- [x] `html.EventSource('/api/v1/notifications/stream', withCredentials: true)` 연결
+- [x] `onMessage` 수신 시 `ref.invalidate(notificationsProvider)` 호출
+- [x] `onMessage` 수신 시 `ref.invalidate(unreadCountProvider)` 호출
+- [x] `disconnect()` — `_subscription?.cancel()` 처리
 
 ---
 
