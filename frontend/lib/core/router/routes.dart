@@ -16,4 +16,8 @@ class Routes {
   static const String analytics = '/analytics';
   static const String settings = '/settings';
   static const String connections = '/settings/connections';
+
+  // Channel management routes
+  static const String channels = '/channels';
+  static const String routingRules = '/routing-rules';
 }

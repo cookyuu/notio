@@ -15,6 +15,10 @@ import 'package:notio_app/features/analytics/presentation/analytics_screen.dart'
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
 import 'package:notio_app/features/connections/presentation/screens/connections_screen.dart';
 import 'package:notio_app/features/connections/presentation/screens/connection_detail_screen.dart';
+import 'package:notio_app/features/delivery_feed/presentation/screens/delivery_feed_screen.dart';
+import 'package:notio_app/features/channels/presentation/screens/channels_screen.dart';
+import 'package:notio_app/features/channels/presentation/screens/channel_create_screen.dart';
+import 'package:notio_app/features/channels/presentation/screens/routing_rules_screen.dart';
 
 class RouterRefreshNotifier extends ChangeNotifier {
   void refresh() {
@@ -116,6 +120,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      GoRoute(
+        path: Routes.channels,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ChannelsScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ChannelCreateScreen(),
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Routes.routingRules,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: RoutingRulesScreen(),
+        ),
+      ),
       ShellRoute(
         builder: (context, state, child) {
           return _MainScaffold(child: child);
@@ -130,7 +154,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.chat,
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: _DeliveriesPlaceholder(),
+              child: DeliveryFeedScreen(),
             ),
           ),
           GoRoute(
@@ -212,9 +236,9 @@ class _BottomNavBar extends StatelessWidget {
           label: 'Notifications',
         ),
         NavigationDestination(
-          icon: Icon(Icons.chat_outlined),
-          selectedIcon: Icon(Icons.chat),
-          label: 'Chat',
+          icon: Icon(Icons.send_outlined),
+          selectedIcon: Icon(Icons.send),
+          label: 'Deliveries',
         ),
         NavigationDestination(
           icon: Icon(Icons.analytics_outlined),
@@ -231,11 +255,3 @@ class _BottomNavBar extends StatelessWidget {
   }
 }
 
-class _DeliveriesPlaceholder extends StatelessWidget {
-  const _DeliveriesPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: SizedBox.shrink());
-  }
-}

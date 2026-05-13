@@ -49,6 +49,10 @@ class SettingsScreen extends ConsumerWidget {
           // Connections Section
           _buildSectionHeader('연동'),
           _buildConnectionsManagementButton(context),
+          const SizedBox(height: AppSpacing.s16),
+          _buildChannelsManagementButton(context),
+          const SizedBox(height: AppSpacing.s16),
+          _buildRoutingRulesButton(context),
           const Divider(height: 32, color: AppColors.divider),
 
           // Account Section
@@ -273,6 +277,72 @@ class SettingsScreen extends ConsumerWidget {
         ),
         onTap: () {
           context.push('/settings/connections');
+        },
+      ),
+    );
+  }
+
+  Widget _buildChannelsManagementButton(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.s12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: ListTile(
+        leading: const Icon(
+          Icons.send_outlined,
+          color: AppColors.primary,
+        ),
+        title: const Text(
+          '채널 관리',
+          style: AppTextStyles.bodyLarge,
+        ),
+        subtitle: Text(
+          'Slack, Telegram, Discord',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: AppColors.textSecondary,
+        ),
+        onTap: () {
+          context.push('/channels');
+        },
+      ),
+    );
+  }
+
+  Widget _buildRoutingRulesButton(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.s12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: ListTile(
+        leading: const Icon(
+          Icons.rule,
+          color: AppColors.primary,
+        ),
+        title: const Text(
+          '라우팅 규칙',
+          style: AppTextStyles.bodyLarge,
+        ),
+        subtitle: Text(
+          '알림 전달 조건 및 타이밍 설정',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: AppColors.textSecondary,
+        ),
+        onTap: () {
+          context.push('/routing-rules');
         },
       ),
     );

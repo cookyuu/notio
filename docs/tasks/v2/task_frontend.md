@@ -110,86 +110,86 @@
 ## Phase 3: channels/ 신규 구현
 
 ### 3-1. 데이터 모델 및 엔티티
-- [ ] `lib/features/channels/data/model/notification_channel_model.dart` — `@JsonSerializable` 구현
-- [ ] `lib/features/channels/data/model/routing_rule_model.dart` — `@JsonSerializable` 구현
-- [ ] `lib/features/channels/domain/entity/notification_channel_entity.dart` 구현
-  - [ ] `ChannelStatusEnum` — `active` / `paused` / `error`
-- [ ] `lib/features/channels/domain/entity/routing_rule_entity.dart` 구현
-  - [ ] `DeliveryModeEnum` — `immediate` / `digest`
-  - [ ] `RoutingConditionEntity` (sources, priorities 목록)
+- [x] `lib/features/channels/data/model/notification_channel_model.dart` — `@JsonSerializable` 구현
+- [x] `lib/features/channels/data/model/routing_rule_model.dart` — `@JsonSerializable` 구현
+- [x] `lib/features/channels/domain/entity/notification_channel_entity.dart` 구현
+  - [x] `ChannelStatusEnum` — `active` / `paused` / `error`
+- [x] `lib/features/channels/domain/entity/routing_rule_entity.dart` 구현
+  - [x] `DeliveryModeEnum` — `immediate` / `digest`
+  - [x] `RoutingConditionEntity` (sources, priorities 목록)
 
 ### 3-2. 데이터소스 및 Repository
-- [ ] `lib/features/channels/data/datasource/channel_remote_datasource.dart` 구현
-  - [ ] 채널 CRUD API 호출
-  - [ ] `PATCH /channels/{id}/pause`, `PATCH /channels/{id}/resume`
-  - [ ] `POST /channels/{id}/test` — 테스트 전송
-  - [ ] 라우팅 규칙 CRUD + `PATCH /routing-rules/reorder`
-- [ ] `lib/features/channels/domain/repository/channel_repository.dart` 인터페이스 정의
-- [ ] `ChannelRepositoryImpl` 구현 (model → entity 변환 포함)
+- [x] `lib/features/channels/data/datasource/channel_remote_datasource.dart` 구현
+  - [x] 채널 CRUD API 호출
+  - [x] `PATCH /channels/{id}/pause`, `PATCH /channels/{id}/resume`
+  - [x] `POST /channels/{id}/test` — 테스트 전송
+  - [x] 라우팅 규칙 CRUD + `PATCH /routing-rules/reorder`
+- [x] `lib/features/channels/domain/repository/channel_repository.dart` 인터페이스 정의
+- [x] `ChannelRepositoryImpl` 구현 (model → entity 변환 포함)
 
 ### 3-3. Providers / Notifier
-- [ ] `lib/features/channels/presentation/providers/channel_providers.dart` 구현
-  - [ ] 채널 목록 로드 / CRUD
-  - [ ] `toggleStatus(int id, bool active)` — pause/resume 분기
-  - [ ] `sendTest(int id)` — 테스트 전송 + 결과 스낵바
-- [ ] `lib/features/channels/presentation/providers/routing_rule_providers.dart` 구현
-  - [ ] 규칙 목록 로드 / CRUD
-  - [ ] `reorder(List<int> orderedIds)` — drag-to-reorder 후 API 호출
+- [x] `lib/features/channels/presentation/providers/channel_providers.dart` 구현
+  - [x] 채널 목록 로드 / CRUD
+  - [x] `toggleStatus(int id, bool active)` — pause/resume 분기
+  - [x] `sendTest(int id)` — 테스트 전송 + 결과 스낵바
+- [x] `lib/features/channels/presentation/providers/routing_rule_providers.dart` 구현
+  - [x] 규칙 목록 로드 / CRUD
+  - [x] `reorder(List<int> orderedIds)` — drag-to-reorder 후 API 호출
 
 ### 3-4. ChannelsScreen 구현
-- [ ] `lib/features/channels/presentation/screens/channels_screen.dart` 구현
-- [ ] `_ChannelCard` 위젯 구현
-  - [ ] 오류 채널: `BorderSide(color: Colors.red, width: 1.5)` 테두리
-  - [ ] `_StatusBadge` — ACTIVE(초록) / PAUSED(회색) / ERROR(빨강)
-  - [ ] `errorCount`회 실패 + `lastError` 메시지 표시
-  - [ ] `lastDeliveredAt` → `timeago.format()` 표시
-  - [ ] `Switch` 토글 → `toggleStatus()` 호출
-  - [ ] 테스트 전송 `IconButton` → `sendTest()` 호출
-- [ ] FAB → `ChannelCreateScreen`으로 이동 (`context.push('/channels/create')`)
+- [x] `lib/features/channels/presentation/screens/channels_screen.dart` 구현
+- [x] `_ChannelCard` 위젯 구현
+  - [x] 오류 채널: `BorderSide(color: Colors.red, width: 1.5)` 테두리
+  - [x] `_StatusBadge` — ACTIVE(초록) / PAUSED(회색) / ERROR(빨강)
+  - [x] `errorCount`회 실패 + `lastError` 메시지 표시
+  - [x] `lastDeliveredAt` → `timeago.format()` 표시
+  - [x] `Switch` 토글 → `toggleStatus()` 호출
+  - [x] 테스트 전송 `IconButton` → `sendTest()` 호출
+- [x] FAB → `ChannelCreateScreen`으로 이동 (`context.push('/channels/create')`)
 
 ### 3-5. ChannelCreateScreen 구현
-- [ ] `lib/features/channels/presentation/screens/channel_create_screen.dart` 구현
-- [ ] Step 1: 채널 타입 선택 카드 (Slack / Telegram / Discord)
-- [ ] Step 2: 자격증명 입력 폼
-  - [ ] Slack: Bot Token (`xoxb-...`) + Channel ID (`C0...`)
-  - [ ] Telegram: Bot Token + Chat ID
-  - [ ] Discord: Webhook URL 전체
-- [ ] Step 3: "검증 중..." 스피너 → 성공/실패 피드백
-  - [ ] 성공 시 `POST /api/v1/channels` 저장 → 목록으로 복귀
+- [x] `lib/features/channels/presentation/screens/channel_create_screen.dart` 구현
+- [x] Step 1: 채널 타입 선택 카드 (Slack / Telegram / Discord)
+- [x] Step 2: 자격증명 입력 폼
+  - [x] Slack: Bot Token (`xoxb-...`) + Channel ID (`C0...`)
+  - [x] Telegram: Bot Token + Chat ID
+  - [x] Discord: Webhook URL 전체
+- [x] Step 3: "검증 중..." 스피너 → 성공/실패 피드백
+  - [x] 성공 시 `POST /api/v1/channels` 저장 → 목록으로 복귀
 
 ### 3-6. RoutingRulesScreen 구현
-- [ ] `lib/features/channels/presentation/screens/routing_rules_screen.dart` 구현
-- [ ] `ReorderableListView` — drag-to-reorder, `reorder()` 호출
-- [ ] 규칙 카드 — 규칙명, 소스/우선순위 조건 칩, 대상 채널명, 전달 방식 배지
-- [ ] FAB → 규칙 추가 바텀시트 (`showModalBottomSheet`)
-- [ ] 스와이프 삭제 (`Dismissible` 또는 `flutter_slidable`)
-- [ ] `_RoutingRuleForm` 바텀시트 구현
-  - [ ] 규칙 이름 `TextFormField`
-  - [ ] 소스 멀티셀렉트 `FilterChip` (CLAUDE / CODEX / GITHUB / SLACK / GMAIL)
-  - [ ] 우선순위 멀티셀렉트 `FilterChip` (URGENT / HIGH / MEDIUM / LOW)
-  - [ ] 대상 채널 멀티셀렉트 (채널 목록 provider 활용)
-  - [ ] stop_on_match `SwitchListTile`
-  - [ ] 전달 방식 `SegmentedButton<DeliveryModeEnum>` (즉시 / 묶음)
-  - [ ] 묶음 간격 `SegmentedButton<int>` (10분 / 20분 / 30분 / 1시간) — DIGEST 선택 시만 표시
-  - [ ] "저장" 버튼 → `POST` 또는 `PUT` 후 목록 갱신
+- [x] `lib/features/channels/presentation/screens/routing_rules_screen.dart` 구현
+- [x] `ReorderableListView` — drag-to-reorder, `reorder()` 호출
+- [x] 규칙 카드 — 규칙명, 소스/우선순위 조건 칩, 전달 방식 배지
+- [x] FAB → 규칙 추가 바텀시트 (`showModalBottomSheet`)
+- [x] 삭제 버튼 → 확인 다이얼로그 후 삭제 (ReorderableListView와의 호환성으로 버튼 방식 채택)
+- [x] `_RoutingRuleForm` 바텀시트 구현
+  - [x] 규칙 이름 `TextFormField`
+  - [x] 소스 멀티셀렉트 `FilterChip` (CLAUDE / CODEX / GITHUB / SLACK / GMAIL)
+  - [x] 우선순위 멀티셀렉트 `FilterChip` (URGENT / HIGH / MEDIUM / LOW)
+  - [x] 대상 채널 멀티셀렉트 (채널 목록 provider 활용)
+  - [x] stop_on_match `SwitchListTile`
+  - [x] 전달 방식 `SegmentedButton<DeliveryModeEnum>` (즉시 / 묶음)
+  - [x] 묶음 간격 `SegmentedButton<int>` (10분 / 20분 / 30분 / 1시간) — DIGEST 선택 시만 표시
+  - [x] "저장" 버튼 → `POST` 또는 `PUT` 후 목록 갱신
 
 ---
 
 ## Phase 4: 라우터 및 네비게이션 변경
 
-- [ ] `lib/core/router/routes.dart` — `channels = '/channels'` 상수 추가
-- [ ] `lib/core/router/routes.dart` — `routingRules = '/routing-rules'` 상수 추가
-- [ ] `lib/core/router/app_router.dart` — `/chat` 라우트 → `DeliveryFeedScreen` 교체
-- [ ] `app_router.dart` — `/channels` 라우트 추가 (ShellRoute 외부)
-  - [ ] 하위 라우트 `/channels/create` 추가
-- [ ] `app_router.dart` — `/routing-rules` 라우트 추가 (ShellRoute 외부)
-- [ ] `_BottomNavBar` — 탭 1: 아이콘 `Icons.send_outlined` / `Icons.send`, 라벨 `'Deliveries'` 변경
-- [ ] `settings_screen.dart` — "채널 관리" `ListTile` 추가
-  - [ ] `subtitle: 'Slack, Telegram, Discord'`
-  - [ ] `onTap: () => context.push(Routes.channels)`
-- [ ] `settings_screen.dart` — "라우팅 규칙" `ListTile` 추가
-  - [ ] `subtitle: '알림 전달 조건 및 타이밍 설정'`
-  - [ ] `onTap: () => context.push(Routes.routingRules)`
+- [x] `lib/core/router/routes.dart` — `channels = '/channels'` 상수 추가
+- [x] `lib/core/router/routes.dart` — `routingRules = '/routing-rules'` 상수 추가
+- [x] `lib/core/router/app_router.dart` — `/chat` 라우트 → `DeliveryFeedScreen` 교체
+- [x] `app_router.dart` — `/channels` 라우트 추가 (ShellRoute 외부)
+  - [x] 하위 라우트 `/channels/create` 추가
+- [x] `app_router.dart` — `/routing-rules` 라우트 추가 (ShellRoute 외부)
+- [x] `_BottomNavBar` — 탭 1: 아이콘 `Icons.send_outlined` / `Icons.send`, 라벨 `'Deliveries'` 변경
+- [x] `settings_screen.dart` — "채널 관리" `ListTile` 추가
+  - [x] `subtitle: 'Slack, Telegram, Discord'`
+  - [x] `onTap: () => context.push(Routes.channels)`
+- [x] `settings_screen.dart` — "라우팅 규칙" `ListTile` 추가
+  - [x] `subtitle: '알림 전달 조건 및 타이밍 설정'`
+  - [x] `onTap: () => context.push(Routes.routingRules)`
 
 ---
 
