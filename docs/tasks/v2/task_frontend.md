@@ -50,60 +50,60 @@
 ## Phase 2: delivery_feed/ 신규 구현
 
 ### 2-1. 데이터 모델
-- [ ] `lib/features/delivery_feed/data/model/delivery_feed_item_model.dart` — `@JsonSerializable` 구현
-  - [ ] 필드: `deliveryLogId`, `notificationId`, `notificationTitle`, `channelId`, `channelType`, `channelDisplayName`, `deliveredContent`, `deliveredAt`, `status`, `externalMessageId`
-- [ ] `lib/features/delivery_feed/domain/entity/delivery_feed_item_entity.dart` 구현
-- [ ] `ChannelTypeEnum` — `slack` / `telegram` / `discord` 정의
-- [ ] `json_serializable` 코드 생성 (`delivery_feed_item_model.g.dart`)
+- [x] `lib/features/delivery_feed/data/model/delivery_feed_item_model.dart` — `@JsonSerializable` 구현
+  - [x] 필드: `deliveryLogId`, `notificationId`, `notificationTitle`, `channelId`, `channelType`, `channelDisplayName`, `deliveredContent`, `deliveredAt`, `status`, `externalMessageId`
+- [x] `lib/features/delivery_feed/domain/entity/delivery_feed_item_entity.dart` 구현
+- [x] `ChannelTypeEnum` — `slack` / `telegram` / `discord` 정의
+- [x] `json_serializable` 코드 생성 (`delivery_feed_item_model.g.dart`)
 
 ### 2-2. 데이터소스 및 Repository
-- [ ] `lib/features/delivery_feed/data/datasource/delivery_feed_remote_datasource.dart` 구현
-  - [ ] `DeliveryFeedRemoteDataSource` 추상 클래스 정의
-  - [ ] `DeliveryFeedRemoteDataSourceImpl` — `GET /api/v1/channels/delivery-feed` 구현
-  - [ ] `queryParameters`: `page`, `size`, `channelType` (nullable)
-  - [ ] `ApiResponse<Page<DeliveryFeedItem>>` 파싱
-- [ ] `lib/features/delivery_feed/domain/repository/delivery_feed_repository.dart` 인터페이스 정의
-- [ ] `DeliveryFeedRepositoryImpl` 구현 (model → entity 변환 포함)
+- [x] `lib/features/delivery_feed/data/datasource/delivery_feed_remote_datasource.dart` 구현
+  - [x] `DeliveryFeedRemoteDataSource` 추상 클래스 정의
+  - [x] `DeliveryFeedRemoteDataSourceImpl` — `GET /api/v1/channels/delivery-feed` 구현
+  - [x] `queryParameters`: `page`, `size`, `channelType` (nullable)
+  - [x] `ApiResponse<Page<DeliveryFeedItem>>` 파싱
+- [x] `lib/features/delivery_feed/domain/repository/delivery_feed_repository.dart` 인터페이스 정의
+- [x] `DeliveryFeedRepositoryImpl` 구현 (model → entity 변환 포함)
 
 ### 2-3. State / Notifier / Provider
-- [ ] `lib/features/delivery_feed/presentation/providers/delivery_feed_state.dart` 구현
-  - [ ] 필드: `items`, `isLoading`, `isLoadingMore`, `hasMore`, `page`, `filter`, `error`
-  - [ ] `copyWith()` 구현
-- [ ] `lib/features/delivery_feed/presentation/providers/delivery_feed_notifier.dart` — `@riverpod` 구현
-  - [ ] `load()` — page=0 초기 로드, isLoading 상태 관리
-  - [ ] `loadMore()` — hasMore 및 isLoadingMore 중복 호출 방지
-  - [ ] `setFilter(ChannelTypeEnum?)` — items 초기화 후 `load()` 호출
-- [ ] `dart run build_runner build --delete-conflicting-outputs` 실행
+- [x] `lib/features/delivery_feed/presentation/providers/delivery_feed_state.dart` 구현
+  - [x] 필드: `items`, `isLoading`, `isLoadingMore`, `hasMore`, `page`, `filter`, `error`
+  - [x] `copyWith()` 구현
+- [x] `lib/features/delivery_feed/presentation/providers/delivery_feed_notifier.dart` — `@riverpod` 구현
+  - [x] `load()` — page=0 초기 로드, isLoading 상태 관리
+  - [x] `loadMore()` — hasMore 및 isLoadingMore 중복 호출 방지
+  - [x] `setFilter(ChannelTypeEnum?)` — items 초기화 후 `load()` 호출
+- [x] `dart run build_runner build --delete-conflicting-outputs` 실행
 
 ### 2-4. 위젯 구현
-- [ ] `lib/features/delivery_feed/presentation/widgets/delivery_bubble.dart` 구현
-  - [ ] 기존 `GlassCard` 위젯 재사용
-  - [ ] 상단: 채널 표시명(좌), 전달 시각 `timeago.format(locale: 'ko')`(우)
-  - [ ] 알림 제목 (fontWeight: w600, color: white70)
-  - [ ] 전달 내용 (`maxLines: 5`, `overflow: TextOverflow.ellipsis`)
-  - [ ] 탭 → `onTap` 콜백 실행
-- [ ] `_ChannelAvatar` 위젯 — 채널 타입별 아이콘/색상
-  - [ ] Slack: `Icons.chat_bubble`, `Color(0xFF4A154B)`
-  - [ ] Telegram: `Icons.send`, `Color(0xFF0088CC)`
-  - [ ] Discord: `Icons.headset`, `Color(0xFF5865F2)`
-- [ ] `lib/features/delivery_feed/presentation/widgets/channel_filter_chips.dart` 구현
-  - [ ] All / Slack / Telegram / Discord FilterChip 4개
-  - [ ] 수평 스크롤 (`SingleChildScrollView`)
-  - [ ] 선택 상태 표시
+- [x] `lib/features/delivery_feed/presentation/widgets/delivery_bubble.dart` 구현
+  - [x] 기존 `GlassCard` 위젯 재사용
+  - [x] 상단: 채널 표시명(좌), 전달 시각 `timeago.format(locale: 'ko')`(우)
+  - [x] 알림 제목 (fontWeight: w600, color: white70)
+  - [x] 전달 내용 (`maxLines: 5`, `overflow: TextOverflow.ellipsis`)
+  - [x] 탭 → `onTap` 콜백 실행
+- [x] `_ChannelAvatar` 위젯 — 채널 타입별 아이콘/색상
+  - [x] Slack: `Icons.chat_bubble`, `Color(0xFF4A154B)`
+  - [x] Telegram: `Icons.send`, `Color(0xFF0088CC)`
+  - [x] Discord: `Icons.headset`, `Color(0xFF5865F2)`
+- [x] `lib/features/delivery_feed/presentation/widgets/channel_filter_chips.dart` 구현
+  - [x] All / Slack / Telegram / Discord FilterChip 4개
+  - [x] 수평 스크롤 (`SingleChildScrollView`)
+  - [x] 선택 상태 표시
 
 ### 2-5. DeliveryFeedScreen 구현
-- [ ] `lib/features/delivery_feed/presentation/screens/delivery_feed_screen.dart` 구현
-- [ ] `initState`에서 `load()` 호출 (`addPostFrameCallback`)
-- [ ] `ScrollController` — 80% 도달 시 `loadMore()` 호출
-- [ ] `ChannelFilterChips` — 상단 고정, 선택 시 `setFilter()` 호출
-- [ ] 로딩 상태: `CircularProgressIndicator` 중앙
-- [ ] 오류 상태: 오류 메시지 + 재시도 버튼
-- [ ] 빈 상태: `_EmptyFeedState`
-  - [ ] `Icons.send_outlined` (size 64, grey)
-  - [ ] "채널 관리로 이동" `ElevatedButton` → `context.push('/channels')`
-- [ ] `RefreshIndicator` 당겨서 새로고침
-- [ ] `ListView.builder` 하단 isLoadingMore 인디케이터
-- [ ] 버블 탭 → `/notifications/{notificationId}` 이동
+- [x] `lib/features/delivery_feed/presentation/screens/delivery_feed_screen.dart` 구현
+- [x] `initState`에서 `load()` 호출 (`addPostFrameCallback`)
+- [x] `ScrollController` — 80% 도달 시 `loadMore()` 호출
+- [x] `ChannelFilterChips` — 상단 고정, 선택 시 `setFilter()` 호출
+- [x] 로딩 상태: `CircularProgressIndicator` 중앙
+- [x] 오류 상태: 오류 메시지 + 재시도 버튼
+- [x] 빈 상태: `_EmptyFeedState`
+  - [x] `Icons.send_outlined` (size 64, grey)
+  - [x] "채널 관리로 이동" `ElevatedButton` → `context.push('/channels')`
+- [x] `RefreshIndicator` 당겨서 새로고침
+- [x] `ListView.builder` 하단 isLoadingMore 인디케이터
+- [x] 버블 탭 → `/notifications/{notificationId}` 이동
 
 ---
 
