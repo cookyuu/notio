@@ -4,6 +4,7 @@ import com.notio.channel.converter.LongListConverter;
 import com.notio.channel.converter.RoutingConditionConverter;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -39,11 +40,13 @@ public class RoutingRule {
 
     @Column(name = "conditions", columnDefinition = "JSONB", nullable = false)
     @Convert(converter = RoutingConditionConverter.class)
+    @ColumnTransformer(write = "?::jsonb")
     @Builder.Default
     private RoutingCondition conditions = RoutingCondition.empty();
 
     @Column(name = "channel_ids", columnDefinition = "JSONB", nullable = false)
     @Convert(converter = LongListConverter.class)
+    @ColumnTransformer(write = "?::jsonb")
     @Builder.Default
     private List<Long> channelIds = new ArrayList<>();
 

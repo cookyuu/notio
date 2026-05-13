@@ -38,7 +38,7 @@ public class RoutingRuleController {
         RoutingRule rule = routingRuleService.create(
             userId,
             request.ruleName(),
-            request.priorityOrder(),
+            request.priorityOrder() != null ? request.priorityOrder() : 100,
             request.conditions() != null ? request.conditions().toDomain() : null,
             request.channelIds(),
             request.stopOnMatch(),
@@ -70,7 +70,7 @@ public class RoutingRuleController {
             userId,
             ruleId,
             request.ruleName(),
-            request.priorityOrder(),
+            request.priorityOrder() != null ? request.priorityOrder() : 100,
             request.conditions() != null ? request.conditions().toDomain() : null,
             request.channelIds(),
             request.stopOnMatch(),

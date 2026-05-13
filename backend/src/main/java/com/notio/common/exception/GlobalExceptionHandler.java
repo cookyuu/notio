@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -46,6 +47,16 @@ public class GlobalExceptionHandler {
             details.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
         return buildErrorResponse(errorCode, details);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(
+            final HttpMessageNotReadableException exception,
+            final HttpServletRequest request
+    ) {
+        final ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+        logRequestFailure("request_failed", request, errorCode, exception, false);
+        return buildErrorResponse(errorCode, Map.of("reason", exception.getMessage()));
     }
 
     @ExceptionHandler({
