@@ -162,6 +162,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
           const SizedBox(height: AppSpacing.s24),
           TextField(
             controller: _displayNameController,
+            onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
               labelText: '채널 표시 이름',
               hintText: 'My Channel',
@@ -171,6 +172,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
           if (isSlack) ...[
             TextField(
               controller: _credentialController,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 labelText: 'Bot Token',
                 hintText: 'xoxb-...',
@@ -180,6 +182,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
             const SizedBox(height: AppSpacing.s16),
             TextField(
               controller: _targetIdController,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 labelText: 'Channel ID',
                 hintText: 'C0...',
@@ -189,6 +192,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
           if (isTelegram) ...[
             TextField(
               controller: _credentialController,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 labelText: 'Bot Token',
                 hintText: '123456:ABC-...',
@@ -198,6 +202,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
             const SizedBox(height: AppSpacing.s16),
             TextField(
               controller: _targetIdController,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 labelText: 'Chat ID',
                 hintText: '-100...',
@@ -207,6 +212,7 @@ class _ChannelCreateScreenState extends ConsumerState<ChannelCreateScreen> {
           if (isDiscord) ...[
             TextField(
               controller: _credentialController,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 labelText: 'Webhook URL',
                 hintText: 'https://discord.com/api/webhooks/...',

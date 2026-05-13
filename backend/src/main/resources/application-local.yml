@@ -14,3 +14,6 @@ notio:
   auth:
     mail:
       delivery-mode: ${NOTIO_AUTH_MAIL_DELIVERY_MODE:LOG}
+  connection:
+    security:
+      credential-encryption-key: bG9jYWwtZGV2LWtleS1jaGFuZ2UtbWUtaW4tcHJvZDE

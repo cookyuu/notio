@@ -217,11 +217,11 @@
 ## Phase 7: 테스트
 
 ### Widget 테스트
-- [ ] `DeliveryFeedScreenTest` — 로딩 상태, 빈 상태(채널관리 이동 버튼), 아이템 목록 렌더링
-- [ ] `DeliveryBubbleTest` — 채널 타입별 아이콘 색상, 타임스탬프 포맷, 탭 콜백
-- [ ] `ChannelFilterChipsTest` — 필터 선택/해제, All 선택 시 null 전달
-- [ ] `ChannelsScreenTest` — 오류 채널 빨간 테두리, 토글 스위치 상태
-- [ ] `RoutingRulesFormTest` — IMMEDIATE 선택 시 Digest 간격 숨김, DIGEST 선택 시 간격 표시
+- [x] `DeliveryFeedScreenTest` — 로딩 상태, 빈 상태(채널관리 이동 버튼), 아이템 목록 렌더링
+- [x] `DeliveryBubbleTest` — 채널 타입별 아이콘 색상, 타임스탬프 포맷, 탭 콜백
+- [x] `ChannelFilterChipsTest` — 필터 선택/해제, All 선택 시 null 전달
+- [x] `ChannelsScreenTest` — 오류 채널 빨간 테두리, 토글 스위치 상태
+- [x] `RoutingRulesFormTest` — IMMEDIATE 선택 시 Digest 간격 숨김, DIGEST 선택 시 간격 표시
 
 ### 통합 플로우 테스트 (수동)
 - [ ] 설정 → 채널 관리 → Slack 채널 추가 → 유효 Token → 채널 저장됨
