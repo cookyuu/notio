@@ -55,6 +55,9 @@ public class SecurityConfig {
                         ).permitAll()
                         // Webhook API (외부 서비스에서 호출)
                         .requestMatchers("/api/v1/webhook/**").permitAll()
+                        // 채널 및 라우팅 규칙 API
+                        .requestMatchers("/api/v1/channels/**").authenticated()
+                        .requestMatchers("/api/v1/routing-rules/**").authenticated()
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(requestCorrelationFilter, UsernamePasswordAuthenticationFilter.class)

@@ -240,13 +240,13 @@
 
 ## Phase 6: 공통 설정
 
-- [ ] `SecurityConfig` — `/api/v1/chat/**` 퍼밋 경로 제거
-- [ ] `SecurityConfig` — `/api/v1/channels/**` 인증 필요 추가
-- [ ] `SecurityConfig` — `/api/v1/routing-rules/**` 인증 필요 추가
-- [ ] `ErrorCode` — `CHANNEL_NOT_FOUND` 추가
-- [ ] `ErrorCode` — `CHANNEL_CREDENTIAL_INVALID` 추가
-- [ ] `ErrorCode` — `ROUTING_RULE_NOT_FOUND` 추가
-- [ ] `ErrorCode` — `DIGEST_INTERVAL_REQUIRED` 추가
+- [x] `SecurityConfig` — `/api/v1/chat/**` 퍼밋 경로 제거
+- [x] `SecurityConfig` — `/api/v1/channels/**` 인증 필요 추가
+- [x] `SecurityConfig` — `/api/v1/routing-rules/**` 인증 필요 추가
+- [x] `ErrorCode` — `CHANNEL_NOT_FOUND` 추가
+- [x] `ErrorCode` — `CHANNEL_CREDENTIAL_INVALID` 추가
+- [x] `ErrorCode` — `ROUTING_RULE_NOT_FOUND` 추가
+- [x] `ErrorCode` — `DIGEST_INTERVAL_REQUIRED` 추가
 
 ---
 
