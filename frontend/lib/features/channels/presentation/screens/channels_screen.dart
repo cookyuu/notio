@@ -122,6 +122,40 @@ class _ChannelCard extends ConsumerWidget {
 
   final NotificationChannelEntity channel;
 
+  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('채널 삭제'),
+        content: const Text('삭제하시겠습니까? 복구할 수 없습니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              ref
+                  .read(channelNotifierProvider.notifier)
+                  .deleteChannel(channel.id);
+            },
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _ChannelEditSheet(channel: channel),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isError = channel.status == ChannelStatusEnum.error;
@@ -171,6 +205,19 @@ class _ChannelCard extends ConsumerWidget {
                         .read(channelNotifierProvider.notifier)
                         .sendTest(channel.id),
                   ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showEditSheet(context);
+                      } else if (value == 'delete') {
+                        _showDeleteDialog(context, ref);
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'edit', child: Text('수정')),
+                      PopupMenuItem(value: 'delete', child: Text('삭제')),
+                    ],
+                  ),
                 ],
               ),
               if (isError && channel.lastError != null) ...[
@@ -189,6 +236,128 @@ class _ChannelCard extends ConsumerWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChannelEditSheet extends ConsumerStatefulWidget {
+  const _ChannelEditSheet({required this.channel});
+
+  final NotificationChannelEntity channel;
+
+  @override
+  ConsumerState<_ChannelEditSheet> createState() => _ChannelEditSheetState();
+}
+
+class _ChannelEditSheetState extends ConsumerState<_ChannelEditSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _displayNameController;
+  final TextEditingController _credentialController = TextEditingController();
+  late final TextEditingController _targetIdentifierController;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayNameController =
+        TextEditingController(text: widget.channel.displayName);
+    _targetIdentifierController =
+        TextEditingController(text: widget.channel.targetIdentifier ?? '');
+  }
+
+  @override
+  void dispose() {
+    _displayNameController.dispose();
+    _credentialController.dispose();
+    _targetIdentifierController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final credential = _credentialController.text.trim();
+    final targetIdent = _targetIdentifierController.text.trim();
+
+    final success =
+        await ref.read(channelNotifierProvider.notifier).updateChannel(
+              id: widget.channel.id,
+              displayName: _displayNameController.text.trim(),
+              credentialPlaintext: credential.isEmpty ? null : credential,
+              targetIdentifier: targetIdent.isEmpty ? null : targetIdent,
+            );
+
+    if (success && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDiscord =
+        widget.channel.channelType == ChannelTypeEnum.discord;
+    final credentialHint =
+        isDiscord ? 'Webhook URL' : 'Bot Token';
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: AppSpacing.s16,
+        right: AppSpacing.s16,
+        top: AppSpacing.s24,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('채널 수정', style: AppTextStyles.titleMedium),
+            const SizedBox(height: AppSpacing.s16),
+            TextFormField(
+              controller: _displayNameController,
+              decoration: const InputDecoration(labelText: '이름'),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? '이름을 입력하세요' : null,
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            TextFormField(
+              controller: _credentialController,
+              decoration: InputDecoration(
+                labelText: credentialHint,
+                hintText: '변경 시에만 입력 (빈칸이면 기존 유지)',
+              ),
+              obscureText: true,
+            ),
+            if (!isDiscord) ...[
+              const SizedBox(height: AppSpacing.s12),
+              TextFormField(
+                controller: _targetIdentifierController,
+                decoration:
+                    const InputDecoration(labelText: 'Target Identifier'),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.s24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('취소'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _save,
+                    child: const Text('저장'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s24),
+          ],
         ),
       ),
     );

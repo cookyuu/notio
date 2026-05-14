@@ -51,32 +51,32 @@ DataSource → Repository 인터페이스 → Repository 구현체 순으로 추
 
 ## Phase 4: UI — `_ChannelCard`에 수정·삭제 진입점 추가
 
-- [ ] `lib/features/channels/presentation/screens/channels_screen.dart`
+- [x] `lib/features/channels/presentation/screens/channels_screen.dart`
 
 ### 4-1. `_ChannelCard` 헤더에 `PopupMenuButton` 추가
-  - [ ] 기존 Switch + IconButton(테스트) Row에 `PopupMenuButton<String>` 추가
-  - [ ] 메뉴 항목: `수정` / `삭제`
+  - [x] 기존 Switch + IconButton(테스트) Row에 `PopupMenuButton<String>` 추가
+  - [x] 메뉴 항목: `수정` / `삭제`
 
 ### 4-2. 삭제 흐름
-  - [ ] PopupMenu "삭제" 선택 → `showDialog` (AlertDialog)
-  - [ ] 다이얼로그 본문: "삭제하시겠습니까? 복구할 수 없습니다."
-  - [ ] [취소] / [삭제(빨간색)] 버튼 구성
-  - [ ] 확인 시 `notifier.deleteChannel(channel.id)` 호출
+  - [x] PopupMenu "삭제" 선택 → `showDialog` (AlertDialog)
+  - [x] 다이얼로그 본문: "삭제하시겠습니까? 복구할 수 없습니다."
+  - [x] [취소] / [삭제(빨간색)] 버튼 구성
+  - [x] 확인 시 `notifier.deleteChannel(channel.id)` 호출
 
 ### 4-3. 수정 흐름 — `_ChannelEditSheet` 위젯
-  - [ ] PopupMenu "수정" 선택 → `showModalBottomSheet` 열기
-  - [ ] `_ChannelEditSheet` private class 구현 (별도 StatefulWidget)
-  - [ ] `displayName` TextFormField (pre-fill: `channel.displayName`, 필수 입력)
-  - [ ] 자격증명 TextFormField
-    - [ ] hint: "변경 시에만 입력 (빈칸이면 기존 유지)"
-    - [ ] Discord: "Webhook URL", 나머지: "Bot Token"
-    - [ ] `obscureText: true`
-  - [ ] `targetIdentifier` TextFormField (pre-fill: `channel.targetIdentifier`)
-    - [ ] Discord 채널인 경우 숨김 처리
-  - [ ] [취소] / [저장] 버튼
-  - [ ] 저장 시 `notifier.updateChannel(...)` 호출
-    - [ ] `credentialPlaintext`: 빈 문자열이면 `null`로 변환
-    - [ ] `targetIdentifier`: 빈 문자열이면 `null`로 변환
+  - [x] PopupMenu "수정" 선택 → `showModalBottomSheet` 열기
+  - [x] `_ChannelEditSheet` private class 구현 (별도 StatefulWidget)
+  - [x] `displayName` TextFormField (pre-fill: `channel.displayName`, 필수 입력)
+  - [x] 자격증명 TextFormField
+    - [x] hint: "변경 시에만 입력 (빈칸이면 기존 유지)"
+    - [x] Discord: "Webhook URL", 나머지: "Bot Token"
+    - [x] `obscureText: true`
+  - [x] `targetIdentifier` TextFormField (pre-fill: `channel.targetIdentifier`)
+    - [x] Discord 채널인 경우 숨김 처리
+  - [x] [취소] / [저장] 버튼
+  - [x] 저장 시 `notifier.updateChannel(...)` 호출
+    - [x] `credentialPlaintext`: 빈 문자열이면 `null`로 변환
+    - [x] `targetIdentifier`: 빈 문자열이면 `null`로 변환
 
 ---
 
