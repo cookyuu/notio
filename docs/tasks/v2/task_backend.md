@@ -1,74 +1,208 @@
-# Task: Backend 개발 체크리스트 (라우팅 모드별 동작 개선)
+# Task: Backend 개발 체크리스트 (AI / LLM 요약 파이프라인)
 
-> **대상 버전**: v2.1 (fix)
+> **대상 버전**: v2.1
 > **작성일**: 2026-05-14
-> **연관 Plan**: `docs/plans/v2/plan_fix.md`
+> **연관 Plan**: `docs/plans/v2/plan_ai.md`
 
 ---
 
-## Phase 1: 파이프라인 분리 — 라우팅과 요약 독립 실행
+## Phase 1: chat/ 패키지 제거 및 의존성 해소
 
-**파일**: `backend/src/main/java/com/notio/notification/service/NotificationService.java`
+### 1-1. LlmMetrics 신규 생성
 
-- [x] Branch B의 기존 `try { summarize(saved); channelRouter.route(saved); }` 블록 제거
-- [x] Branch B: `channelRouter.route(saved)`를 독립 비동기 작업(`CompletableFuture.runAsync`)으로 분리
-  - [x] 실패 시 `event=channel_routing_failed notification_id={} user_id={}` 로그 출력
-- [x] Branch C: `notificationSummaryService.summarize(saved)`를 독립 비동기 작업으로 분리
-  - [x] 실패 시 `event=notification_summarize_failed notification_id={} user_id={}` 로그 출력
-- [x] 두 작업 모두 `VIRTUAL_THREAD_EXECUTOR` 사용 확인
+**파일**: `ai/metrics/LlmMetrics.java`
 
----
-
-## Phase 2: IMMEDIATE — `buildMessage()` 데드 코드 제거
-
-**파일**: `backend/src/main/java/com/notio/channel/ChannelRouter.java`
-
-- [x] `buildMessage()` 내 `aiSummary != null` 분기 제거
-- [x] `notification.getBody()`를 직접 사용하도록 변경
-- [x] 반환 `ChannelMessage` 생성자에 필요한 필드(`id`, `title`, `body`, `source`, `priority`, `externalUrl`, `createdAt`) 확인
+- [x] `@Component`, `@RequiredArgsConstructor` 선언
+- [x] `NotioMetrics` 주입
+- [x] `recordLlmCall(String outcome, Duration duration)` 메서드 구현
+  - [x] `notio_llm_call_total` 카운터 (`outcome` 태그)
+  - [x] `notio_llm_call_duration` 타이머
 
 ---
 
-## Phase 3: DIGEST — 기간 내 알림 없으면 전달 스킵
+### 1-2. OllamaLlmProvider — ChatMetrics → LlmMetrics 교체
 
-**파일**: `backend/src/main/java/com/notio/channel/NotificationDigestScheduler.java`
+**파일**: `ai/llm/OllamaLlmProvider.java`
 
-- [x] `processDigestForChannel()` 상단에 `pendingLogs.isEmpty()` early return 추가
-  - [x] 스킵 시 `event=digest_skipped_no_notifications channel_id={}` debug 로그 출력
-- [x] 알림 DB 조회 후 `notifications`가 비어 있으면 `DEAD` 처리하는 기존 분기 동작 확인
-
----
-
-## Phase 4: DIGEST — 전달 실패 시 `nextRetryAt` 설정
-
-**파일**: `backend/src/main/java/com/notio/channel/NotificationDigestScheduler.java`
-
-- [x] 실패 처리 블록에서 `retryAt = Instant.now().plus(5, ChronoUnit.MINUTES)` 계산
-- [x] `result.retryable()` 분기
-  - [x] `true`: `status = RETRY`, `nextRetryAt = retryAt` 설정
-  - [x] `false`: `status = DEAD` 설정
-- [x] 두 경우 모두 `lastError = result.errorMessage()` 설정
-- [x] `ChronoUnit` import 추가 확인
+- [x] `ChatMetrics` 의존성 제거, `LlmMetrics` 주입으로 교체
+- [x] 스트리밍 전용 메트릭 호출 제거
+  - [x] `recordFirstChunk` 호출 제거
+  - [x] `incrementActiveStreams` 호출 제거
+  - [x] `decrementActiveStreams` 호출 제거
+- [x] `recordLlmCall(outcome, duration)` 호출로 교체
 
 ---
 
-## Phase 5: DIGEST — 묶음 메시지 헤더 개선
+### 1-3. PgvectorRagRetriever — ChatMetrics → NotificationFlowMetrics 교체
 
-**파일**: `backend/src/main/java/com/notio/channel/NotificationDigestScheduler.java`
+**파일**: `ai/rag/PgvectorRagRetriever.java`
 
-- [x] `sourceSummary` 계산: 알림 목록의 source를 `distinct → sorted → joining(", ")` 처리
-- [x] `maxPriority` 계산: `notifications` 스트림에서 `max(Comparator.naturalOrder())` 사용, 기본값 `MEDIUM`
-- [x] `ChannelMessage` 생성 시 제목을 `"[묶음 알림] " + size + "개 · " + sourceSummary` 형식으로 변경
-- [x] `priority` 필드를 하드코딩 `MEDIUM` 대신 `maxPriority`로 교체
+- [x] `ChatMetrics` 의존성 제거, `NotificationFlowMetrics` 주입으로 교체
+- [x] 기존 ChatMetrics 메트릭 호출을 `recordRagRetrieval(boolean, Duration)` 호출로 교체
 
 ---
 
-## Phase 6: 검증
+### 1-4. chat/ 패키지 전체 삭제
 
-- [x] **IMMEDIATE 지연 개선**: 알림 수신 후 채널 전달이 LLM 요약 대기 없이 즉시 이루어지는지 확인
-- [x] **IMMEDIATE 원본 body**: 전달된 메시지 body가 원본 body 그대로인지 확인 (aiSummary 아님)
-- [x] **DIGEST 빈 알림 스킵**: 설정 기간 내 알림이 없으면 채널에 아무것도 전달되지 않는지 확인
-- [x] **DIGEST 정상 동작**: 여러 알림 수신 후 기간 만료 시 LLM 묶음 요약 메시지 수신 확인
-- [x] **DIGEST 헤더**: 복수 소스(GITHUB + SLACK 등) 알림 혼재 시 제목에 소스 목록 노출 확인
-- [x] **DIGEST 재시도**: 채널 전달 실패(retryable) 시 5분 후 `ChannelDeliveryScheduler`가 재처리하는지 확인
-- [x] **로그 독립성**: `event=channel_routing_*`와 `event=notification_summarize_*`가 순서에 무관하게 독립적으로 출력되는지 확인
+> **주의**: 1-2, 1-3 완료 후 진행
+
+- [x] `chat/controller/ChatController.java` 삭제
+- [x] `chat/domain/ChatMessage.java` 삭제
+- [x] `chat/domain/ChatMessageRole.java` 삭제
+- [x] `chat/dto/ChatMessageResponse.java` 삭제
+- [x] `chat/dto/ChatRequest.java` 삭제
+- [x] `chat/dto/DailySummaryResponse.java` 삭제
+- [x] `chat/metrics/ChatMetrics.java` 삭제
+- [x] `chat/repository/ChatMessageRepository.java` 삭제
+- [x] `chat/service/ChatPromptContext.java` 삭제
+- [x] `chat/service/ChatService.java` 삭제
+- [x] `chat/service/ChatTimeRangeExtractor.java` 삭제
+- [x] `chat/service/DailySummaryService.java` 삭제
+- [x] 삭제 후 `./gradlew compileJava` 통과 확인
+
+---
+
+## Phase 2: PromptBuilder 수정
+
+**파일**: `ai/prompt/PromptBuilder.java`
+
+### 2-1. 기존 메서드 제거
+
+- [ ] `buildChatPrompt(List<RagDocument>, List<ChatMessage>, String)` 제거
+- [ ] `buildDailySummaryPrompt(LocalDate, List<Notification>)` 제거
+- [ ] `formatRecentMessages(List<ChatMessage>)` 제거
+- [ ] `ChatMessage` import 제거
+
+### 2-2. buildNotificationSummaryPrompt 추가
+
+- [ ] `buildNotificationSummaryPrompt(Notification, List<RagDocument>)` 메서드 구현
+  - [ ] 시스템 프롬프트: 2~4문장, 마크다운, 유사 알림 언급, 500자 제한 규칙 포함
+  - [ ] 유저 프롬프트: `소스`, `제목`, `우선순위`, `내용`, `링크(nullable)` 포함
+  - [ ] RAG context 존재 시 유사 과거 알림 최대 3개 (`similarityScore` 포함) 추가
+  - [ ] `LlmPrompt.of(systemPrompt, userPrompt)` 반환
+
+### 2-3. buildDigestSummaryPrompt 추가
+
+- [ ] `buildDigestSummaryPrompt(List<Notification>)` 메서드 구현
+  - [ ] 시스템 프롬프트: 전체 요약 1~2문장, 목록형 1줄 요약, 1000자 제한 규칙 포함
+  - [ ] 유저 프롬프트: 알림 수, 각 알림의 소스/제목/우선순위/내용 포함
+  - [ ] `aiSummary != null`이면 `aiSummary`, 아니면 `body` 사용
+  - [ ] `truncate(String, int)` private 헬퍼 메서드 추가 (maxLen=300)
+  - [ ] `LlmPrompt.of(systemPrompt, userPrompt)` 반환
+
+---
+
+## Phase 3: NotificationSummaryService 구현
+
+### 3-1. Notification 엔티티 변경
+
+**파일**: `notification/domain/Notification.java`
+
+- [ ] `ai_summary` 컬럼 필드 추가: `@Column(name = "ai_summary", columnDefinition = "TEXT")`, nullable
+- [ ] Flyway 마이그레이션 스크립트 작성: `ALTER TABLE notifications ADD COLUMN ai_summary TEXT`
+
+### 3-2. NotificationRepository 추가
+
+**파일**: `notification/repository/NotificationRepository.java`
+
+- [ ] `updateAiSummary(@Param("id") Long id, @Param("summary") String summary)` 추가
+  - [ ] `@Modifying`, `@Query("UPDATE Notification n SET n.aiSummary = :summary WHERE n.id = :id")` 선언
+
+### 3-3. NotificationSummaryService 구현
+
+**파일**: `notification/service/NotificationSummaryService.java`
+
+- [ ] `@Slf4j`, `@Service`, `@RequiredArgsConstructor` 선언
+- [ ] 의존성 주입: `RagRetriever`, `PromptBuilder`, `LlmProvider`, `NotificationRepository`, `NotioAiProperties`, `NotificationFlowMetrics`
+- [ ] `summarize(Notification)` 메서드 구현
+  - [ ] `shouldSummarize()` false 시 debug 로그 출력 후 `null` 반환
+  - [ ] RAG 컨텍스트 조회: `ragRetriever.retrieve(userId, title + " " + body, Optional.empty())`
+  - [ ] 프롬프트 생성 후 `llmProvider.chat(prompt)` 호출
+  - [ ] `notificationRepository.updateAiSummary(id, summary)` 저장
+  - [ ] `metrics.recordAiSummarization("success", duration)` 기록
+  - [ ] 성공 로그: `event=ai_summarization_success notification_id={} source={} summary_len={}`
+  - [ ] 실패 시 `metrics.recordAiSummarization("failure", duration)` 기록 후 `null` 반환
+  - [ ] 실패 로그: `event=ai_summarization_failed notification_id={} source={} error={}`
+- [ ] `shouldSummarize(Notification)` private 메서드 구현
+  - [ ] `aiProperties.summarizeSources()` null/empty 시 `true` 반환
+  - [ ] 소스 이름 포함 여부로 반환
+
+---
+
+## Phase 4: AnthropicLlmProvider 구현
+
+**파일**: `ai/llm/AnthropicLlmProvider.java`
+
+- [ ] `@Slf4j`, `@Service`, `@ConditionalOnProperty(name = "notio.ai.provider", havingValue = "anthropic")`, `@RequiredArgsConstructor` 선언
+- [ ] 의존성 주입: `ChatModel anthropicChatModel`, `NotioAiProperties`, `LlmMetrics`
+- [ ] `LlmProvider` 인터페이스 구현
+- [ ] `chat(LlmPrompt)` 메서드 구현
+  - [ ] `SystemMessage`, `UserMessage` 조합으로 `Prompt` 생성
+  - [ ] `anthropicChatModel.call(prompt)` 호출
+  - [ ] `response.getResult().getOutput().getText()` 추출
+  - [ ] `llmMetrics.recordLlmCall("success", duration)` 기록
+  - [ ] 실패 시 `llmMetrics.recordLlmCall("failure", duration)` 기록 후 `AiException` throw
+- [ ] `stream(LlmPrompt, Consumer<String>)` 메서드 stub 구현 (`UnsupportedOperationException`)
+
+---
+
+## Phase 5: NotioAiProperties 변경
+
+**파일**: `ai/config/NotioAiProperties.java`
+
+- [ ] `@ConfigurationProperties(prefix = "notio.ai")` record로 변경
+- [ ] `provider` 필드 추가 (`@DefaultValue("ollama")`)
+- [ ] `llmTimeout` 필드 유지
+- [ ] `embeddingTimeout` 필드 유지
+- [ ] `summarizeSources` 필드 추가 (`@DefaultValue("CLAUDE,CODEX")`, `List<String>`)
+
+---
+
+## Phase 6: NotificationFlowMetrics 및 설정 추가
+
+### 6-1. NotificationFlowMetrics 메서드 추가
+
+**파일**: `notification/metrics/NotificationFlowMetrics.java`
+
+- [ ] `recordAiSummarization(String outcome, Duration duration)` 추가
+  - [ ] `notio_ai_summarization_total` 카운터 (`outcome` 태그)
+  - [ ] `notio_ai_summarization_duration` 타이머
+- [ ] `recordRagRetrieval(boolean timeRangeApplied, Duration duration)` 추가
+  - [ ] `notio_rag_retrieval_total` 카운터 (`time_range_applied` 태그)
+  - [ ] `notio_rag_retrieval_duration` 타이머
+
+### 6-2. application.yml 설정 추가
+
+**파일**: `src/main/resources/application.yml`
+
+- [ ] `notio.ai.provider: ${NOTIO_AI_PROVIDER:ollama}` 추가
+- [ ] `notio.ai.summarize-sources: ${NOTIO_AI_SUMMARIZE_SOURCES:CLAUDE,CODEX}` 추가
+- [ ] `notio.ai.llm-timeout: ${NOTIO_AI_LLM_TIMEOUT:20s}` 추가
+- [ ] `spring.ai.anthropic.api-key: ${ANTHROPIC_API_KEY:}` 추가
+- [ ] `spring.ai.anthropic.chat.options.model: claude-haiku-4-5` 추가
+- [ ] `spring.ai.anthropic.chat.options.max-tokens: 1024` 추가
+
+---
+
+## Phase 7: 테스트
+
+### 단위 테스트
+
+- [ ] `NotificationSummaryServiceTest`
+  - [ ] `shouldSummarize()` — CLAUDE/CODEX 소스 포함 시 요약 실행
+  - [ ] `shouldSummarize()` — GITHUB 소스(미포함) 시 skip, null 반환
+  - [ ] `shouldSummarize()` — `summarizeSources` null/empty 시 항상 실행
+  - [ ] LLM 호출 실패 시 null 반환 (예외 미전파 확인)
+- [ ] `PromptBuilderTest`
+  - [ ] `buildNotificationSummaryPrompt` — RAG context 없을 때 프롬프트 구조
+  - [ ] `buildNotificationSummaryPrompt` — RAG context 있을 때 유사 알림 3개 포함 확인
+  - [ ] `buildDigestSummaryPrompt` — 복수 알림 → 목록 형식 포함 확인
+  - [ ] `buildDigestSummaryPrompt` — aiSummary 있는 알림은 aiSummary 사용, 없으면 body 사용
+
+### 통합 테스트
+
+- [ ] `NotificationSummaryServiceIntegrationTest`
+  - [ ] CLAUDE 소스 알림 → `ai_summary` DB 저장 확인 (Testcontainers)
+  - [ ] GITHUB 소스 알림 → 요약 skip 확인 (기본 설정 CLAUDE,CODEX만)
+- [ ] `OllamaLlmProviderTest`
+  - [ ] LLM 타임아웃 시 `AiException` 발생 확인
