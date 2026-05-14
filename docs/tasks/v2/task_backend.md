@@ -98,34 +98,34 @@
 
 **파일**: `notification/domain/Notification.java`
 
-- [ ] `ai_summary` 컬럼 필드 추가: `@Column(name = "ai_summary", columnDefinition = "TEXT")`, nullable
-- [ ] Flyway 마이그레이션 스크립트 작성: `ALTER TABLE notifications ADD COLUMN ai_summary TEXT`
+- [x] `ai_summary` 컬럼 필드 추가: `@Column(name = "ai_summary", columnDefinition = "TEXT")`, nullable
+- [x] Flyway 마이그레이션 스크립트 작성: `ALTER TABLE notifications ADD COLUMN ai_summary TEXT`
 
 ### 3-2. NotificationRepository 추가
 
 **파일**: `notification/repository/NotificationRepository.java`
 
-- [ ] `updateAiSummary(@Param("id") Long id, @Param("summary") String summary)` 추가
-  - [ ] `@Modifying`, `@Query("UPDATE Notification n SET n.aiSummary = :summary WHERE n.id = :id")` 선언
+- [x] `updateAiSummary(@Param("id") Long id, @Param("summary") String summary)` 추가
+  - [x] `@Modifying`, `@Query("UPDATE Notification n SET n.aiSummary = :summary WHERE n.id = :id")` 선언
 
 ### 3-3. NotificationSummaryService 구현
 
 **파일**: `notification/service/NotificationSummaryService.java`
 
-- [ ] `@Slf4j`, `@Service`, `@RequiredArgsConstructor` 선언
-- [ ] 의존성 주입: `RagRetriever`, `PromptBuilder`, `LlmProvider`, `NotificationRepository`, `NotioAiProperties`, `NotificationFlowMetrics`
-- [ ] `summarize(Notification)` 메서드 구현
-  - [ ] `shouldSummarize()` false 시 debug 로그 출력 후 `null` 반환
-  - [ ] RAG 컨텍스트 조회: `ragRetriever.retrieve(userId, title + " " + body, Optional.empty())`
-  - [ ] 프롬프트 생성 후 `llmProvider.chat(prompt)` 호출
-  - [ ] `notificationRepository.updateAiSummary(id, summary)` 저장
-  - [ ] `metrics.recordAiSummarization("success", duration)` 기록
-  - [ ] 성공 로그: `event=ai_summarization_success notification_id={} source={} summary_len={}`
-  - [ ] 실패 시 `metrics.recordAiSummarization("failure", duration)` 기록 후 `null` 반환
-  - [ ] 실패 로그: `event=ai_summarization_failed notification_id={} source={} error={}`
-- [ ] `shouldSummarize(Notification)` private 메서드 구현
-  - [ ] `aiProperties.summarizeSources()` null/empty 시 `true` 반환
-  - [ ] 소스 이름 포함 여부로 반환
+- [x] `@Slf4j`, `@Service`, `@RequiredArgsConstructor` 선언
+- [x] 의존성 주입: `RagRetriever`, `PromptBuilder`, `LlmProvider`, `NotificationRepository`, `NotioAiProperties`, `NotificationFlowMetrics`
+- [x] `summarize(Notification)` 메서드 구현
+  - [x] `shouldSummarize()` false 시 debug 로그 출력 후 `null` 반환
+  - [x] RAG 컨텍스트 조회: `ragRetriever.retrieve(userId, title + " " + body, Optional.empty())`
+  - [x] 프롬프트 생성 후 `llmProvider.chat(prompt)` 호출
+  - [x] `notificationRepository.updateAiSummary(id, summary)` 저장
+  - [x] `metrics.recordAiSummarization("success", duration)` 기록
+  - [x] 성공 로그: `event=ai_summarization_success notification_id={} source={} summary_len={}`
+  - [x] 실패 시 `metrics.recordAiSummarization("failure", duration)` 기록 후 `null` 반환
+  - [x] 실패 로그: `event=ai_summarization_failed notification_id={} source={} error={}`
+- [x] `shouldSummarize(Notification)` private 메서드 구현
+  - [x] `aiProperties.summarizeSources()` null/empty 시 `true` 반환
+  - [x] 소스 이름 포함 여부로 반환
 
 ---
 
