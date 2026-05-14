@@ -68,27 +68,27 @@
 
 ### 2-1. 기존 메서드 제거
 
-- [ ] `buildChatPrompt(List<RagDocument>, List<ChatMessage>, String)` 제거
-- [ ] `buildDailySummaryPrompt(LocalDate, List<Notification>)` 제거
-- [ ] `formatRecentMessages(List<ChatMessage>)` 제거
-- [ ] `ChatMessage` import 제거
+- [x] `buildChatPrompt(List<RagDocument>, List<ChatMessage>, String)` 제거
+- [x] `buildDailySummaryPrompt(LocalDate, List<Notification>)` 제거
+- [x] `formatRecentMessages(List<ChatMessage>)` 제거
+- [x] `ChatMessage` import 제거
 
 ### 2-2. buildNotificationSummaryPrompt 추가
 
-- [ ] `buildNotificationSummaryPrompt(Notification, List<RagDocument>)` 메서드 구현
-  - [ ] 시스템 프롬프트: 2~4문장, 마크다운, 유사 알림 언급, 500자 제한 규칙 포함
-  - [ ] 유저 프롬프트: `소스`, `제목`, `우선순위`, `내용`, `링크(nullable)` 포함
-  - [ ] RAG context 존재 시 유사 과거 알림 최대 3개 (`similarityScore` 포함) 추가
-  - [ ] `LlmPrompt.of(systemPrompt, userPrompt)` 반환
+- [x] `buildNotificationSummaryPrompt(Notification, List<RagDocument>)` 메서드 구현
+  - [x] 시스템 프롬프트: 2~4문장, 마크다운, 유사 알림 언급, 500자 제한 규칙 포함
+  - [x] 유저 프롬프트: `소스`, `제목`, `우선순위`, `내용`, `링크(nullable)` 포함
+  - [x] RAG context 존재 시 유사 과거 알림 최대 3개 (`similarityScore` 포함) 추가
+  - [x] `LlmPrompt.of(systemPrompt, userPrompt)` 반환
 
 ### 2-3. buildDigestSummaryPrompt 추가
 
-- [ ] `buildDigestSummaryPrompt(List<Notification>)` 메서드 구현
-  - [ ] 시스템 프롬프트: 전체 요약 1~2문장, 목록형 1줄 요약, 1000자 제한 규칙 포함
-  - [ ] 유저 프롬프트: 알림 수, 각 알림의 소스/제목/우선순위/내용 포함
-  - [ ] `aiSummary != null`이면 `aiSummary`, 아니면 `body` 사용
-  - [ ] `truncate(String, int)` private 헬퍼 메서드 추가 (maxLen=300)
-  - [ ] `LlmPrompt.of(systemPrompt, userPrompt)` 반환
+- [x] `buildDigestSummaryPrompt(List<Notification>)` 메서드 구현
+  - [x] 시스템 프롬프트: 전체 요약 1~2문장, 목록형 1줄 요약, 1000자 제한 규칙 포함
+  - [x] 유저 프롬프트: 알림 수, 각 알림의 소스/제목/우선순위/내용 포함
+  - [x] `aiSummary != null`이면 `aiSummary`, 아니면 `body` 사용
+  - [x] `truncate(String, int)` private 헬퍼 메서드 추가 (maxLen=300)
+  - [x] `LlmPrompt.of(systemPrompt, userPrompt)` 반환
 
 ---
 
