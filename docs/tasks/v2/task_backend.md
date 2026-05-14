@@ -23,9 +23,9 @@
 
 **파일**: `backend/src/main/java/com/notio/channel/ChannelRouter.java`
 
-- [ ] `buildMessage()` 내 `aiSummary != null` 분기 제거
-- [ ] `notification.getBody()`를 직접 사용하도록 변경
-- [ ] 반환 `ChannelMessage` 생성자에 필요한 필드(`id`, `title`, `body`, `source`, `priority`, `externalUrl`, `createdAt`) 확인
+- [x] `buildMessage()` 내 `aiSummary != null` 분기 제거
+- [x] `notification.getBody()`를 직접 사용하도록 변경
+- [x] 반환 `ChannelMessage` 생성자에 필요한 필드(`id`, `title`, `body`, `source`, `priority`, `externalUrl`, `createdAt`) 확인
 
 ---
 

@@ -143,13 +143,10 @@ public class ChannelRouter {
     }
 
     private ChannelMessage buildMessage(Notification notification) {
-        String body = notification.getAiSummary() != null
-            ? notification.getAiSummary()
-            : notification.getBody();
         return new ChannelMessage(
             notification.getId(),
             notification.getTitle(),
-            body,
+            notification.getBody(),
             notification.getSource(),
             notification.getPriority(),
             notification.getExternalUrl(),
