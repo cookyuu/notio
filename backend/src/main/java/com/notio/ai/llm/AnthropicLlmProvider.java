@@ -2,6 +2,7 @@ package com.notio.ai.llm;
 
 import com.notio.ai.metrics.LlmMetrics;
 import com.notio.ai.prompt.LlmPrompt;
+import com.notio.common.config.properties.NotioAiProperties;
 import com.notio.common.exception.AiExceptionTranslator;
 import java.time.Duration;
 import java.time.Instant;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.anthropic.AnthropicChatModel;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -22,7 +23,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AnthropicLlmProvider implements LlmProvider {
 
-    private final AnthropicChatModel anthropicChatModel;
+    private final ChatModel anthropicChatModel;
+    private final NotioAiProperties aiProperties;
     private final AiExceptionTranslator exceptionTranslator;
     private final LlmMetrics llmMetrics;
 

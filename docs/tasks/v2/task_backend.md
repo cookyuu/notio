@@ -133,16 +133,16 @@
 
 **파일**: `ai/llm/AnthropicLlmProvider.java`
 
-- [ ] `@Slf4j`, `@Service`, `@ConditionalOnProperty(name = "notio.ai.provider", havingValue = "anthropic")`, `@RequiredArgsConstructor` 선언
-- [ ] 의존성 주입: `ChatModel anthropicChatModel`, `NotioAiProperties`, `LlmMetrics`
-- [ ] `LlmProvider` 인터페이스 구현
-- [ ] `chat(LlmPrompt)` 메서드 구현
-  - [ ] `SystemMessage`, `UserMessage` 조합으로 `Prompt` 생성
-  - [ ] `anthropicChatModel.call(prompt)` 호출
-  - [ ] `response.getResult().getOutput().getText()` 추출
-  - [ ] `llmMetrics.recordLlmCall("success", duration)` 기록
-  - [ ] 실패 시 `llmMetrics.recordLlmCall("failure", duration)` 기록 후 `AiException` throw
-- [ ] `stream(LlmPrompt, Consumer<String>)` 메서드 stub 구현 (`UnsupportedOperationException`)
+- [x] `@Slf4j`, `@Service`, `@ConditionalOnProperty(name = "notio.ai.provider", havingValue = "anthropic")`, `@RequiredArgsConstructor` 선언
+- [x] 의존성 주입: `ChatModel anthropicChatModel`, `NotioAiProperties`, `LlmMetrics`
+- [x] `LlmProvider` 인터페이스 구현
+- [x] `chat(LlmPrompt)` 메서드 구현
+  - [x] `SystemMessage`, `UserMessage` 조합으로 `Prompt` 생성
+  - [x] `anthropicChatModel.call(prompt)` 호출
+  - [x] `response.getResult().getOutput().getText()` 추출
+  - [x] `llmMetrics.recordLlmCall("success", duration)` 기록
+  - [x] 실패 시 `llmMetrics.recordLlmCall("failure", duration)` 기록 후 `AiException` throw
+- [x] `stream(LlmPrompt, Consumer<String>)` 메서드 stub 구현 (`UnsupportedOperationException`)
 
 ---
 
