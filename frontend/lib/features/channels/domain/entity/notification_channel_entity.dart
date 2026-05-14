@@ -29,6 +29,7 @@ class NotificationChannelEntity {
   final ChannelTypeEnum channelType;
   final String displayName;
   final String? keyPreview;
+  final String? targetIdentifier;
   final ChannelStatusEnum status;
   final int errorCount;
   final String? lastError;
@@ -43,6 +44,7 @@ class NotificationChannelEntity {
     required this.errorCount,
     required this.createdAt,
     this.keyPreview,
+    this.targetIdentifier,
     this.lastError,
     this.lastDeliveredAt,
   });

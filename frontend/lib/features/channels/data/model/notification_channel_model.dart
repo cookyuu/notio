@@ -13,6 +13,8 @@ class NotificationChannelModel {
   final String displayName;
   @JsonKey(name: 'key_preview')
   final String? keyPreview;
+  @JsonKey(name: 'target_identifier')
+  final String? targetIdentifier;
   final String status;
   @JsonKey(name: 'error_count', defaultValue: 0)
   final int errorCount;
@@ -31,6 +33,7 @@ class NotificationChannelModel {
     required this.errorCount,
     required this.createdAt,
     this.keyPreview,
+    this.targetIdentifier,
     this.lastError,
     this.lastDeliveredAt,
   });
@@ -46,6 +49,7 @@ class NotificationChannelModel {
       channelType: ChannelTypeEnumExtension.fromApiValue(channelType),
       displayName: displayName,
       keyPreview: keyPreview,
+      targetIdentifier: targetIdentifier,
       status: ChannelStatusEnumExtension.fromApiValue(status),
       errorCount: errorCount,
       lastError: lastError,
