@@ -188,21 +188,21 @@
 
 ### 단위 테스트
 
-- [ ] `NotificationSummaryServiceTest`
-  - [ ] `shouldSummarize()` — CLAUDE/CODEX 소스 포함 시 요약 실행
-  - [ ] `shouldSummarize()` — GITHUB 소스(미포함) 시 skip, null 반환
-  - [ ] `shouldSummarize()` — `summarizeSources` null/empty 시 항상 실행
-  - [ ] LLM 호출 실패 시 null 반환 (예외 미전파 확인)
-- [ ] `PromptBuilderTest`
-  - [ ] `buildNotificationSummaryPrompt` — RAG context 없을 때 프롬프트 구조
-  - [ ] `buildNotificationSummaryPrompt` — RAG context 있을 때 유사 알림 3개 포함 확인
-  - [ ] `buildDigestSummaryPrompt` — 복수 알림 → 목록 형식 포함 확인
-  - [ ] `buildDigestSummaryPrompt` — aiSummary 있는 알림은 aiSummary 사용, 없으면 body 사용
+- [x] `NotificationSummaryServiceTest`
+  - [x] `shouldSummarize()` — CLAUDE/CODEX 소스 포함 시 요약 실행
+  - [x] `shouldSummarize()` — GITHUB 소스(미포함) 시 skip, null 반환
+  - [x] `shouldSummarize()` — `summarizeSources` null/empty 시 항상 실행
+  - [x] LLM 호출 실패 시 null 반환 (예외 미전파 확인)
+- [x] `PromptBuilderTest`
+  - [x] `buildNotificationSummaryPrompt` — RAG context 없을 때 프롬프트 구조
+  - [x] `buildNotificationSummaryPrompt` — RAG context 있을 때 유사 알림 3개 포함 확인
+  - [x] `buildDigestSummaryPrompt` — 복수 알림 → 목록 형식 포함 확인
+  - [x] `buildDigestSummaryPrompt` — aiSummary 있는 알림은 aiSummary 사용, 없으면 body 사용
 
 ### 통합 테스트
 
-- [ ] `NotificationSummaryServiceIntegrationTest`
-  - [ ] CLAUDE 소스 알림 → `ai_summary` DB 저장 확인 (Testcontainers)
-  - [ ] GITHUB 소스 알림 → 요약 skip 확인 (기본 설정 CLAUDE,CODEX만)
-- [ ] `OllamaLlmProviderTest`
-  - [ ] LLM 타임아웃 시 `AiException` 발생 확인
+- [x] `NotificationSummaryServiceIntegrationTest`
+  - [x] CLAUDE 소스 알림 → `ai_summary` DB 저장 확인 (Testcontainers)
+  - [x] GITHUB 소스 알림 → 요약 skip 확인 (기본 설정 CLAUDE,CODEX만)
+- [x] `OllamaLlmProviderTest`
+  - [x] LLM 타임아웃 시 `AiException` 발생 확인
