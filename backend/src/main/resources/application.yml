@@ -138,7 +138,7 @@ notio:
   connection:
     security:
       webhook-key-pepper: ${NOTIO_WEBHOOK_KEY_PEPPER:local-dev-webhook-pepper-change-me}
-      credential-encryption-key: ${NOTIO_CREDENTIAL_ENCRYPTION_KEY:}
+      credential-encryption-key: ${NOTIO_CREDENTIAL_ENCRYPTION_KEY:QJwvzMWsAbm3TPI4mBPUnGx2PR35Gfl8tN9PwkJlUzE=}
   rate-limit:
     fail-open-profiles: ${NOTIO_RATE_LIMIT_FAIL_OPEN_PROFILES:local,dev,test}
     fail-closed-paths: ${NOTIO_RATE_LIMIT_FAIL_CLOSED_PATHS:/api/v1/webhook/**}

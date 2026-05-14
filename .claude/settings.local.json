@@ -160,7 +160,10 @@
       "Bash(/home/cookyuu/flutter/bin/dart run *)",
       "Bash(/home/cookyuu/flutter/bin/flutter build *)",
       "Bash(kill -9 30734)",
-      "Bash(sudo rm *)"
+      "Bash(sudo rm *)",
+      "Bash(GRADLE_USER_HOME=/tmp/gradle-home ./gradlew compileJava)",
+      "Bash(GRADLE_USER_HOME=/tmp/gradle-home2 ./gradlew --stacktrace compileJava)",
+      "Bash(GRADLE_USER_HOME=/tmp/gradle-home3 ./gradlew compileJava)"
     ]
   },
   "hooks": {
