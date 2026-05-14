@@ -151,7 +151,7 @@ notio:
   ai:
     provider: ${NOTIO_AI_PROVIDER:ollama}
     summarize-sources: ${NOTIO_AI_SUMMARIZE_SOURCES:CLAUDE,CODEX}
-    llm-timeout: ${NOTIO_LLM_TIMEOUT:120s}
+    llm-timeout: ${NOTIO_AI_LLM_TIMEOUT:20s}
     embedding-timeout: ${NOTIO_EMBED_TIMEOUT:15s}
     streaming-timeout: ${NOTIO_STREAMING_TIMEOUT:120s}
   rag:

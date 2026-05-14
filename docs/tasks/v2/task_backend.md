@@ -164,23 +164,23 @@
 
 **파일**: `notification/metrics/NotificationFlowMetrics.java`
 
-- [ ] `recordAiSummarization(String outcome, Duration duration)` 추가
-  - [ ] `notio_ai_summarization_total` 카운터 (`outcome` 태그)
-  - [ ] `notio_ai_summarization_duration` 타이머
-- [ ] `recordRagRetrieval(boolean timeRangeApplied, Duration duration)` 추가
-  - [ ] `notio_rag_retrieval_total` 카운터 (`time_range_applied` 태그)
-  - [ ] `notio_rag_retrieval_duration` 타이머
+- [x] `recordAiSummarization(String outcome, Duration duration)` 추가
+  - [x] `notio_ai_summarization_total` 카운터 (`outcome` 태그)
+  - [x] `notio_ai_summarization_duration` 타이머
+- [x] `recordRagRetrieval(boolean timeRangeApplied, Duration duration)` 추가
+  - [x] `notio_rag_retrieval_total` 카운터 (`time_range_applied` 태그)
+  - [x] `notio_rag_retrieval_duration` 타이머
 
 ### 6-2. application.yml 설정 추가
 
 **파일**: `src/main/resources/application.yml`
 
-- [ ] `notio.ai.provider: ${NOTIO_AI_PROVIDER:ollama}` 추가
-- [ ] `notio.ai.summarize-sources: ${NOTIO_AI_SUMMARIZE_SOURCES:CLAUDE,CODEX}` 추가
-- [ ] `notio.ai.llm-timeout: ${NOTIO_AI_LLM_TIMEOUT:20s}` 추가
-- [ ] `spring.ai.anthropic.api-key: ${ANTHROPIC_API_KEY:}` 추가
-- [ ] `spring.ai.anthropic.chat.options.model: claude-haiku-4-5` 추가
-- [ ] `spring.ai.anthropic.chat.options.max-tokens: 1024` 추가
+- [x] `notio.ai.provider: ${NOTIO_AI_PROVIDER:ollama}` 추가
+- [x] `notio.ai.summarize-sources: ${NOTIO_AI_SUMMARIZE_SOURCES:CLAUDE,CODEX}` 추가
+- [x] `notio.ai.llm-timeout: ${NOTIO_AI_LLM_TIMEOUT:20s}` 추가
+- [x] `spring.ai.anthropic.api-key: ${ANTHROPIC_API_KEY:}` 추가
+- [x] `spring.ai.anthropic.chat.options.model: claude-haiku-4-5` 추가
+- [x] `spring.ai.anthropic.chat.options.max-tokens: 1024` 추가
 
 ---
 
