@@ -117,13 +117,22 @@ public class NotificationService {
             }
         }, VIRTUAL_THREAD_EXECUTOR);
 
-        // Branch B: LLM 요약 → 채널 라우팅 (순차, Branch A와 병렬)
+        // Branch B: 채널 라우팅 (비동기, Branch A와 병렬)
+        CompletableFuture.runAsync(() -> {
+            try {
+                channelRouter.route(saved);
+            } catch (Exception e) {
+                log.error("event=channel_routing_failed notification_id={} user_id={}",
+                    saved.getId(), saved.getUserId(), e);
+            }
+        }, VIRTUAL_THREAD_EXECUTOR);
+
+        // Branch C: LLM 요약 (비동기, Branch A·B와 병렬)
         CompletableFuture.runAsync(() -> {
             try {
                 notificationSummaryService.summarize(saved);
-                channelRouter.route(saved);
             } catch (Exception e) {
-                log.error("event=notification_pipeline_failed notification_id={} user_id={}",
+                log.error("event=notification_summarize_failed notification_id={} user_id={}",
                     saved.getId(), saved.getUserId(), e);
             }
         }, VIRTUAL_THREAD_EXECUTOR);
