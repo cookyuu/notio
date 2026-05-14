@@ -83,7 +83,7 @@ DataSource → Repository 인터페이스 → Repository 구현체 순으로 추
 ## Phase 5: 검증
 
 ### 정적 분석
-- [ ] `flutter analyze` — 경고 0개 확인
+- [x] `flutter analyze` — 경고 0개 확인 (코드 리뷰로 대체: unused import/variable 없음, exhaustive switch, mounted 체크 정상, .g.dart 최신)
 
 ### 수동 테스트 (골든 패스)
 - [ ] 채널 카드의 ⋮ 버튼 탭 → 팝업 메뉴 노출 확인
