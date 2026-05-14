@@ -89,6 +89,8 @@ public class NotificationChannel {
 
     public void resume() {
         this.status = ChannelStatus.ACTIVE;
+        this.errorCount = 0;
+        this.lastError = null;
     }
 
     public void updateCredential(String credentialEncrypted, String targetIdentifier) {
