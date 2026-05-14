@@ -23,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -83,12 +85,23 @@ public class NotificationDigestScheduler {
             LlmPrompt prompt = promptBuilder.buildDigestSummaryPrompt(notifications);
             String digestContent = llmProvider.chat(prompt);
 
+            String sourceSummary = notifications.stream()
+                .map(n -> n.getSource().name())
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(", "));
+
+            NotificationPriority maxPriority = notifications.stream()
+                .map(Notification::getPriority)
+                .max(Comparator.naturalOrder())
+                .orElse(NotificationPriority.MEDIUM);
+
             ChannelMessage digestMessage = new ChannelMessage(
                 notifications.get(0).getId(),
-                "[묶음 알림] " + notifications.size() + "개",
+                "[묶음 알림] " + notifications.size() + "개 · " + sourceSummary,
                 digestContent,
                 notifications.get(0).getSource(),
-                NotificationPriority.MEDIUM,
+                maxPriority,
                 null,
                 Instant.now()
             );

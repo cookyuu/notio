@@ -56,10 +56,10 @@
 
 **파일**: `backend/src/main/java/com/notio/channel/NotificationDigestScheduler.java`
 
-- [ ] `sourceSummary` 계산: 알림 목록의 source를 `distinct → sorted → joining(", ")` 처리
-- [ ] `maxPriority` 계산: `notifications` 스트림에서 `max(Comparator.naturalOrder())` 사용, 기본값 `MEDIUM`
-- [ ] `ChannelMessage` 생성 시 제목을 `"[묶음 알림] " + size + "개 · " + sourceSummary` 형식으로 변경
-- [ ] `priority` 필드를 하드코딩 `MEDIUM` 대신 `maxPriority`로 교체
+- [x] `sourceSummary` 계산: 알림 목록의 source를 `distinct → sorted → joining(", ")` 처리
+- [x] `maxPriority` 계산: `notifications` 스트림에서 `max(Comparator.naturalOrder())` 사용, 기본값 `MEDIUM`
+- [x] `ChannelMessage` 생성 시 제목을 `"[묶음 알림] " + size + "개 · " + sourceSummary` 형식으로 변경
+- [x] `priority` 필드를 하드코딩 `MEDIUM` 대신 `maxPriority`로 교체
 
 ---
 
