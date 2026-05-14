@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:notio_app/core/constants/app_spacing.dart';
 import 'package:notio_app/core/theme/app_colors.dart';
 import 'package:notio_app/core/theme/app_text_styles.dart';
+import 'package:notio_app/features/channels/domain/entity/notification_channel_entity.dart';
 import 'package:notio_app/features/channels/domain/entity/routing_rule_entity.dart';
+import 'package:notio_app/features/delivery_feed/domain/entity/channel_type_enum.dart';
 import 'package:notio_app/features/channels/presentation/providers/channel_providers.dart';
 import 'package:notio_app/features/channels/presentation/providers/routing_rule_providers.dart';
 
@@ -28,6 +30,7 @@ class _RoutingRulesScreenState extends ConsumerState<RoutingRulesScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(routingRuleNotifierProvider);
+    final channels = ref.watch(channelNotifierProvider).channels;
 
     return Scaffold(
       appBar: AppBar(
@@ -37,7 +40,7 @@ class _RoutingRulesScreenState extends ConsumerState<RoutingRulesScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: _buildBody(state),
+      body: _buildBody(state, channels),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showRuleForm(context),
         child: const Icon(Icons.add),
@@ -45,7 +48,8 @@ class _RoutingRulesScreenState extends ConsumerState<RoutingRulesScreen> {
     );
   }
 
-  Widget _buildBody(RoutingRuleState state) {
+  Widget _buildBody(
+      RoutingRuleState state, List<NotificationChannelEntity> channels) {
     if (state.isLoading && state.rules.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -68,9 +72,13 @@ class _RoutingRulesScreenState extends ConsumerState<RoutingRulesScreen> {
       },
       itemBuilder: (context, index) {
         final rule = state.rules[index];
+        final ruleChannels = channels
+            .where((ch) => rule.channelIds.contains(ch.id))
+            .toList();
         return _RuleCard(
           key: ValueKey(rule.id),
           rule: rule,
+          ruleChannels: ruleChannels,
           onEdit: () => _showRuleForm(context, rule: rule),
           onDelete: () => _confirmDelete(context, rule),
         );
@@ -144,12 +152,14 @@ class _RoutingRulesScreenState extends ConsumerState<RoutingRulesScreen> {
 class _RuleCard extends StatelessWidget {
   const _RuleCard({
     required this.rule,
+    required this.ruleChannels,
     required this.onEdit,
     required this.onDelete,
     super.key,
   });
 
   final RoutingRuleEntity rule;
+  final List<NotificationChannelEntity> ruleChannels;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -200,6 +210,11 @@ class _RuleCard extends StatelessWidget {
                         color: AppColors.warning,
                       ),
                     ],
+                    const SizedBox(height: AppSpacing.s4),
+                    _ChannelChipRow(
+                      ruleChannels: ruleChannels,
+                      channelIdCount: rule.channelIds.length,
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -265,6 +280,92 @@ class _ChipRow extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _ChannelChipRow extends StatelessWidget {
+  const _ChannelChipRow({
+    required this.ruleChannels,
+    required this.channelIdCount,
+  });
+
+  final List<NotificationChannelEntity> ruleChannels;
+  final int channelIdCount;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ruleChannels.isNotEmpty) {
+      return Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          Text(
+            '채널: ',
+            style: AppTextStyles.labelSmall
+                .copyWith(color: AppColors.textTertiary),
+          ),
+          ...ruleChannels.map(
+            (ch) => Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withAlpha(30),
+                border:
+                    Border.all(color: AppColors.primary.withAlpha(80)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _channelIcon(ch.channelType),
+                    size: 10,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    ch.displayName,
+                    style: TextStyle(
+                        fontSize: 11, color: AppColors.primary),
+                  ),
+                  if (ch.status != ChannelStatusEnum.active) ...[
+                    const SizedBox(width: 3),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 10,
+                      color: ch.status == ChannelStatusEnum.error
+                          ? AppColors.error
+                          : AppColors.textTertiary,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (channelIdCount > 0) {
+      return Text(
+        '채널 $channelIdCount개 (로딩 중)',
+        style:
+            AppTextStyles.labelSmall.copyWith(color: AppColors.textTertiary),
+      );
+    }
+
+    return Text(
+      '채널 없음',
+      style: AppTextStyles.labelSmall.copyWith(color: AppColors.error),
+    );
+  }
+
+  IconData _channelIcon(ChannelTypeEnum type) {
+    return switch (type) {
+      ChannelTypeEnum.slack => Icons.message_outlined,
+      ChannelTypeEnum.telegram => Icons.send_outlined,
+      ChannelTypeEnum.discord => Icons.videogame_asset_outlined,
+    };
   }
 }
 
@@ -345,7 +446,8 @@ class _RoutingRuleFormState extends ConsumerState<_RoutingRuleForm> {
 
   @override
   Widget build(BuildContext context) {
-    final channels = ref.watch(channelNotifierProvider).channels;
+    final channelState = ref.watch(channelNotifierProvider);
+    final channels = channelState.channels;
 
     return Container(
       decoration: const BoxDecoration(
@@ -405,19 +507,35 @@ class _RoutingRuleFormState extends ConsumerState<_RoutingRuleForm> {
               const SizedBox(height: AppSpacing.s16),
 
               // Target channels
-              if (channels.isNotEmpty) ...[
+              Text(
+                '대상 채널',
+                style: AppTextStyles.labelMedium
+                    .copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.s8),
+              if (channelState.isLoading && channels.isEmpty)
+                const SizedBox(
+                  height: 36,
+                  child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              else if (channels.isEmpty)
                 Text(
-                  '대상 채널',
-                  style: AppTextStyles.labelMedium
-                      .copyWith(color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: AppSpacing.s8),
+                  '등록된 채널이 없습니다.\n채널 설정에서 먼저 채널을 추가해주세요.',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textTertiary),
+                )
+              else
                 Wrap(
                   spacing: AppSpacing.s8,
                   runSpacing: AppSpacing.s4,
                   children: channels.map((ch) {
                     final selected = _selectedChannelIds.contains(ch.id);
                     return FilterChip(
+                      avatar: Icon(
+                        _channelIcon(ch.channelType),
+                        size: 14,
+                      ),
                       label: Text(ch.displayName),
                       selected: selected,
                       onSelected: (_) => setState(() {
@@ -428,8 +546,7 @@ class _RoutingRuleFormState extends ConsumerState<_RoutingRuleForm> {
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: AppSpacing.s16),
-              ],
+              const SizedBox(height: AppSpacing.s16),
 
               // Stop on match
               SwitchListTile(
@@ -536,6 +653,14 @@ class _RoutingRuleFormState extends ConsumerState<_RoutingRuleForm> {
         ),
       ],
     );
+  }
+
+  IconData _channelIcon(ChannelTypeEnum type) {
+    return switch (type) {
+      ChannelTypeEnum.slack => Icons.message_outlined,
+      ChannelTypeEnum.telegram => Icons.send_outlined,
+      ChannelTypeEnum.discord => Icons.videogame_asset_outlined,
+    };
   }
 
   Future<void> _submit() async {
