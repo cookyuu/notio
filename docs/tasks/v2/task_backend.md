@@ -43,12 +43,12 @@
 
 **파일**: `backend/src/main/java/com/notio/channel/NotificationDigestScheduler.java`
 
-- [ ] 실패 처리 블록에서 `retryAt = Instant.now().plus(5, ChronoUnit.MINUTES)` 계산
-- [ ] `result.retryable()` 분기
-  - [ ] `true`: `status = RETRY`, `nextRetryAt = retryAt` 설정
-  - [ ] `false`: `status = DEAD` 설정
-- [ ] 두 경우 모두 `lastError = result.errorMessage()` 설정
-- [ ] `ChronoUnit` import 추가 확인
+- [x] 실패 처리 블록에서 `retryAt = Instant.now().plus(5, ChronoUnit.MINUTES)` 계산
+- [x] `result.retryable()` 분기
+  - [x] `true`: `status = RETRY`, `nextRetryAt = retryAt` 설정
+  - [x] `false`: `status = DEAD` 설정
+- [x] 두 경우 모두 `lastError = result.errorMessage()` 설정
+- [x] `ChronoUnit` import 추가 확인
 
 ---
 

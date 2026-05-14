@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Slf4j
@@ -107,8 +108,14 @@ public class NotificationDigestScheduler {
                 metrics.recordDigestDelivery(channel.getChannelType().name(), notifications.size());
                 log.info("event=digest_delivered channel_id={} count={}", channelId, notifications.size());
             } else {
+                Instant retryAt = Instant.now().plus(5, ChronoUnit.MINUTES);
                 pendingLogs.forEach(l -> {
-                    l.setStatus(result.retryable() ? DeliveryStatus.RETRY : DeliveryStatus.DEAD);
+                    if (result.retryable()) {
+                        l.setStatus(DeliveryStatus.RETRY);
+                        l.setNextRetryAt(retryAt);
+                    } else {
+                        l.setStatus(DeliveryStatus.DEAD);
+                    }
                     l.setLastError(result.errorMessage());
                 });
                 channel.recordFailure(result.errorMessage());
