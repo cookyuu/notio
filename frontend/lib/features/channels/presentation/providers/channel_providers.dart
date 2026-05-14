@@ -124,6 +124,32 @@ class ChannelNotifier extends _$ChannelNotifier {
     }
   }
 
+  Future<bool> updateChannel({
+    required int id,
+    String? displayName,
+    String? credentialPlaintext,
+    String? targetIdentifier,
+  }) async {
+    state = state.copyWith(isActing: true, clearError: true);
+    try {
+      await ref.read(channelRepositoryProvider).updateChannel(
+            id: id,
+            displayName: displayName,
+            credentialPlaintext: credentialPlaintext,
+            targetIdentifier: targetIdentifier,
+          );
+      await load();
+      state = state.copyWith(
+        isActing: false,
+        successMessage: '채널이 수정되었습니다.',
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(isActing: false, error: e.toString());
+      return false;
+    }
+  }
+
   Future<void> deleteChannel(int id) async {
     state = state.copyWith(isActing: true, clearError: true);
     try {

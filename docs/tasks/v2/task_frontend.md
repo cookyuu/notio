@@ -40,12 +40,12 @@ DataSource → Repository 인터페이스 → Repository 구현체 순으로 추
 
 ## Phase 3: Presentation 계층 — Provider에 `updateChannel` 추가
 
-- [ ] `lib/features/channels/presentation/providers/channel_providers.dart`
-  - [ ] `updateChannel({required int id, String? displayName, String? credentialPlaintext, String? targetIdentifier})` 메서드 추가
-  - [ ] 시작 시 `isActing: true, clearError: true` 상태 전환
-  - [ ] `repository.updateChannel(...)` 호출 후 `load()` 재조회
-  - [ ] 성공 시 `isActing: false, successMessage: '채널이 수정되었습니다.'` 반환 `true`
-  - [ ] 실패 시 `isActing: false, error: e.toString()` 반환 `false`
+- [x] `lib/features/channels/presentation/providers/channel_providers.dart`
+  - [x] `updateChannel({required int id, String? displayName, String? credentialPlaintext, String? targetIdentifier})` 메서드 추가
+  - [x] 시작 시 `isActing: true, clearError: true` 상태 전환
+  - [x] `repository.updateChannel(...)` 호출 후 `load()` 재조회
+  - [x] 성공 시 `isActing: false, successMessage: '채널이 수정되었습니다.'` 반환 `true`
+  - [x] 실패 시 `isActing: false, error: e.toString()` 반환 `false`
 
 ---
 
