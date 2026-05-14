@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -55,8 +56,10 @@ public class CredentialEncryptionService {
             buffer.put(nonce);
             buffer.put(encrypted);
             return Base64.getUrlEncoder().withoutPadding().encodeToString(buffer.array());
+        } catch (NotioException e) {
+            throw e;
         } catch (Exception exception) {
-            throw new NotioException(ErrorCode.INTERNAL_SERVER_ERROR);
+            throw new NotioException(ErrorCode.INTERNAL_SERVER_ERROR, "Credential encryption failed", Map.of(), exception);
         }
     }
 
@@ -71,8 +74,10 @@ public class CredentialEncryptionService {
             final Cipher cipher = Cipher.getInstance(CIPHER);
             cipher.init(Cipher.DECRYPT_MODE, keySpec(), new GCMParameterSpec(GCM_TAG_BITS, nonce));
             return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
+        } catch (NotioException e) {
+            throw e;
         } catch (Exception exception) {
-            throw new NotioException(ErrorCode.INTERNAL_SERVER_ERROR);
+            throw new NotioException(ErrorCode.INTERNAL_SERVER_ERROR, "Credential decryption failed", Map.of(), exception);
         }
     }
 

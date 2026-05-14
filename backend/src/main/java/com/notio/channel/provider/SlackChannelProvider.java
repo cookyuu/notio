@@ -34,9 +34,10 @@ public class SlackChannelProvider implements NotificationChannelProvider {
     @Override
     @SuppressWarnings("unchecked")
     public ChannelDeliveryResult deliver(NotificationChannel channel, ChannelMessage message) {
-        String token = encryptionService.decrypt(channel.getCredentialEncrypted());
-        Map<String, Object> payload = formatter.format(channel.getTargetIdentifier(), message);
         try {
+            String token = encryptionService.decrypt(channel.getCredentialEncrypted());
+            Map<String, Object> payload = formatter.format(channel.getTargetIdentifier(), message);
+
             Map<String, Object> response = restClient.post()
                 .uri(CHAT_POST_URL)
                 .header("Authorization", "Bearer " + token)
@@ -53,19 +54,18 @@ public class SlackChannelProvider implements NotificationChannelProvider {
                 return ChannelDeliveryResult.success((String) response.get("ts"));
             }
             String error = (String) response.get("error");
-            log.warn("Slack delivery failed: channel={}, error={}", channel.getTargetIdentifier(), error);
+            log.warn("event=slack_delivery_failed channel_id={} slack_error={}", channel.getId(), error);
             boolean retryable = "ratelimited".equals(error);
             return ChannelDeliveryResult.failure(error, retryable);
 
         } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                return ChannelDeliveryResult.failure(e.getMessage(), true);
-            }
-            return ChannelDeliveryResult.failure(e.getMessage(), false);
+            log.warn("event=slack_delivery_failed channel_id={} status={}", channel.getId(), e.getStatusCode().value());
+            return ChannelDeliveryResult.failure(e.getMessage(), e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS);
         } catch (HttpServerErrorException e) {
+            log.warn("event=slack_delivery_server_error channel_id={} status={}", channel.getId(), e.getStatusCode().value());
             return ChannelDeliveryResult.failure(e.getMessage(), true);
         } catch (Exception e) {
-            log.warn("Slack delivery unexpected error: {}", e.getMessage());
+            log.warn("event=slack_delivery_exception channel_id={}", channel.getId(), e);
             return ChannelDeliveryResult.failure(e.getMessage(), true);
         }
     }

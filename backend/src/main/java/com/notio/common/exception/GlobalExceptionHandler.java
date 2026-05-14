@@ -27,7 +27,8 @@ public class GlobalExceptionHandler {
             final HttpServletRequest request
     ) {
         final ErrorCode errorCode = exception.getErrorCode();
-        logRequestFailure("request_failed", request, errorCode, exception, false);
+        final boolean isServerError = errorCode.getHttpStatus().is5xxServerError();
+        logRequestFailure("request_failed", request, errorCode, exception, isServerError);
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(ApiResponse.error(new ApiError(
                         errorCode.getCode(),

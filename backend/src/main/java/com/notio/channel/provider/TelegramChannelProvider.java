@@ -32,18 +32,21 @@ public class TelegramChannelProvider implements NotificationChannelProvider {
     @Override
     @SuppressWarnings("unchecked")
     public ChannelDeliveryResult deliver(NotificationChannel channel, ChannelMessage message) {
-        String token = encryptionService.decrypt(channel.getCredentialEncrypted());
-        String chatId = channel.getTargetIdentifier();
-        String text = formatter.format(message);
-        String url = API_BASE + token + "/sendMessage";
-
-        Map<String, Object> payload = Map.of(
-            "chat_id", chatId,
-            "text", text,
-            "parse_mode", "MarkdownV2"
-        );
-
         try {
+            String token = encryptionService.decrypt(channel.getCredentialEncrypted());
+            String chatId = channel.getTargetIdentifier();
+            if (chatId == null || chatId.isBlank()) {
+                return ChannelDeliveryResult.failure("Telegram chat ID (targetIdentifier) is not configured", false);
+            }
+            String text = formatter.format(message);
+            String url = API_BASE + token + "/sendMessage";
+
+            Map<String, Object> payload = Map.of(
+                "chat_id", chatId,
+                "text", text,
+                "parse_mode", "MarkdownV2"
+            );
+
             Map<String, Object> response = restClient.post()
                 .uri(url)
                 .body(payload)
@@ -62,14 +65,13 @@ public class TelegramChannelProvider implements NotificationChannelProvider {
             return ChannelDeliveryResult.failure("Telegram sendMessage failed", false);
 
         } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                return ChannelDeliveryResult.failure(e.getMessage(), true);
-            }
-            return ChannelDeliveryResult.failure(e.getMessage(), false);
+            log.warn("event=telegram_delivery_failed channel_id={} status={}", channel.getId(), e.getStatusCode().value());
+            return ChannelDeliveryResult.failure(e.getMessage(), e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS);
         } catch (HttpServerErrorException e) {
+            log.warn("event=telegram_delivery_server_error channel_id={} status={}", channel.getId(), e.getStatusCode().value());
             return ChannelDeliveryResult.failure(e.getMessage(), true);
         } catch (Exception e) {
-            log.warn("Telegram delivery unexpected error: {}", e.getMessage());
+            log.warn("event=telegram_delivery_exception channel_id={}", channel.getId(), e);
             return ChannelDeliveryResult.failure(e.getMessage(), true);
         }
     }

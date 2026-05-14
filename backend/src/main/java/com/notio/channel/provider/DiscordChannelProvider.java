@@ -39,26 +39,26 @@ public class DiscordChannelProvider implements NotificationChannelProvider {
     @Override
     @SuppressWarnings("unchecked")
     public ChannelDeliveryResult deliver(NotificationChannel channel, ChannelMessage message) {
-        String webhookUrl = encryptionService.decrypt(channel.getCredentialEncrypted());
-
-        Map<String, Object> embed = new LinkedHashMap<>();
-        embed.put("title", message.title());
-        embed.put("description", truncate(message.body(), 4096));
-        embed.put("color", COLORS.getOrDefault(message.priority(), 10197915));
-
-        List<Map<String, Object>> fields = List.of(
-            field("Source", message.source().name(), true),
-            field("Priority", message.priority().name(), true)
-        );
-        embed.put("fields", fields);
-
-        if (message.externalUrl() != null && !message.externalUrl().isBlank()) {
-            embed.put("url", message.externalUrl());
-        }
-
-        Map<String, Object> payload = Map.of("embeds", List.of(embed));
-
         try {
+            String webhookUrl = encryptionService.decrypt(channel.getCredentialEncrypted());
+
+            Map<String, Object> embed = new LinkedHashMap<>();
+            embed.put("title", message.title());
+            embed.put("description", truncate(message.body(), 4096));
+            embed.put("color", COLORS.getOrDefault(message.priority(), 10197915));
+
+            List<Map<String, Object>> fields = List.of(
+                field("Source", message.source().name(), true),
+                field("Priority", message.priority().name(), true)
+            );
+            embed.put("fields", fields);
+
+            if (message.externalUrl() != null && !message.externalUrl().isBlank()) {
+                embed.put("url", message.externalUrl());
+            }
+
+            Map<String, Object> payload = Map.of("embeds", List.of(embed));
+
             Map<String, Object> response = restClient.post()
                 .uri(webhookUrl + "?wait=true")
                 .body(payload)
@@ -69,15 +69,14 @@ public class DiscordChannelProvider implements NotificationChannelProvider {
             return ChannelDeliveryResult.success(messageId);
 
         } catch (HttpClientErrorException e) {
-            HttpStatus status = HttpStatus.resolve(e.getStatusCode().value());
-            if (status == HttpStatus.TOO_MANY_REQUESTS) {
-                return ChannelDeliveryResult.failure(e.getMessage(), true);
-            }
-            return ChannelDeliveryResult.failure(e.getMessage(), false);
+            log.warn("event=discord_delivery_failed channel_id={} status={}", channel.getId(), e.getStatusCode().value());
+            boolean retryable = HttpStatus.resolve(e.getStatusCode().value()) == HttpStatus.TOO_MANY_REQUESTS;
+            return ChannelDeliveryResult.failure(e.getMessage(), retryable);
         } catch (HttpServerErrorException e) {
+            log.warn("event=discord_delivery_server_error channel_id={} status={}", channel.getId(), e.getStatusCode().value());
             return ChannelDeliveryResult.failure(e.getMessage(), true);
         } catch (Exception e) {
-            log.warn("Discord delivery unexpected error: {}", e.getMessage());
+            log.warn("event=discord_delivery_exception channel_id={}", channel.getId(), e);
             return ChannelDeliveryResult.failure(e.getMessage(), true);
         }
     }
