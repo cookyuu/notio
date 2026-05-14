@@ -52,6 +52,7 @@ public class NotificationDigestScheduler {
                 channelId, DeliveryStatus.DIGEST_PENDING, Instant.now());
 
         if (pendingLogs.isEmpty()) {
+            log.debug("event=digest_skipped_no_notifications channel_id={}", channelId);
             return;
         }
 

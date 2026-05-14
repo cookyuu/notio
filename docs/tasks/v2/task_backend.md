@@ -33,9 +33,9 @@
 
 **파일**: `backend/src/main/java/com/notio/channel/NotificationDigestScheduler.java`
 
-- [ ] `processDigestForChannel()` 상단에 `pendingLogs.isEmpty()` early return 추가
-  - [ ] 스킵 시 `event=digest_skipped_no_notifications channel_id={}` debug 로그 출력
-- [ ] 알림 DB 조회 후 `notifications`가 비어 있으면 `DEAD` 처리하는 기존 분기 동작 확인
+- [x] `processDigestForChannel()` 상단에 `pendingLogs.isEmpty()` early return 추가
+  - [x] 스킵 시 `event=digest_skipped_no_notifications channel_id={}` debug 로그 출력
+- [x] 알림 DB 조회 후 `notifications`가 비어 있으면 `DEAD` 처리하는 기존 분기 동작 확인
 
 ---
 
