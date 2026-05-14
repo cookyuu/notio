@@ -183,8 +183,10 @@ class ChannelRouterTest {
         verify(deliveryLogRepository, never()).save(any());
     }
 
+    // Phase 6 — IMMEDIATE 원본 body: buildMessage()는 aiSummary 분기 없이
+    // 항상 notification.getBody()를 그대로 사용해야 한다 (Phase 2 fix 반영)
     @Test
-    void buildMessageUsesAiSummaryWhenPresent() {
+    void buildMessageAlwaysUsesOriginalBodyRegardlessOfAiSummary() {
         Notification notification = Notification.builder()
             .id(1L).userId(1L).source(NotificationSource.GITHUB)
             .title("Test").body("original body").priority(NotificationPriority.HIGH)
@@ -202,7 +204,10 @@ class ChannelRouterTest {
 
         ArgumentCaptor<ChannelMessage> messageCaptor = ArgumentCaptor.forClass(ChannelMessage.class);
         verify(provider).deliver(eq(channel), messageCaptor.capture());
-        assertThat(messageCaptor.getValue().body()).isEqualTo("AI summary text");
+        // aiSummary가 존재해도 body는 원본 body를 사용해야 한다
+        assertThat(messageCaptor.getValue().body())
+            .as("IMMEDIATE 모드에서 ChannelMessage.body는 aiSummary가 아닌 원본 body여야 한다")
+            .isEqualTo("original body");
     }
 
     @Test

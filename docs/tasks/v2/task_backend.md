@@ -65,10 +65,10 @@
 
 ## Phase 6: 검증
 
-- [ ] **IMMEDIATE 지연 개선**: 알림 수신 후 채널 전달이 LLM 요약 대기 없이 즉시 이루어지는지 확인
-- [ ] **IMMEDIATE 원본 body**: 전달된 메시지 body가 원본 body 그대로인지 확인 (aiSummary 아님)
-- [ ] **DIGEST 빈 알림 스킵**: 설정 기간 내 알림이 없으면 채널에 아무것도 전달되지 않는지 확인
-- [ ] **DIGEST 정상 동작**: 여러 알림 수신 후 기간 만료 시 LLM 묶음 요약 메시지 수신 확인
-- [ ] **DIGEST 헤더**: 복수 소스(GITHUB + SLACK 등) 알림 혼재 시 제목에 소스 목록 노출 확인
-- [ ] **DIGEST 재시도**: 채널 전달 실패(retryable) 시 5분 후 `ChannelDeliveryScheduler`가 재처리하는지 확인
-- [ ] **로그 독립성**: `event=channel_routing_*`와 `event=notification_summarize_*`가 순서에 무관하게 독립적으로 출력되는지 확인
+- [x] **IMMEDIATE 지연 개선**: 알림 수신 후 채널 전달이 LLM 요약 대기 없이 즉시 이루어지는지 확인
+- [x] **IMMEDIATE 원본 body**: 전달된 메시지 body가 원본 body 그대로인지 확인 (aiSummary 아님)
+- [x] **DIGEST 빈 알림 스킵**: 설정 기간 내 알림이 없으면 채널에 아무것도 전달되지 않는지 확인
+- [x] **DIGEST 정상 동작**: 여러 알림 수신 후 기간 만료 시 LLM 묶음 요약 메시지 수신 확인
+- [x] **DIGEST 헤더**: 복수 소스(GITHUB + SLACK 등) 알림 혼재 시 제목에 소스 목록 노출 확인
+- [x] **DIGEST 재시도**: 채널 전달 실패(retryable) 시 5분 후 `ChannelDeliveryScheduler`가 재처리하는지 확인
+- [x] **로그 독립성**: `event=channel_routing_*`와 `event=notification_summarize_*`가 순서에 무관하게 독립적으로 출력되는지 확인

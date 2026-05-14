@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -305,5 +310,119 @@ class NotificationServiceTest {
         assertThat(saveFromConnectionEvict.key()).isEqualTo("#connection.userId");
         assertThat(markAllReadEvict.key()).isEqualTo("#userId");
         assertThat(deleteEvict.key()).isEqualTo("#userId");
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase 6 — IMMEDIATE 지연 개선: channelRouter.route()가 summarize() 완료를
+    // 기다리지 않고 즉시 실행되는지 검증
+    // -----------------------------------------------------------------------
+
+    @Test
+    void channelRoutingDoesNotBlockOnSummarize() throws Exception {
+        final NotificationEvent event = new NotificationEvent(
+            NotificationSource.GITHUB, "title", "body", NotificationPriority.HIGH,
+            "ext-1", null, null, 10L, null
+        );
+        final Notification saved = Notification.builder()
+            .id(1L).userId(10L).source(NotificationSource.GITHUB)
+            .title("title").body("body").priority(NotificationPriority.HIGH).build();
+        when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
+
+        // summarize()는 300ms 동안 블로킹하는 느린 작업으로 설정
+        final CountDownLatch routeCalled = new CountDownLatch(1);
+        final AtomicBoolean summarizeFinished = new AtomicBoolean(false);
+
+        lenient().doAnswer(invocation -> {
+            Thread.sleep(300);
+            summarizeFinished.set(true);
+            return null;
+        }).when(notificationSummaryService).summarize(any(Notification.class));
+
+        lenient().doAnswer(invocation -> {
+            routeCalled.countDown();
+            return null;
+        }).when(channelRouter).route(any(Notification.class));
+
+        notificationService.saveFromEvent(event);
+
+        // route()는 summarize()가 끝나기 전에 호출되어야 한다 (최대 1초 대기)
+        final boolean routeCalledBeforeTimeout = routeCalled.await(1, TimeUnit.SECONDS);
+        assertThat(routeCalledBeforeTimeout)
+            .as("channelRouter.route()는 summarize() 완료를 기다리지 않고 즉시 실행되어야 한다")
+            .isTrue();
+        assertThat(summarizeFinished.get())
+            .as("route()가 먼저 호출된 시점에 summarize()는 아직 완료되지 않아야 한다")
+            .isFalse();
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase 6 — IMMEDIATE 원본 body: route()에 전달되는 ChannelMessage.body가
+    // notification.getBody()와 동일한지는 ChannelRouter 단위에서 검증되므로,
+    // 여기서는 saveNotification()이 원본 body를 그대로 유지하는지 확인한다
+    // -----------------------------------------------------------------------
+
+    @Test
+    void savedNotificationBodyEqualsOriginalEventBody() {
+        final String originalBody = "PR #42 opened: feat/new-api";
+        final NotificationEvent event = new NotificationEvent(
+            NotificationSource.GITHUB, "PR opened", originalBody, NotificationPriority.HIGH,
+            "ext-1", null, null, 10L, null
+        );
+        final Notification saved = Notification.builder()
+            .id(1L).userId(10L).source(NotificationSource.GITHUB)
+            .title("PR opened").body(originalBody).priority(NotificationPriority.HIGH).build();
+        when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
+
+        final Notification result = notificationService.saveFromEvent(event);
+
+        assertThat(result.getBody())
+            .as("저장된 알림의 body는 이벤트 원본 body와 동일해야 한다")
+            .isEqualTo(originalBody);
+        assertThat(result.getAiSummary())
+            .as("saveFromEvent 직후에는 aiSummary가 설정되지 않아야 한다")
+            .isNull();
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase 6 — 로그 독립성: Branch B(routing)와 Branch C(summarize)가 독립
+    // CompletableFuture로 실행되어 서로 블로킹하지 않는지 검증
+    // -----------------------------------------------------------------------
+
+    @Test
+    void routingAndSummarizeRunAsIndependentAsyncBranches() throws Exception {
+        final NotificationEvent event = new NotificationEvent(
+            NotificationSource.SLACK, "title", "body", NotificationPriority.MEDIUM,
+            "ext-1", null, null, 10L, null
+        );
+        final Notification saved = Notification.builder()
+            .id(1L).userId(10L).source(NotificationSource.SLACK)
+            .title("title").body("body").priority(NotificationPriority.MEDIUM).build();
+        when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
+
+        final CountDownLatch bothBranchesStarted = new CountDownLatch(2);
+        final AtomicBoolean routeStarted = new AtomicBoolean(false);
+        final AtomicBoolean summarizeStarted = new AtomicBoolean(false);
+
+        lenient().doAnswer(invocation -> {
+            routeStarted.set(true);
+            bothBranchesStarted.countDown();
+            return null;
+        }).when(channelRouter).route(any(Notification.class));
+
+        lenient().doAnswer(invocation -> {
+            summarizeStarted.set(true);
+            bothBranchesStarted.countDown();
+            return null;
+        }).when(notificationSummaryService).summarize(any(Notification.class));
+
+        notificationService.saveFromEvent(event);
+
+        // 두 브랜치 모두 2초 이내에 독립적으로 시작되어야 한다
+        final boolean bothStarted = bothBranchesStarted.await(2, TimeUnit.SECONDS);
+        assertThat(bothStarted)
+            .as("channelRouter.route()와 notificationSummaryService.summarize()가 모두 독립적으로 실행되어야 한다")
+            .isTrue();
+        assertThat(routeStarted.get()).isTrue();
+        assertThat(summarizeStarted.get()).isTrue();
     }
 }
