@@ -9,6 +9,8 @@ import 'package:notio_app/features/delivery_feed/presentation/providers/delivery
 import 'package:notio_app/features/delivery_feed/presentation/providers/delivery_feed_state.dart';
 import 'package:notio_app/features/delivery_feed/presentation/widgets/channel_filter_chips.dart';
 import 'package:notio_app/features/delivery_feed/presentation/widgets/delivery_bubble.dart';
+import 'package:notio_app/features/notification/presentation/providers/notifications_notifier.dart';
+import 'package:notio_app/features/notification/presentation/widgets/notification_detail_modal.dart';
 
 class DeliveryFeedScreen extends ConsumerStatefulWidget {
   const DeliveryFeedScreen({super.key});
@@ -19,6 +21,7 @@ class DeliveryFeedScreen extends ConsumerStatefulWidget {
 
 class _DeliveryFeedScreenState extends ConsumerState<DeliveryFeedScreen> {
   final ScrollController _scrollController = ScrollController();
+  int? _loadingItemId;
 
   @override
   void initState() {
@@ -48,6 +51,30 @@ class _DeliveryFeedScreenState extends ConsumerState<DeliveryFeedScreen> {
 
   void _onFilterSelected(ChannelTypeEnum? channelType) {
     ref.read(deliveryFeedNotifierProvider.notifier).setFilter(channelType);
+  }
+
+  Future<void> _openDetail(int notificationId) async {
+    if (_loadingItemId != null) return;
+    setState(() => _loadingItemId = notificationId);
+    try {
+      final detail = await ref
+          .read(notificationsProvider.notifier)
+          .fetchNotificationDetail(notificationId);
+      if (!mounted) return;
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => NotificationDetailModal(notification: detail),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _loadingItemId = null);
+    }
   }
 
   @override
@@ -114,7 +141,9 @@ class _DeliveryFeedScreenState extends ConsumerState<DeliveryFeedScreen> {
           final item = state.items[index];
           return DeliveryBubble(
             item: item,
-            onTap: () => context.push('/notifications/${item.notificationId}'),
+            onTap: _loadingItemId == item.notificationId
+                ? null
+                : () => _openDetail(item.notificationId),
           );
         },
       ),
