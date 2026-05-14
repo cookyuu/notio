@@ -32,6 +32,22 @@ class ChannelRepositoryImpl implements ChannelRepository {
   }
 
   @override
+  Future<NotificationChannelEntity> updateChannel({
+    required int id,
+    String? displayName,
+    String? credentialPlaintext,
+    String? targetIdentifier,
+  }) async {
+    final model = await _remoteDataSource.updateChannel(id, {
+      if (displayName != null) 'display_name': displayName,
+      if (credentialPlaintext != null)
+        'credential_plaintext': credentialPlaintext,
+      if (targetIdentifier != null) 'target_identifier': targetIdentifier,
+    });
+    return model.toEntity();
+  }
+
+  @override
   Future<void> deleteChannel(int id) async {
     await _remoteDataSource.deleteChannel(id);
   }

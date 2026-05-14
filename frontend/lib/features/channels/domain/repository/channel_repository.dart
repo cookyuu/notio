@@ -11,6 +11,13 @@ abstract class ChannelRepository {
     String? targetIdentifier,
   });
 
+  Future<NotificationChannelEntity> updateChannel({
+    required int id,
+    String? displayName,
+    String? credentialPlaintext,
+    String? targetIdentifier,
+  });
+
   Future<void> deleteChannel(int id);
 
   Future<void> pauseChannel(int id);

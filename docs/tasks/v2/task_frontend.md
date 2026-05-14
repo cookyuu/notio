@@ -25,16 +25,16 @@
 
 DataSource → Repository 인터페이스 → Repository 구현체 순으로 추가한다.
 
-- [ ] `lib/features/channels/data/datasource/channel_remote_datasource.dart`
-  - [ ] `updateChannel(int id, Map<String, dynamic> data)` 메서드 추가
-  - [ ] `PUT /api/v1/channels/$id` 호출
-  - [ ] `response.data['success'] != true` 시 Exception throw
-  - [ ] `NotificationChannelModel.fromJson(response.data['data'])` 반환
-- [ ] `lib/features/channels/domain/repository/channel_repository.dart`
-  - [ ] `updateChannel({required int id, String? displayName, String? credentialPlaintext, String? targetIdentifier})` 추상 메서드 추가
-- [ ] `lib/features/channels/data/repository/channel_repository_impl.dart`
-  - [ ] `updateChannel` 구현
-  - [ ] null이 아닌 필드만 Map에 포함해서 전송 (`if (field != null) 'key': field` 패턴)
+- [x] `lib/features/channels/data/datasource/channel_remote_datasource.dart`
+  - [x] `updateChannel(int id, Map<String, dynamic> data)` 메서드 추가
+  - [x] `PUT /api/v1/channels/$id` 호출
+  - [x] `response.data['success'] != true` 시 Exception throw
+  - [x] `NotificationChannelModel.fromJson(response.data['data'])` 반환
+- [x] `lib/features/channels/domain/repository/channel_repository.dart`
+  - [x] `updateChannel({required int id, String? displayName, String? credentialPlaintext, String? targetIdentifier})` 추상 메서드 추가
+- [x] `lib/features/channels/data/repository/channel_repository_impl.dart`
+  - [x] `updateChannel` 구현
+  - [x] null이 아닌 필드만 Map에 포함해서 전송 (`if (field != null) 'key': field` 패턴)
 
 ---
 

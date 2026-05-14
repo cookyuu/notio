@@ -38,6 +38,22 @@ class ChannelRemoteDataSource {
     }
   }
 
+  Future<NotificationChannelModel> updateChannel(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _dio.put('/api/v1/channels/$id', data: data);
+      if (response.data['success'] != true) {
+        throw Exception(response.data['error']['message']);
+      }
+      return NotificationChannelModel.fromJson(
+          response.data['data'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw Exception('네트워크 오류: ${e.message}');
+    }
+  }
+
   Future<void> deleteChannel(int id) async {
     try {
       final response = await _dio.delete('/api/v1/channels/$id');
