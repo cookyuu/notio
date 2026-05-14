@@ -150,11 +150,11 @@
 
 **파일**: `ai/config/NotioAiProperties.java`
 
-- [ ] `@ConfigurationProperties(prefix = "notio.ai")` record로 변경
-- [ ] `provider` 필드 추가 (`@DefaultValue("ollama")`)
-- [ ] `llmTimeout` 필드 유지
-- [ ] `embeddingTimeout` 필드 유지
-- [ ] `summarizeSources` 필드 추가 (`@DefaultValue("CLAUDE,CODEX")`, `List<String>`)
+- [x] `@ConfigurationProperties(prefix = "notio.ai")` record로 변경
+- [x] `provider` 필드 추가 (`@DefaultValue("ollama")`)
+- [x] `llmTimeout` 필드 유지
+- [x] `embeddingTimeout` 필드 유지
+- [x] `summarizeSources` 필드 추가 (`@DefaultValue("CLAUDE,CODEX")`, `List<String>`)
 
 ---
 
