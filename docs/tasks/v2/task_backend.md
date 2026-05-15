@@ -186,30 +186,30 @@
 
 ### 단위 테스트
 
-- [ ] `NotificationSummaryServiceTest`
-  - [ ] `shouldSummarize()` — CLAUDE 소스 포함 시 true 반환
-  - [ ] `shouldSummarize()` — GITHUB 소스 미포함 시 false 반환 (기본 설정 CLAUDE,CODEX)
-  - [ ] `summarize()` — summarizeSources 미설정(null/empty) 시 모든 소스 요약
-  - [ ] `summarize()` — LLM 예외 발생 시 null 반환, failure 메트릭 기록
-- [ ] `PromptBuilderTest`
-  - [ ] `buildNotificationSummaryPrompt()` — RAG context 포함 시 "유사 과거 알림" 섹션 존재
-  - [ ] `buildNotificationSummaryPrompt()` — RAG context 미포함 시 "유사 과거 알림" 섹션 미존재
-  - [ ] `buildDigestSummaryPrompt()` — 복수 알림 → 소스/제목 순서 정확한지 검증
-  - [ ] `buildDigestSummaryPrompt()` — aiSummary 있을 경우 body 대신 aiSummary 사용
+- [x] `NotificationSummaryServiceTest`
+  - [x] `shouldSummarize()` — CLAUDE 소스 포함 시 true 반환
+  - [x] `shouldSummarize()` — GITHUB 소스 미포함 시 false 반환 (기본 설정 CLAUDE,CODEX)
+  - [x] `summarize()` — summarizeSources 미설정(null/empty) 시 모든 소스 요약
+  - [x] `summarize()` — LLM 예외 발생 시 null 반환, failure 메트릭 기록
+- [x] `PromptBuilderTest`
+  - [x] `buildNotificationSummaryPrompt()` — RAG context 포함 시 "유사 과거 알림" 섹션 존재
+  - [x] `buildNotificationSummaryPrompt()` — RAG context 미포함 시 "유사 과거 알림" 섹션 미존재
+  - [x] `buildDigestSummaryPrompt()` — 복수 알림 → 소스/제목 순서 정확한지 검증
+  - [x] `buildDigestSummaryPrompt()` — aiSummary 있을 경우 body 대신 aiSummary 사용
 
 ### 통합 테스트
 
-- [ ] `NotificationSummaryServiceIntegrationTest`
-  - [ ] CLAUDE 소스 알림 → `ai_summary` DB 저장 확인 (Testcontainers PostgreSQL)
-  - [ ] GITHUB 소스 알림 → 요약 skip, `ai_summary` null 확인
-- [ ] `OllamaLlmProviderTest`
-  - [ ] LLM 타임아웃 시 `AiException` 발생 확인
+- [x] `NotificationSummaryServiceIntegrationTest`
+  - [x] CLAUDE 소스 알림 → `ai_summary` DB 저장 확인 (Testcontainers PostgreSQL)
+  - [x] GITHUB 소스 알림 → 요약 skip, `ai_summary` null 확인
+- [x] `OllamaLlmProviderTest`
+  - [x] LLM 타임아웃 시 `AiException` 발생 확인
 
 ---
 
 ## 최종 검증
 
-- [ ] `./gradlew compileJava` — 컴파일 오류 0개
-- [ ] `./gradlew test` — 전체 테스트 통과
+- [x] `./gradlew compileJava` — 컴파일 오류 0개
+- [x] `./gradlew test` — 전체 테스트 통과
 - [ ] `chat/` 패키지 관련 참조 없음 (`grep -r "com.notio.chat"` 결과 0건)
 - [ ] `notio_ai_summarization_total`, `notio_llm_call_total`, `notio_rag_retrieval_total` 메트릭 노출 확인 (`/actuator/metrics`)
