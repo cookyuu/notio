@@ -107,19 +107,19 @@
 
 ## Phase 4: 테스트
 
-- [ ] `AiUsageLogServiceTest` 단위 테스트 작성
-  - [ ] `logFromNotification` — 정상 저장 케이스
-  - [ ] `logFromNotification` — source != CLAUDE → skip
-  - [ ] `logFromNotification` — 중복 notification_id → skip
-  - [ ] `logFromNotification` — 토큰 모두 0 → skip
-  - [ ] `logFromNotification` — metadata 파싱 실패 → skip (경고 로그)
-  - [ ] `getAiUsage` — 날짜 범위 초과 → `INVALID_REQUEST`
-  - [ ] `getAiUsage` — startDate > endDate → `INVALID_REQUEST`
-  - [ ] `getAiUsage` — 기본값 적용 (null 파라미터)
-- [ ] `@WebMvcTest(AnalyticsController)` 슬라이스 테스트
-  - [ ] 파라미터 없음 → 200 + DAILY 기본값 응답
-  - [ ] `granularity=INVALID` → 400 + INVALID_REQUEST
-  - [ ] `granularity=DAILY&startDate=2026-01-01&endDate=2026-12-31` (91일 초과) → 400
+- [x] `AiUsageLogServiceTest` 단위 테스트 작성
+  - [x] `logFromNotification` — 정상 저장 케이스
+  - [x] `logFromNotification` — source != CLAUDE → skip
+  - [x] `logFromNotification` — 중복 notification_id → skip
+  - [x] `logFromNotification` — 토큰 모두 0 → skip
+  - [x] `logFromNotification` — metadata 파싱 실패 → skip (경고 로그)
+  - [x] `getAiUsage` — 날짜 범위 초과 → `INVALID_REQUEST`
+  - [x] `getAiUsage` — startDate > endDate → `INVALID_REQUEST`
+  - [x] `getAiUsage` — 기본값 적용 (null 파라미터)
+- [x] `@WebMvcTest(AnalyticsController)` 슬라이스 테스트
+  - [x] 파라미터 없음 → 200 + DAILY 기본값 응답
+  - [x] `granularity=INVALID` → 400 + INVALID_REQUEST
+  - [x] `granularity=DAILY&startDate=2026-01-01&endDate=2026-12-31` (91일 초과) → 400
 
 ---
 

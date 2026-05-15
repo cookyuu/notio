@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.notio.analytics.service.AiUsageLogService;
 import com.notio.channel.ChannelRouter;
 import com.notio.connection.domain.Connection;
 import com.notio.common.exception.NotioException;
@@ -68,6 +69,9 @@ class NotificationServiceTest {
     @Mock
     private ChannelRouter channelRouter;
 
+    @Mock
+    private AiUsageLogService aiUsageLogService;
+
     private SimpleMeterRegistry meterRegistry;
     private NotificationService notificationService;
 
@@ -81,7 +85,8 @@ class NotificationServiceTest {
             notificationEmbeddingService,
             new NotificationFlowMetrics(new NotioMetrics(meterRegistry, new NotioMetricsTagPolicy())),
             notificationSummaryService,
-            channelRouter
+            channelRouter,
+            aiUsageLogService
         );
         lenient().when(cacheManager.getCache("unreadCount")).thenReturn(unreadCountCache);
     }

@@ -6,9 +6,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.notio.analytics.dto.AiUsageGranularity;
+import com.notio.analytics.dto.AiUsageResponse;
 import com.notio.analytics.dto.WeeklyAnalyticsResponse;
+import com.notio.analytics.service.AiUsageLogService;
 import com.notio.analytics.service.AnalyticsService;
+import com.notio.common.exception.ErrorCode;
 import com.notio.common.exception.GlobalExceptionHandler;
+import com.notio.common.exception.NotioException;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,11 +32,14 @@ class AnalyticsControllerTest {
     @Mock
     private AnalyticsService analyticsService;
 
+    @Mock
+    private AiUsageLogService aiUsageLogService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new AnalyticsController(analyticsService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new AnalyticsController(analyticsService, aiUsageLogService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -104,5 +114,47 @@ class AnalyticsControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    void aiUsageReturnsOkWithDailyDefaultWhenNoParams() throws Exception {
+        final LocalDate today = LocalDate.now();
+        final AiUsageResponse stub = new AiUsageResponse(
+                AiUsageGranularity.DAILY, today.minusDays(6), today,
+                0L, 0L, 0L, null, List.of(), List.of()
+        );
+        when(aiUsageLogService.getAiUsage(10L, AiUsageGranularity.DAILY, null, null)).thenReturn(stub);
+
+        mockMvc.perform(get("/api/v1/analytics/ai-usage")
+                        .principal(new UsernamePasswordAuthenticationToken("10", null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void aiUsageReturnsBadRequestWhenGranularityIsInvalid() throws Exception {
+        mockMvc.perform(get("/api/v1/analytics/ai-usage")
+                        .param("granularity", "INVALID")
+                        .principal(new UsernamePasswordAuthenticationToken("10", null)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void aiUsageReturnsBadRequestWhenDateRangeExceedsMaxDays() throws Exception {
+        final LocalDate startDate = LocalDate.of(2026, 1, 1);
+        final LocalDate endDate = LocalDate.of(2026, 12, 31);
+        when(aiUsageLogService.getAiUsage(10L, AiUsageGranularity.DAILY, startDate, endDate))
+                .thenThrow(new NotioException(ErrorCode.INVALID_REQUEST, "조회 범위가 초과했습니다."));
+
+        mockMvc.perform(get("/api/v1/analytics/ai-usage")
+                        .param("granularity", "DAILY")
+                        .param("startDate", "2026-01-01")
+                        .param("endDate", "2026-12-31")
+                        .principal(new UsernamePasswordAuthenticationToken("10", null)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
     }
 }
