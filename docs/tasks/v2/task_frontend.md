@@ -50,38 +50,38 @@
 
 ### 4-A. import 추가
 
-- [ ] `notification_detail_screen.dart` import 추가
+- [x] `notification_detail_screen.dart` import 추가
 
 ### 4-B. ShellRoute 내 `/notifications` 중첩 라우트 추가
 
-- [ ] `Routes.notifications` GoRoute에 `routes` 목록 추가
-  - [ ] 중첩 `GoRoute(path: ':id')` 추가 → `/notifications/:id`
-  - [ ] `pageBuilder`에서 `state.pathParameters['id']` 파싱 (`int.parse`)
-  - [ ] `NoTransitionPage(child: NotificationDetailScreen(notificationId: id))` 반환
+- [x] `Routes.notifications` GoRoute에 `routes` 목록 추가
+  - [x] 중첩 `GoRoute(path: ':id')` 추가 → `/notifications/:id`
+  - [x] `pageBuilder`에서 `state.pathParameters['id']` 파싱 (`int.parse`)
+  - [x] `NoTransitionPage(child: NotificationDetailScreen(notificationId: id))` 반환
 
 ### 4-C. GoRouter errorBuilder 추가
 
-- [ ] `GoRouter`에 `errorBuilder` 추가
-  - [ ] `AppBar` — `BackButton`(`onPressed`: `context.go(Routes.notifications)`) + `title: Text('오류')`
-  - [ ] `body` — `Icon(Icons.error_outline)` + `Text('페이지를 찾을 수 없습니다')` + `FilledButton('홈으로 이동')`
-  - [ ] `FilledButton.onPressed`: `context.go(Routes.notifications)`
-  - [ ] `AppColors.error`, `AppTextStyles.headlineSmall`, `AppSpacing` 상수 사용
+- [x] `GoRouter`에 `errorBuilder` 추가
+  - [x] `AppBar` — `BackButton`(`onPressed`: `context.go(Routes.notifications)`) + `title: Text('오류')`
+  - [x] `body` — `Icon(Icons.error_outline)` + `Text('페이지를 찾을 수 없습니다')` + `FilledButton('홈으로 이동')`
+  - [x] `FilledButton.onPressed`: `context.go(Routes.notifications)`
+  - [x] `AppColors.error`, `AppTextStyles.headlineSmall`, `AppSpacing` 상수 사용
 
 ### 4-D. _MainScaffold — 상세 화면에서 BottomNav 숨김
 
-- [ ] `_MainScaffold.build()`에서 현재 경로 확인
-  - [ ] `GoRouterState.of(context).uri.path` 로 `location` 추출
-  - [ ] `RegExp(r'^/notifications/\d+$').hasMatch(location)` 로 `isDetailRoute` 판별
-  - [ ] `isDetailRoute`가 true이면 `bottomNavigationBar: null`
+- [x] `_MainScaffold.build()`에서 현재 경로 확인
+  - [x] `GoRouterState.of(context).uri.path` 로 `location` 추출
+  - [x] `RegExp(r'^/notifications/\d+$').hasMatch(location)` 로 `isDetailRoute` 판별
+  - [x] `isDetailRoute`가 true이면 `bottomNavigationBar: null`
 
 ### 4-E. _BottomNavBar.getCurrentIndex() — prefix 매칭으로 변경
 
-- [ ] `switch-case` → `if-else` prefix 매칭으로 교체
-  - [ ] `location.startsWith(Routes.notifications)` → 0 반환
-  - [ ] `location.startsWith(Routes.chat)` → 1 반환
-  - [ ] `location == Routes.analytics` → 2 반환
-  - [ ] `location == Routes.settings` → 3 반환
-  - [ ] 기본값 0 반환
+- [x] `switch-case` → `if-else` prefix 매칭으로 교체
+  - [x] `location.startsWith(Routes.notifications)` → 0 반환
+  - [x] `location.startsWith(Routes.chat)` → 1 반환
+  - [x] `location == Routes.analytics` → 2 반환
+  - [x] `location == Routes.settings` → 3 반환
+  - [x] 기본값 0 반환
 
 ---
 

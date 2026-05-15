@@ -10,6 +10,10 @@ import 'package:notio_app/features/auth/presentation/screens/find_id_screen.dart
 import 'package:notio_app/features/auth/presentation/screens/password_reset_request_screen.dart';
 import 'package:notio_app/features/auth/presentation/screens/password_reset_confirm_screen.dart';
 import 'package:notio_app/features/auth/presentation/screens/auth_oauth_callback_screen.dart';
+import 'package:notio_app/core/constants/app_spacing.dart';
+import 'package:notio_app/core/theme/app_colors.dart';
+import 'package:notio_app/core/theme/app_text_styles.dart';
+import 'package:notio_app/features/notification/presentation/screens/notification_detail_screen.dart';
 import 'package:notio_app/features/notification/presentation/screens/notifications_screen.dart';
 import 'package:notio_app/features/analytics/presentation/analytics_screen.dart';
 import 'package:notio_app/features/settings/presentation/settings_screen.dart';
@@ -37,6 +41,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: Routes.login,
     refreshListenable: refreshNotifier,
+    errorBuilder: (context, state) => Scaffold(
+      backgroundColor: AppColors.bg0,
+      appBar: AppBar(
+        backgroundColor: AppColors.bg1,
+        leading: BackButton(onPressed: () => context.go(Routes.notifications)),
+        title: const Text('오류'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 64),
+            const SizedBox(height: AppSpacing.s16),
+            const Text('페이지를 찾을 수 없습니다', style: AppTextStyles.headlineSmall),
+            const SizedBox(height: AppSpacing.s24),
+            FilledButton(
+              onPressed: () => context.go(Routes.notifications),
+              child: const Text('홈으로 이동'),
+            ),
+          ],
+        ),
+      ),
+    ),
     redirect: (context, state) {
       final authState = ref.read(authSessionNotifierProvider);
       final isAuthenticated = authState.value?.isAuthenticated ?? false;
@@ -150,6 +177,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: NotificationsScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: ':id',
+                pageBuilder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return NoTransitionPage(
+                    child: NotificationDetailScreen(notificationId: id),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: Routes.chat,
@@ -182,9 +220,11 @@ class _MainScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final location = GoRouterState.of(context).uri.path;
+    final isDetailRoute = RegExp(r'^/notifications/\d+$').hasMatch(location);
     return Scaffold(
       body: child,
-      bottomNavigationBar: const _BottomNavBar(),
+      bottomNavigationBar: isDetailRoute ? null : const _BottomNavBar(),
     );
   }
 }
@@ -197,18 +237,11 @@ class _BottomNavBar extends StatelessWidget {
     final location = GoRouterState.of(context).uri.toString();
 
     int getCurrentIndex() {
-      switch (location) {
-        case Routes.notifications:
-          return 0;
-        case Routes.chat:
-          return 1;
-        case Routes.analytics:
-          return 2;
-        case Routes.settings:
-          return 3;
-        default:
-          return 0;
-      }
+      if (location.startsWith(Routes.notifications)) return 0;
+      if (location.startsWith(Routes.chat)) return 1;
+      if (location == Routes.analytics) return 2;
+      if (location == Routes.settings) return 3;
+      return 0;
     }
 
     return NavigationBar(
