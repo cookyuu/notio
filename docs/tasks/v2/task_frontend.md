@@ -32,15 +32,15 @@
 
 **파일**: `lib/features/notification/presentation/screens/notification_detail_screen.dart`
 
-- [ ] `NotificationDetailScreen` 위젯 생성
-  - [ ] `ConsumerStatefulWidget` 상속
-  - [ ] `notificationId` (`int`) 파라미터 선언
-- [ ] `initState`에서 `fetchNotificationDetail` 호출
-- [ ] 로딩 중 `CircularProgressIndicator` 표시
-- [ ] 데이터 로드 완료 후 `NotificationDetailModal` 콘텐츠를 `SingleChildScrollView`로 감싸 재사용
-- [ ] `AppBar` 구성
-  - [ ] `context.canPop()` 시 `context.pop()`
-  - [ ] `context.canPop()` false 시 `context.go(Routes.notifications)` 폴백
+- [x] `NotificationDetailScreen` 위젯 생성
+  - [x] `ConsumerStatefulWidget` 상속
+  - [x] `notificationId` (`int`) 파라미터 선언
+- [x] `initState`에서 `fetchNotificationDetail` 호출
+- [x] 로딩 중 `CircularProgressIndicator` 표시
+- [x] 데이터 로드 완료 후 `NotificationDetailModal` 콘텐츠를 `SingleChildScrollView`로 감싸 재사용
+- [x] `AppBar` 구성
+  - [x] `context.canPop()` 시 `context.pop()`
+  - [x] `context.canPop()` false 시 `context.go(Routes.notifications)` 폴백
 
 ---
 
