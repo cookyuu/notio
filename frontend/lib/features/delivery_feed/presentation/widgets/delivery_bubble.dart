@@ -10,12 +10,12 @@ import 'package:timeago/timeago.dart' as timeago;
 class DeliveryBubble extends StatelessWidget {
   const DeliveryBubble({
     required this.item,
-    required this.onTap,
+    this.onTap,
     super.key,
   });
 
   final DeliveryFeedItemEntity item;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

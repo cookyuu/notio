@@ -1,15 +1,97 @@
-# Task: Frontend 개발 체크리스트 (AI/LLM 요약 파이프라인)
+# Task: Frontend 개발 체크리스트 (GoException 라우팅 버그 수정)
 
 > **대상 버전**: v2.1
 > **작성일**: 2026-05-15
-> **연관 Plan**: `docs/plans/v2/plan_ai.md`
+> **연관 Plan**: `docs/plans/v2/plan_fix.md`
 
 ---
 
-## 변경 없음
+## Step 1: delivery_bubble.dart — onTap nullable 수정
 
-이번 작업(`AI/LLM 요약 파이프라인`)은 **Backend 전용** 변경입니다.
+**파일**: `lib/features/delivery_feed/presentation/widgets/delivery_bubble.dart`
 
-Flutter 프론트엔드에는 변경이 필요하지 않습니다.
+- [x] `onTap` 필드 타입 변경
+  - [x] `final VoidCallback onTap` → `final VoidCallback? onTap`
+  - [x] `GestureDetector.onTap`은 이미 `GestureTapCallback?`이므로 추가 변경 불필요 확인
+- [x] `delivery_feed_screen.dart` 144번째 줄 로딩 중 `null` 전달 — 타입 불일치 해소 확인
 
-백엔드 작업은 `docs/tasks/v2/task_backend.md` 참조.
+---
+
+## Step 2: routes.dart — 경로 상수 및 헬퍼 추가
+
+**파일**: `lib/core/router/routes.dart`
+
+- [ ] `/notifications/:id` 경로 상수 추가
+  - [ ] `static const String notificationDetail = '/notifications/:id'`
+- [ ] `notificationDetailPath` 헬퍼 메서드 추가
+  - [ ] `static String notificationDetailPath(int id) => '/notifications/$id'`
+
+---
+
+## Step 3: notification_detail_screen.dart — 전체 화면 상세 (신규)
+
+**파일**: `lib/features/notification/presentation/screens/notification_detail_screen.dart`
+
+- [ ] `NotificationDetailScreen` 위젯 생성
+  - [ ] `ConsumerStatefulWidget` 상속
+  - [ ] `notificationId` (`int`) 파라미터 선언
+- [ ] `initState`에서 `fetchNotificationDetail` 호출
+- [ ] 로딩 중 `CircularProgressIndicator` 표시
+- [ ] 데이터 로드 완료 후 `NotificationDetailModal` 콘텐츠를 `SingleChildScrollView`로 감싸 재사용
+- [ ] `AppBar` 구성
+  - [ ] `context.canPop()` 시 `context.pop()`
+  - [ ] `context.canPop()` false 시 `context.go(Routes.notifications)` 폴백
+
+---
+
+## Step 4: app_router.dart — 4가지 수정
+
+**파일**: `lib/core/router/app_router.dart`
+
+### 4-A. import 추가
+
+- [ ] `notification_detail_screen.dart` import 추가
+
+### 4-B. ShellRoute 내 `/notifications` 중첩 라우트 추가
+
+- [ ] `Routes.notifications` GoRoute에 `routes` 목록 추가
+  - [ ] 중첩 `GoRoute(path: ':id')` 추가 → `/notifications/:id`
+  - [ ] `pageBuilder`에서 `state.pathParameters['id']` 파싱 (`int.parse`)
+  - [ ] `NoTransitionPage(child: NotificationDetailScreen(notificationId: id))` 반환
+
+### 4-C. GoRouter errorBuilder 추가
+
+- [ ] `GoRouter`에 `errorBuilder` 추가
+  - [ ] `AppBar` — `BackButton`(`onPressed`: `context.go(Routes.notifications)`) + `title: Text('오류')`
+  - [ ] `body` — `Icon(Icons.error_outline)` + `Text('페이지를 찾을 수 없습니다')` + `FilledButton('홈으로 이동')`
+  - [ ] `FilledButton.onPressed`: `context.go(Routes.notifications)`
+  - [ ] `AppColors.error`, `AppTextStyles.headlineSmall`, `AppSpacing` 상수 사용
+
+### 4-D. _MainScaffold — 상세 화면에서 BottomNav 숨김
+
+- [ ] `_MainScaffold.build()`에서 현재 경로 확인
+  - [ ] `GoRouterState.of(context).uri.path` 로 `location` 추출
+  - [ ] `RegExp(r'^/notifications/\d+$').hasMatch(location)` 로 `isDetailRoute` 판별
+  - [ ] `isDetailRoute`가 true이면 `bottomNavigationBar: null`
+
+### 4-E. _BottomNavBar.getCurrentIndex() — prefix 매칭으로 변경
+
+- [ ] `switch-case` → `if-else` prefix 매칭으로 교체
+  - [ ] `location.startsWith(Routes.notifications)` → 0 반환
+  - [ ] `location.startsWith(Routes.chat)` → 1 반환
+  - [ ] `location == Routes.analytics` → 2 반환
+  - [ ] `location == Routes.settings` → 3 반환
+  - [ ] 기본값 0 반환
+
+---
+
+## 최종 검증
+
+- [ ] `flutter analyze` — 타입 에러 0개
+- [ ] Deliveries 화면에서 알림 항목 탭 → `showModalBottomSheet` 정상 표시
+- [ ] Notifications 화면에서 알림 카드 탭 → `showModalBottomSheet` 정상 표시 (기존 동작 유지)
+- [ ] 딥링크 `/notifications/316` 직접 접근 → `NotificationDetailScreen` 렌더
+- [ ] 잘못된 경로 접근 → `errorBuilder` 화면 표시 (날 것의 GoException 대신)
+- [ ] `/notifications/316` 화면에서 뒤로가기 → `/notifications` 복귀
+- [ ] `/notifications/316` 화면에서 바텀네비게이션 미표시 확인
+- [ ] 바텀네비게이션 탭 전환 정상 동작 확인
