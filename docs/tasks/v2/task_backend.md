@@ -49,16 +49,16 @@
 
 **목적**: 백엔드가 metadata JSONB에 저장할 수 있도록 payload 확장
 
-- [ ] `usage.input_tokens`, `usage.output_tokens` 추출
-  - [ ] `usage = data.get('usage', {})`
-  - [ ] `input_tokens = usage.get('input_tokens', 0)`
-  - [ ] `output_tokens = usage.get('output_tokens', 0)`
-- [ ] `model = data.get('model', '')` 추출
-- [ ] payload에 `'usage'` 객체 추가
+- [x] `usage.input_tokens`, `usage.output_tokens` 추출
+  - [x] `usage = data.get('usage', {})`
+  - [x] `input_tokens = usage.get('input_tokens', 0)`
+  - [x] `output_tokens = usage.get('output_tokens', 0)`
+- [x] `model = data.get('model', '')` 추출
+- [x] payload에 `'usage'` 객체 추가
   ```json
   "usage": { "input_tokens": 1234, "output_tokens": 567 }
   ```
-- [ ] payload에 `'model'` 문자열 추가
+- [x] payload에 `'model'` 문자열 추가
 
 ---
 

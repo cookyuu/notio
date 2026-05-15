@@ -40,6 +40,7 @@ try:
     usage = data.get('usage', {})
     input_tokens = usage.get('input_tokens', 0)
     output_tokens = usage.get('output_tokens', 0)
+    model = data.get('model', '')
 
     summary = last_assistant_message[:800] + '...' if len(last_assistant_message) > 800 else last_assistant_message
 
@@ -60,7 +61,9 @@ try:
             'message': message,
             'priority': 'medium',
             'timestamp': datetime.now(timezone.utc).isoformat()
-        }
+        },
+        'usage': {'input_tokens': input_tokens, 'output_tokens': output_tokens},
+        'model': model,
     }
 
     print(json.dumps(payload))
