@@ -13,13 +13,10 @@ from datetime import datetime, timezone
 try:
     data = json.load(sys.stdin)
 
-    # last_assistant_message 추출
-    message = 'Claude Code 작업이 완료되었습니다.'
+    DEFAULT_MESSAGE = 'Claude Code 작업이 완료되었습니다.'
 
     last_assistant_message = data.get('last_assistant_message', '')
-    if last_assistant_message:
-        message = last_assistant_message
-    else:
+    if not last_assistant_message:
         transcript_path = data.get('transcript_path', '')
         if transcript_path and os.path.exists(transcript_path):
             extracted = ''
@@ -38,11 +35,23 @@ try:
                     except Exception:
                         continue
             if extracted:
-                message = extracted
+                last_assistant_message = extracted
+
+    usage = data.get('usage', {})
+    input_tokens = usage.get('input_tokens', 0)
+    output_tokens = usage.get('output_tokens', 0)
+
+    summary = last_assistant_message[:800] + '...' if len(last_assistant_message) > 800 else last_assistant_message
+
+    if input_tokens == 0 and output_tokens == 0:
+        token_line = ''
+    else:
+        token_line = f'\n\n입력 {input_tokens:,} 토큰 / 출력 {output_tokens:,} 토큰'
+
+    message = (summary or DEFAULT_MESSAGE) + token_line
 
     external_id = f'claude-stop-{int(datetime.now(timezone.utc).timestamp())}'
 
-    # API 스펙에 맞는 payload 생성
     payload = {
         'event_type': 'notification',
         'notification': {

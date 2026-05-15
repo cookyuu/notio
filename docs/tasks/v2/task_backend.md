@@ -36,12 +36,12 @@
 
 **목적**: 작업 요약 + 토큰 사용량을 하나의 메시지 문자열로 조합
 
-- [ ] `summary` = `last_assistant_message` 최대 800자 트리밍
-  - [ ] 800자 초과 시 `'...'` 접미 추가
-- [ ] `token_line` 생성
-  - [ ] `input_tokens == 0` and `output_tokens == 0` 이면 `token_line = ''`
-  - [ ] 아닐 경우 `f'\n\n입력 {input_tokens:,} 토큰 / 출력 {output_tokens:,} 토큰'`
-- [ ] `message = (summary or 기본메시지) + token_line`
+- [x] `summary` = `last_assistant_message` 최대 800자 트리밍
+  - [x] 800자 초과 시 `'...'` 접미 추가
+- [x] `token_line` 생성
+  - [x] `input_tokens == 0` and `output_tokens == 0` 이면 `token_line = ''`
+  - [x] 아닐 경우 `f'\n\n입력 {input_tokens:,} 토큰 / 출력 {output_tokens:,} 토큰'`
+- [x] `message = (summary or 기본메시지) + token_line`
 
 ---
 
