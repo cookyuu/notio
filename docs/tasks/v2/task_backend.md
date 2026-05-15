@@ -21,14 +21,14 @@
 
 **목적**: 고정 메시지 대신 실제 작업 내용을 알림에 포함
 
-- [ ] StopHook 직접 제공 필드 우선 추출
-  - [ ] `last_assistant_message = data.get('last_assistant_message', '')`
-- [ ] `last_assistant_message`가 비어있을 경우 transcript fallback 구현
-  - [ ] `transcript_path = data.get('transcript_path', '')` 추출
-  - [ ] `os.path.exists(transcript_path)` 확인 후 JSONL 파일 파싱
-  - [ ] `role == 'assistant'`인 마지막 entry의 text block(`type == 'text'`) 추출
-  - [ ] 파싱 실패 시 개별 라인 `try/except`로 건너뜀
-- [ ] 모두 실패 시 기본 메시지 `'Claude Code 작업이 완료되었습니다.'` 사용
+- [x] StopHook 직접 제공 필드 우선 추출
+  - [x] `last_assistant_message = data.get('last_assistant_message', '')`
+- [x] `last_assistant_message`가 비어있을 경우 transcript fallback 구현
+  - [x] `transcript_path = data.get('transcript_path', '')` 추출
+  - [x] `os.path.exists(transcript_path)` 확인 후 JSONL 파일 파싱
+  - [x] `role == 'assistant'`인 마지막 entry의 text block(`type == 'text'`) 추출
+  - [x] 파싱 실패 시 개별 라인 `try/except`로 건너뜀
+- [x] 모두 실패 시 기본 메시지 `'Claude Code 작업이 완료되었습니다.'` 사용
 
 ---
 
