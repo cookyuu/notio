@@ -1,215 +1,94 @@
-# Task: Backend 개발 체크리스트 (AI/LLM 요약 파이프라인)
+# Task: send-stop-webhook.sh 개선 체크리스트
 
-> **대상 버전**: v2.1
+> **대상 버전**: v2.2
 > **작성일**: 2026-05-15
-> **연관 Plan**: `docs/plans/v2/plan_ai.md`
+> **연관 Plan**: `docs/plans/v2/plan_fix.md`
+> **수정 대상**: `.claude/hooks/send-stop-webhook.sh`
 
 ---
 
-## Phase 1: chat/ 패키지 제거 및 의존성 해소
+## Phase 1: Python stdin 파이프 방식 전환
 
-### 1-1. LlmMetrics 신규 생성
+**목적**: 따옴표·특수문자 포함 입력에서 파싱 실패하는 쉘 변수 삽입 취약점 제거
 
-- [x] `ai/metrics/LlmMetrics.java` 파일 생성
-  - [x] `@Component`, `@RequiredArgsConstructor` 적용
-  - [x] `NotioMetrics` 의존성 주입
-  - [x] `recordLlmCall(String outcome, Duration duration)` 메서드 구현
-    - [x] `notio_llm_call_total` 카운터 (`outcome` 태그)
-    - [x] `notio_llm_call_duration` 타이머
-
-### 1-2. NotificationFlowMetrics 메서드 추가
-
-- [x] `recordAiSummarization(String outcome, Duration duration)` 메서드 추가
-  - [x] `notio_ai_summarization_total` 카운터 (`outcome` 태그)
-  - [x] `notio_ai_summarization_duration` 타이머
-- [x] `recordRagRetrieval(boolean timeRangeApplied, Duration duration)` 메서드 추가
-  - [x] `notio_rag_retrieval_total` 카운터 (`time_range_applied` 태그)
-  - [x] `notio_rag_retrieval_duration` 타이머
-
-### 1-3. OllamaLlmProvider 수정
-
-- [x] `ChatMetrics` 의존성 → `LlmMetrics`로 교체
-- [x] 스트리밍 전용 메트릭 제거
-  - [x] `recordFirstChunk` 호출 제거
-  - [x] `incrementActiveStreams` 호출 제거
-  - [x] `decrementActiveStreams` 호출 제거
-- [x] `recordLlmCall(String mode, String outcome, Duration duration)` 호출을 `recordLlmCall(String outcome, Duration duration)`으로 변경
-
-### 1-4. PgvectorRagRetriever 수정
-
-- [x] `ChatMetrics` 의존성 → `NotificationFlowMetrics`로 교체
-- [x] RAG 검색 메트릭 호출을 `recordRagRetrieval(boolean, Duration)`으로 변경
-
-### 1-5. chat/ 패키지 전체 삭제
-
-> **주의**: 1-3, 1-4 완료 후 삭제
-
-- [x] `chat/controller/ChatController.java` 삭제
-- [x] `chat/domain/ChatMessage.java` 삭제
-- [x] `chat/domain/ChatMessageRole.java` 삭제
-- [x] `chat/dto/ChatMessageResponse.java` 삭제
-- [x] `chat/dto/ChatRequest.java` 삭제
-- [x] `chat/dto/DailySummaryResponse.java` 삭제
-- [x] `chat/metrics/ChatMetrics.java` 삭제
-- [x] `chat/repository/ChatMessageRepository.java` 삭제
-- [x] `chat/service/ChatPromptContext.java` 삭제
-- [x] `chat/service/ChatService.java` 삭제
-- [x] `chat/service/ChatTimeRangeExtractor.java` 삭제
-- [x] `chat/service/DailySummaryService.java` 삭제
-- [x] 컴파일 오류 0개 확인 (`./gradlew compileJava`)
+- [x] `json.loads('''$INPUT''')` → `json.load(sys.stdin)` 방식으로 전환
+  - [x] `echo "$INPUT" | python3 -c "import json, sys; data = json.load(sys.stdin) ..."` 구조로 변경
+  - [x] Python 스크립트 내에서 `$INPUT` 직접 참조 제거
 
 ---
 
-## Phase 2: PromptBuilder 수정
+## Phase 2: last_assistant_message 추출 + transcript fallback
 
-**파일**: `ai/prompt/PromptBuilder.java`
+**목적**: 고정 메시지 대신 실제 작업 내용을 알림에 포함
 
-### 2-1. 기존 메서드 제거
-
-- [x] `buildChatPrompt(List<RagDocument>, List<ChatMessage>, String)` 제거
-- [x] `buildDailySummaryPrompt(LocalDate, List<Notification>)` 제거
-- [x] `formatRecentMessages(List<ChatMessage>)` 제거
-- [x] `ChatMessage` import 제거
-
-### 2-2. buildNotificationSummaryPrompt 추가
-
-- [x] `buildNotificationSummaryPrompt(Notification, List<RagDocument>)` 메서드 추가
-  - [x] 시스템 프롬프트: 2~4문장, 500자 제한, 마크다운 활용 규칙 포함
-  - [x] 유저 프롬프트: 소스, 제목, 우선순위, 내용, 링크(nullable) 포함
-  - [x] RAG context가 있을 경우 유사 과거 알림 top-3 포함
-  - [x] `LlmPrompt.of(systemPrompt, userPrompt)` 반환
-
-### 2-3. buildDigestSummaryPrompt 추가
-
-- [x] `buildDigestSummaryPrompt(List<Notification>)` 메서드 추가
-  - [x] 시스템 프롬프트: 첫 줄 전체 요약, 항목별 1줄 요약, 1000자 제한 규칙 포함
-  - [x] 유저 프롬프트: 알림 개수 표시, 각 알림 소스/제목/우선순위/내용 포함
-  - [x] `n.getAiSummary() != null` 이면 aiSummary, 아니면 body 사용
-  - [x] `truncate(String, int)` private 헬퍼 메서드 추가 (최대 300자)
-  - [x] `LlmPrompt.of(systemPrompt, userPrompt)` 반환
+- [ ] StopHook 직접 제공 필드 우선 추출
+  - [ ] `last_assistant_message = data.get('last_assistant_message', '')`
+- [ ] `last_assistant_message`가 비어있을 경우 transcript fallback 구현
+  - [ ] `transcript_path = data.get('transcript_path', '')` 추출
+  - [ ] `os.path.exists(transcript_path)` 확인 후 JSONL 파일 파싱
+  - [ ] `role == 'assistant'`인 마지막 entry의 text block(`type == 'text'`) 추출
+  - [ ] 파싱 실패 시 개별 라인 `try/except`로 건너뜀
+- [ ] 모두 실패 시 기본 메시지 `'Claude Code 작업이 완료되었습니다.'` 사용
 
 ---
 
-## Phase 3: NotificationSummaryService 구현
+## Phase 3: 메시지 포맷 구성
 
-### 3-1. Notification 엔티티 변경
+**목적**: 작업 요약 + 토큰 사용량을 하나의 메시지 문자열로 조합
 
-**파일**: `notification/domain/Notification.java`
-
-- [x] `aiSummary` 필드 추가
-  - [x] `@Column(name = "ai_summary", columnDefinition = "TEXT")` 적용
-  - [x] nullable (LLM 요약 없을 경우 null 유지)
-
-### 3-2. NotificationRepository 메서드 추가
-
-**파일**: `notification/repository/NotificationRepository.java`
-
-- [x] `updateAiSummary(@Param("id") Long id, @Param("summary") String summary)` 추가
-  - [x] `@Modifying` 적용
-  - [x] `@Query("UPDATE Notification n SET n.aiSummary = :summary WHERE n.id = :id")` 적용
-
-### 3-3. NotificationSummaryService 구현
-
-**파일**: `notification/service/NotificationSummaryService.java`
-
-- [x] `@Slf4j`, `@Service`, `@RequiredArgsConstructor` 적용
-- [x] 의존성 주입
-  - [x] `RagRetriever ragRetriever`
-  - [x] `PromptBuilder promptBuilder`
-  - [x] `LlmProvider llmProvider`
-  - [x] `NotificationRepository notificationRepository`
-  - [x] `NotioAiProperties aiProperties`
-  - [x] `NotificationFlowMetrics metrics`
-- [x] `summarize(Notification notification)` 메서드 구현
-  - [x] `shouldSummarize()` 체크 → false 시 null 반환 + debug 로그
-  - [x] `ragRetriever.retrieve()` 호출 (userId, title+body 합성 쿼리, Optional.empty())
-  - [x] `promptBuilder.buildNotificationSummaryPrompt()` 호출
-  - [x] `llmProvider.chat()` 호출
-  - [x] `notificationRepository.updateAiSummary()` 호출
-  - [x] `metrics.recordAiSummarization("success", duration)` 호출
-  - [x] info 로그: notification_id, source, summary_len
-  - [x] 예외 발생 시 `metrics.recordAiSummarization("failure", duration)` 호출
-  - [x] 예외 발생 시 warn 로그 후 null 반환
-- [x] `shouldSummarize(Notification)` private 메서드 구현
-  - [x] `aiProperties.summarizeSources()` null/empty 시 true 반환
-  - [x] `configured.contains(notification.getSource().name())` 반환
+- [ ] `summary` = `last_assistant_message` 최대 800자 트리밍
+  - [ ] 800자 초과 시 `'...'` 접미 추가
+- [ ] `token_line` 생성
+  - [ ] `input_tokens == 0` and `output_tokens == 0` 이면 `token_line = ''`
+  - [ ] 아닐 경우 `f'\n\n입력 {input_tokens:,} 토큰 / 출력 {output_tokens:,} 토큰'`
+- [ ] `message = (summary or 기본메시지) + token_line`
 
 ---
 
-## Phase 4: AnthropicLlmProvider 구현
+## Phase 4: payload에 usage, model 추가
 
-**파일**: `ai/llm/AnthropicLlmProvider.java`
+**목적**: 백엔드가 metadata JSONB에 저장할 수 있도록 payload 확장
 
-- [x] `@Slf4j`, `@Service`, `@RequiredArgsConstructor` 적용
-- [x] `@ConditionalOnProperty(name = "notio.ai.provider", havingValue = "anthropic")` 적용
-- [x] `LlmProvider` 인터페이스 구현
-- [x] 의존성 주입
-  - [x] `ChatModel anthropicChatModel`
-  - [x] `LlmMetrics llmMetrics`
-  - [x] `AiExceptionTranslator exceptionTranslator` (NotioException 래핑 전담)
-- [x] `chat(LlmPrompt prompt)` 메서드 구현
-  - [x] `SystemMessage` + `UserMessage` 리스트로 `Prompt` 생성
-  - [x] `anthropicChatModel.call()` 호출
-  - [x] `response.getResult().getOutput().getText()` 추출
-  - [x] `llmMetrics.recordLlmCall("success", duration)` 호출
-  - [x] 예외 발생 시 `llmMetrics.recordLlmCall("failure", duration)` 후 `AiExceptionTranslator.llmUnavailable()` 래핑
-- [x] `stream(LlmPrompt, Consumer<String>)` 메서드 구현
-  - [x] `UnsupportedOperationException` throw (요약 파이프라인은 동기만 사용)
+- [ ] `usage.input_tokens`, `usage.output_tokens` 추출
+  - [ ] `usage = data.get('usage', {})`
+  - [ ] `input_tokens = usage.get('input_tokens', 0)`
+  - [ ] `output_tokens = usage.get('output_tokens', 0)`
+- [ ] `model = data.get('model', '')` 추출
+- [ ] payload에 `'usage'` 객체 추가
+  ```json
+  "usage": { "input_tokens": 1234, "output_tokens": 567 }
+  ```
+- [ ] payload에 `'model'` 문자열 추가
 
 ---
 
-## Phase 5: NotioAiProperties 변경
+## Phase 5: 백엔드 webhook 핸들러 확인
 
-**파일**: `ai/config/NotioAiProperties.java`
+**목적**: 새 필드(`usage`, `model`)가 metadata JSONB에 정상 저장되는지 확인
 
-- [x] `record` 타입 확인 (`@ConfigurationProperties(prefix = "notio.ai")`)
-- [x] `summarizeSources` 필드 추가
-  - [x] `@DefaultValue("CLAUDE,CODEX") List<String> summarizeSources`
-- [x] 기존 필드 유지: `provider`, `llmTimeout`, `embeddingTimeout`
-
----
-
-## Phase 6: application.yml 설정 추가
-
-**파일**: `src/main/resources/application.yml`
-
-- [x] `notio.ai.provider` 설정 추가 (`${NOTIO_AI_PROVIDER:ollama}`)
-- [x] `notio.ai.summarize-sources` 설정 추가 (`${NOTIO_AI_SUMMARIZE_SOURCES:CLAUDE,CODEX}`)
-- [x] `notio.ai.llm-timeout` 설정 추가 (`${NOTIO_AI_LLM_TIMEOUT:20s}`)
-- [x] `spring.ai.anthropic.api-key` 설정 추가 (`${ANTHROPIC_API_KEY:}`)
-- [x] `spring.ai.anthropic.chat.options.model` 설정 추가 (`claude-haiku-4-5`)
-- [x] `spring.ai.anthropic.chat.options.max-tokens` 설정 추가 (`1024`)
-
----
-
-## Phase 7: 테스트 작성
-
-### 단위 테스트
-
-- [x] `NotificationSummaryServiceTest`
-  - [x] `shouldSummarize()` — CLAUDE 소스 포함 시 true 반환
-  - [x] `shouldSummarize()` — GITHUB 소스 미포함 시 false 반환 (기본 설정 CLAUDE,CODEX)
-  - [x] `summarize()` — summarizeSources 미설정(null/empty) 시 모든 소스 요약
-  - [x] `summarize()` — LLM 예외 발생 시 null 반환, failure 메트릭 기록
-- [x] `PromptBuilderTest`
-  - [x] `buildNotificationSummaryPrompt()` — RAG context 포함 시 "유사 과거 알림" 섹션 존재
-  - [x] `buildNotificationSummaryPrompt()` — RAG context 미포함 시 "유사 과거 알림" 섹션 미존재
-  - [x] `buildDigestSummaryPrompt()` — 복수 알림 → 소스/제목 순서 정확한지 검증
-  - [x] `buildDigestSummaryPrompt()` — aiSummary 있을 경우 body 대신 aiSummary 사용
-
-### 통합 테스트
-
-- [x] `NotificationSummaryServiceIntegrationTest`
-  - [x] CLAUDE 소스 알림 → `ai_summary` DB 저장 확인 (Testcontainers PostgreSQL)
-  - [x] GITHUB 소스 알림 → 요약 skip, `ai_summary` null 확인
-- [x] `OllamaLlmProviderTest`
-  - [x] LLM 타임아웃 시 `AiException` 발생 확인
+- [ ] Claude webhook handler에서 `usage`, `model` 필드를 `metadata` 컬럼에 저장하는 로직 확인
+  - [ ] 이미 처리 중이면 변경 없음 — 확인만
+  - [ ] 누락 시 `ClaudeWebhookHandler` 또는 관련 Service에 저장 로직 추가
+- [ ] DB에서 metadata 컬럼 조회하여 실제 저장 확인
+  ```sql
+  SELECT metadata FROM notifications WHERE source = 'CLAUDE' ORDER BY created_at DESC LIMIT 1;
+  ```
 
 ---
 
 ## 최종 검증
 
-- [x] `./gradlew compileJava` — 컴파일 오류 0개
-- [x] `./gradlew test` — 전체 테스트 통과
-- [ ] `chat/` 패키지 관련 참조 없음 (`grep -r "com.notio.chat"` 결과 0건)
-- [ ] `notio_ai_summarization_total`, `notio_llm_call_total`, `notio_rag_retrieval_total` 메트릭 노출 확인 (`/actuator/metrics`)
+- [ ] 정상 케이스 — `last_assistant_message` 포함
+  ```bash
+  echo '{"session_id":"test","transcript_path":"","model":"claude-sonnet-4-6","usage":{"input_tokens":1234,"output_tokens":567},"last_assistant_message":"테스트 작업이 완료되었습니다. 파일 3개를 수정했습니다."}' | bash .claude/hooks/send-stop-webhook.sh
+  ```
+- [ ] Fallback 케이스 — `last_assistant_message` 누락, `transcript_path` 사용
+  ```bash
+  echo '{"session_id":"test","transcript_path":"/tmp/test_transcript.jsonl","model":"claude-sonnet-4-6","usage":{"input_tokens":100,"output_tokens":50}}' | bash .claude/hooks/send-stop-webhook.sh
+  ```
+- [ ] 특수문자 케이스 — 따옴표, 백슬래시, 줄바꿈 포함 메시지 파싱 오류 없음 확인
+- [ ] 토큰 0 케이스 — `token_line` 미표시 확인
+  ```bash
+  echo '{"session_id":"test","transcript_path":"","model":"claude-sonnet-4-6","usage":{"input_tokens":0,"output_tokens":0},"last_assistant_message":"작업 완료"}' | bash .claude/hooks/send-stop-webhook.sh
+  ```
+- [ ] HTTP 응답 200 확인 (curl 출력)

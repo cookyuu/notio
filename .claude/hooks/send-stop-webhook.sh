@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
-INPUT="$(cat)"
-
 BACKEND_URL="${NOTIO_BACKEND_WEBHOOK_URL:-http://192.168.0.87:8080/api/v1/webhook/claude}"
 TOKEN="${NOTIO_WEBHOOK_CLAUDE_TOKEN:-ntio_wh_TJTjpX4cnPpe_iJFT209XqNxtzx9Kt2gosS40snSfnY0QzqyM_OWXc8g}"
 
@@ -12,7 +10,7 @@ import sys
 from datetime import datetime, timezone
 
 try:
-    data = json.loads('''$INPUT''')
+    data = json.load(sys.stdin)
 
     # last_assistant_message 추출 (1800자까지)
     message = 'Claude Code 작업이 완료되었습니다.'
