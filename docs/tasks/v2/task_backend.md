@@ -96,43 +96,43 @@
 
 **파일**: `notification/domain/Notification.java`
 
-- [ ] `aiSummary` 필드 추가
-  - [ ] `@Column(name = "ai_summary", columnDefinition = "TEXT")` 적용
-  - [ ] nullable (LLM 요약 없을 경우 null 유지)
+- [x] `aiSummary` 필드 추가
+  - [x] `@Column(name = "ai_summary", columnDefinition = "TEXT")` 적용
+  - [x] nullable (LLM 요약 없을 경우 null 유지)
 
 ### 3-2. NotificationRepository 메서드 추가
 
 **파일**: `notification/repository/NotificationRepository.java`
 
-- [ ] `updateAiSummary(@Param("id") Long id, @Param("summary") String summary)` 추가
-  - [ ] `@Modifying` 적용
-  - [ ] `@Query("UPDATE Notification n SET n.aiSummary = :summary WHERE n.id = :id")` 적용
+- [x] `updateAiSummary(@Param("id") Long id, @Param("summary") String summary)` 추가
+  - [x] `@Modifying` 적용
+  - [x] `@Query("UPDATE Notification n SET n.aiSummary = :summary WHERE n.id = :id")` 적용
 
 ### 3-3. NotificationSummaryService 구현
 
 **파일**: `notification/service/NotificationSummaryService.java`
 
-- [ ] `@Slf4j`, `@Service`, `@RequiredArgsConstructor` 적용
-- [ ] 의존성 주입
-  - [ ] `RagRetriever ragRetriever`
-  - [ ] `PromptBuilder promptBuilder`
-  - [ ] `LlmProvider llmProvider`
-  - [ ] `NotificationRepository notificationRepository`
-  - [ ] `NotioAiProperties aiProperties`
-  - [ ] `NotificationFlowMetrics metrics`
-- [ ] `summarize(Notification notification)` 메서드 구현
-  - [ ] `shouldSummarize()` 체크 → false 시 null 반환 + debug 로그
-  - [ ] `ragRetriever.retrieve()` 호출 (userId, title+body 합성 쿼리, Optional.empty())
-  - [ ] `promptBuilder.buildNotificationSummaryPrompt()` 호출
-  - [ ] `llmProvider.chat()` 호출
-  - [ ] `notificationRepository.updateAiSummary()` 호출
-  - [ ] `metrics.recordAiSummarization("success", duration)` 호출
-  - [ ] info 로그: notification_id, source, summary_len
-  - [ ] 예외 발생 시 `metrics.recordAiSummarization("failure", duration)` 호출
-  - [ ] 예외 발생 시 warn 로그 후 null 반환
-- [ ] `shouldSummarize(Notification)` private 메서드 구현
-  - [ ] `aiProperties.summarizeSources()` null/empty 시 true 반환
-  - [ ] `configured.contains(notification.getSource().name())` 반환
+- [x] `@Slf4j`, `@Service`, `@RequiredArgsConstructor` 적용
+- [x] 의존성 주입
+  - [x] `RagRetriever ragRetriever`
+  - [x] `PromptBuilder promptBuilder`
+  - [x] `LlmProvider llmProvider`
+  - [x] `NotificationRepository notificationRepository`
+  - [x] `NotioAiProperties aiProperties`
+  - [x] `NotificationFlowMetrics metrics`
+- [x] `summarize(Notification notification)` 메서드 구현
+  - [x] `shouldSummarize()` 체크 → false 시 null 반환 + debug 로그
+  - [x] `ragRetriever.retrieve()` 호출 (userId, title+body 합성 쿼리, Optional.empty())
+  - [x] `promptBuilder.buildNotificationSummaryPrompt()` 호출
+  - [x] `llmProvider.chat()` 호출
+  - [x] `notificationRepository.updateAiSummary()` 호출
+  - [x] `metrics.recordAiSummarization("success", duration)` 호출
+  - [x] info 로그: notification_id, source, summary_len
+  - [x] 예외 발생 시 `metrics.recordAiSummarization("failure", duration)` 호출
+  - [x] 예외 발생 시 warn 로그 후 null 반환
+- [x] `shouldSummarize(Notification)` private 메서드 구현
+  - [x] `aiProperties.summarizeSources()` null/empty 시 true 반환
+  - [x] `configured.contains(notification.getSource().name())` 반환
 
 ---
 
