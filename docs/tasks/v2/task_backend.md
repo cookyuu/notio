@@ -88,20 +88,20 @@
 
 ### NotificationService
 
-- [ ] `AiUsageLogService` 생성자 주입 추가
-- [ ] `saveNotification()` 내부 Branch C 아래 **Branch D** 추가
-  - [ ] `CompletableFuture.runAsync(() -> aiUsageLogService.logFromNotification(saved), VIRTUAL_THREAD_EXECUTOR)` 비동기 호출
-  - [ ] `catch (Exception e)` → `log.warn("event=ai_usage_log_failed notification_id={} user_id={} exception_type={}", ...)` 로그
+- [x] `AiUsageLogService` 생성자 주입 추가
+- [x] `saveNotification()` 내부 Branch C 아래 **Branch D** 추가
+  - [x] `CompletableFuture.runAsync(() -> aiUsageLogService.logFromNotification(saved), VIRTUAL_THREAD_EXECUTOR)` 비동기 호출
+  - [x] `catch (Exception e)` → `log.warn("event=ai_usage_log_failed notification_id={} user_id={} exception_type={}", ...)` 로그
 
 ### AnalyticsController
 
-- [ ] `AiUsageLogService` 생성자 주입 추가
-- [ ] `GET /api/v1/analytics/ai-usage` 엔드포인트 추가
-  - [ ] `@RequestParam(defaultValue = "DAILY") String granularity`
-  - [ ] `@RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate startDate`
-  - [ ] `@RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate endDate`
-  - [ ] `Authentication` 파라미터로 현재 userId 추출
-  - [ ] `ApiResponse.success(aiUsageLogService.getAiUsage(...))` 반환
+- [x] `AiUsageLogService` 생성자 주입 추가
+- [x] `GET /api/v1/analytics/ai-usage` 엔드포인트 추가
+  - [x] `@RequestParam(defaultValue = "DAILY") String granularity`
+  - [x] `@RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate startDate`
+  - [x] `@RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate endDate`
+  - [x] `Authentication` 파라미터로 현재 userId 추출
+  - [x] `ApiResponse.success(aiUsageLogService.getAiUsage(...))` 반환
 
 ---
 

@@ -2,6 +2,7 @@ package com.notio.notification.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.notio.analytics.service.AiUsageLogService;
 import com.notio.channel.ChannelRouter;
 import com.notio.connection.domain.Connection;
 import com.notio.common.exception.ErrorCode;
@@ -47,6 +48,7 @@ public class NotificationService {
     private final NotificationFlowMetrics notificationFlowMetrics;
     private final NotificationSummaryService notificationSummaryService;
     private final ChannelRouter channelRouter;
+    private final AiUsageLogService aiUsageLogService;
 
     @Transactional
     @CacheEvict(value = "unreadCount", key = "#event.userId()")
@@ -136,6 +138,20 @@ public class NotificationService {
                     saved.getId(), saved.getUserId(), e);
             }
         }, VIRTUAL_THREAD_EXECUTOR);
+
+        // Branch D: AI 토큰 사용량 기록 (비동기, Branch A·B·C와 병렬)
+        CompletableFuture.runAsync(
+            () -> aiUsageLogService.logFromNotification(saved),
+            VIRTUAL_THREAD_EXECUTOR
+        ).exceptionally(e -> {
+            log.warn(
+                "event=ai_usage_log_failed notification_id={} user_id={} exception_type={}",
+                saved.getId(),
+                saved.getUserId(),
+                e.getClass().getSimpleName()
+            );
+            return null;
+        });
 
         return saved;
     }
