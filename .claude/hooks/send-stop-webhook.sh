@@ -16,30 +16,39 @@ try:
     DEFAULT_MESSAGE = 'Claude Code 작업이 완료되었습니다.'
 
     last_assistant_message = data.get('last_assistant_message', '')
-    if not last_assistant_message:
-        transcript_path = data.get('transcript_path', '')
-        if transcript_path and os.path.exists(transcript_path):
-            extracted = ''
-            with open(transcript_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        entry = json.loads(line)
-                        if entry.get('role') == 'assistant':
-                            content = entry.get('content', [])
-                            for block in content:
-                                if isinstance(block, dict) and block.get('type') == 'text':
-                                    extracted = block.get('text', '')
-                    except Exception:
-                        continue
-            if extracted:
-                last_assistant_message = extracted
+    transcript_path = data.get('transcript_path', '')
 
-    usage = data.get('usage', {})
-    input_tokens = usage.get('input_tokens', 0)
-    output_tokens = usage.get('output_tokens', 0)
+    total_input_tokens = 0
+    total_output_tokens = 0
+    extracted_message = ''
+
+    if transcript_path and os.path.exists(transcript_path):
+        with open(transcript_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if entry.get('role') == 'assistant':
+                        for block in entry.get('content', []):
+                            if isinstance(block, dict) and block.get('type') == 'text':
+                                extracted_message = block.get('text', '')
+                        entry_usage = entry.get('usage', {})
+                        total_input_tokens += entry_usage.get('input_tokens', 0)
+                        total_output_tokens += entry_usage.get('output_tokens', 0)
+                except Exception:
+                    continue
+
+    if not last_assistant_message and extracted_message:
+        last_assistant_message = extracted_message
+
+    # transcript에 usage가 없으면 hook 최상위 필드로 fallback
+    if total_input_tokens == 0 and total_output_tokens == 0:
+        total_output_tokens = data.get('output_tokens', 0)
+
+    input_tokens = total_input_tokens
+    output_tokens = total_output_tokens
     model = data.get('model', '')
 
     summary = last_assistant_message[:800] + '...' if len(last_assistant_message) > 800 else last_assistant_message
