@@ -173,12 +173,12 @@
 
 **파일**: `src/main/resources/application.yml`
 
-- [ ] `notio.ai.provider` 설정 추가 (`${NOTIO_AI_PROVIDER:ollama}`)
-- [ ] `notio.ai.summarize-sources` 설정 추가 (`${NOTIO_AI_SUMMARIZE_SOURCES:CLAUDE,CODEX}`)
-- [ ] `notio.ai.llm-timeout` 설정 추가 (`${NOTIO_AI_LLM_TIMEOUT:20s}`)
-- [ ] `spring.ai.anthropic.api-key` 설정 추가 (`${ANTHROPIC_API_KEY:}`)
-- [ ] `spring.ai.anthropic.chat.options.model` 설정 추가 (`claude-haiku-4-5`)
-- [ ] `spring.ai.anthropic.chat.options.max-tokens` 설정 추가 (`1024`)
+- [x] `notio.ai.provider` 설정 추가 (`${NOTIO_AI_PROVIDER:ollama}`)
+- [x] `notio.ai.summarize-sources` 설정 추가 (`${NOTIO_AI_SUMMARIZE_SOURCES:CLAUDE,CODEX}`)
+- [x] `notio.ai.llm-timeout` 설정 추가 (`${NOTIO_AI_LLM_TIMEOUT:20s}`)
+- [x] `spring.ai.anthropic.api-key` 설정 추가 (`${ANTHROPIC_API_KEY:}`)
+- [x] `spring.ai.anthropic.chat.options.model` 설정 추가 (`claude-haiku-4-5`)
+- [x] `spring.ai.anthropic.chat.options.max-tokens` 설정 추가 (`1024`)
 
 ---
 
