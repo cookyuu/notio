@@ -80,17 +80,22 @@
 
 ## 최종 검증
 
-- [ ] 정상 케이스 — `last_assistant_message` 포함
+- [x] 정상 케이스 — `last_assistant_message` 포함
   ```bash
   echo '{"session_id":"test","transcript_path":"","model":"claude-sonnet-4-6","usage":{"input_tokens":1234,"output_tokens":567},"last_assistant_message":"테스트 작업이 완료되었습니다. 파일 3개를 수정했습니다."}' | bash .claude/hooks/send-stop-webhook.sh
   ```
-- [ ] Fallback 케이스 — `last_assistant_message` 누락, `transcript_path` 사용
+  > message에 본문 + `\n\n입력 1,234 토큰 / 출력 567 토큰` 정상 포함 확인
+- [x] Fallback 케이스 — `last_assistant_message` 누락, `transcript_path` 사용
   ```bash
   echo '{"session_id":"test","transcript_path":"/tmp/test_transcript.jsonl","model":"claude-sonnet-4-6","usage":{"input_tokens":100,"output_tokens":50}}' | bash .claude/hooks/send-stop-webhook.sh
   ```
-- [ ] 특수문자 케이스 — 따옴표, 백슬래시, 줄바꿈 포함 메시지 파싱 오류 없음 확인
-- [ ] 토큰 0 케이스 — `token_line` 미표시 확인
+  > transcript JSONL에서 마지막 assistant text block 추출 정상 확인
+- [x] 특수문자 케이스 — 따옴표, 백슬래시, 줄바꿈 포함 메시지 파싱 오류 없음 확인
+  > stdin 파이프 방식(`json.load(sys.stdin)`)으로 특수문자 포함 JSON 정상 파싱 확인
+- [x] 토큰 0 케이스 — `token_line` 미표시 확인
   ```bash
   echo '{"session_id":"test","transcript_path":"","model":"claude-sonnet-4-6","usage":{"input_tokens":0,"output_tokens":0},"last_assistant_message":"작업 완료"}' | bash .claude/hooks/send-stop-webhook.sh
   ```
-- [ ] HTTP 응답 200 확인 (curl 출력)
+  > `input_tokens == 0 and output_tokens == 0` 조건에서 `token_line = ''` 정상 확인
+- [x] HTTP 응답 200 확인 (curl 출력)
+  > `{"success":true,"data":{"notification_id":345,"processed_at":"2026-05-15T06:33:12Z"}}`
