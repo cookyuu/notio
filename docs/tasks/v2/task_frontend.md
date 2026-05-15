@@ -21,10 +21,10 @@
 
 **파일**: `lib/core/router/routes.dart`
 
-- [ ] `/notifications/:id` 경로 상수 추가
-  - [ ] `static const String notificationDetail = '/notifications/:id'`
-- [ ] `notificationDetailPath` 헬퍼 메서드 추가
-  - [ ] `static String notificationDetailPath(int id) => '/notifications/$id'`
+- [x] `/notifications/:id` 경로 상수 추가
+  - [x] `static const String notificationDetail = '/notifications/:id'`
+- [x] `notificationDetailPath` 헬퍼 메서드 추가
+  - [x] `static String notificationDetailPath(int id) => '/notifications/$id'`
 
 ---
 

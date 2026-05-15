@@ -12,10 +12,14 @@ class Routes {
 
   // Main routes
   static const String notifications = '/notifications';
+  static const String notificationDetail = '/notifications/:id';
   static const String chat = '/chat';
   static const String analytics = '/analytics';
   static const String settings = '/settings';
   static const String connections = '/settings/connections';
+
+  // Helper methods
+  static String notificationDetailPath(int id) => '/notifications/$id';
 
   // Channel management routes
   static const String channels = '/channels';
