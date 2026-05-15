@@ -1,101 +1,136 @@
-# Task: send-stop-webhook.sh 개선 체크리스트
+# Task: AI Token Usage Analytics — Backend 구현 체크리스트
 
-> **대상 버전**: v2.2
+> **대상 버전**: v2.3
 > **작성일**: 2026-05-15
 > **연관 Plan**: `docs/plans/v2/plan_fix.md`
-> **수정 대상**: `.claude/hooks/send-stop-webhook.sh`
 
 ---
 
-## Phase 1: Python stdin 파이프 방식 전환
+## Phase 1: V15 Migration
 
-**목적**: 따옴표·특수문자 포함 입력에서 파싱 실패하는 쉘 변수 삽입 취약점 제거
-
-- [x] `json.loads('''$INPUT''')` → `json.load(sys.stdin)` 방식으로 전환
-  - [x] `echo "$INPUT" | python3 -c "import json, sys; data = json.load(sys.stdin) ..."` 구조로 변경
-  - [x] Python 스크립트 내에서 `$INPUT` 직접 참조 제거
-
----
-
-## Phase 2: last_assistant_message 추출 + transcript fallback
-
-**목적**: 고정 메시지 대신 실제 작업 내용을 알림에 포함
-
-- [x] StopHook 직접 제공 필드 우선 추출
-  - [x] `last_assistant_message = data.get('last_assistant_message', '')`
-- [x] `last_assistant_message`가 비어있을 경우 transcript fallback 구현
-  - [x] `transcript_path = data.get('transcript_path', '')` 추출
-  - [x] `os.path.exists(transcript_path)` 확인 후 JSONL 파일 파싱
-  - [x] `role == 'assistant'`인 마지막 entry의 text block(`type == 'text'`) 추출
-  - [x] 파싱 실패 시 개별 라인 `try/except`로 건너뜀
-- [x] 모두 실패 시 기본 메시지 `'Claude Code 작업이 완료되었습니다.'` 사용
+- [x] `db/migration/V15__create_ai_usage_logs.sql` 파일 생성
+  - [x] `ai_usage_logs` 테이블 생성 (id, user_id, notification_id, model, input_tokens, output_tokens, total_tokens GENERATED ALWAYS, session_at, created_at, updated_at, deleted_at)
+  - [x] `fk_ai_usage_logs_users` FK 제약조건 추가
+  - [x] `fk_ai_usage_logs_notifications` FK 제약조건 추가
+  - [x] `idx_ai_usage_logs_user_session_at` 인덱스 생성 (`user_id, session_at DESC WHERE deleted_at IS NULL`)
+  - [x] `idx_ai_usage_logs_model` 인덱스 생성 (`user_id, model WHERE deleted_at IS NULL`)
+  - [x] `uq_ai_usage_logs_notification_id` UNIQUE 인덱스 생성 (idempotency 보장)
 
 ---
 
-## Phase 3: 메시지 포맷 구성
+## Phase 2: 신규 파일 — `com.notio.analytics.domain`
 
-**목적**: 작업 요약 + 토큰 사용량을 하나의 메시지 문자열로 조합
+### AiUsageLog Entity
 
-- [x] `summary` = `last_assistant_message` 최대 800자 트리밍
-  - [x] 800자 초과 시 `'...'` 접미 추가
-- [x] `token_line` 생성
-  - [x] `input_tokens == 0` and `output_tokens == 0` 이면 `token_line = ''`
-  - [x] 아닐 경우 `f'\n\n입력 {input_tokens:,} 토큰 / 출력 {output_tokens:,} 토큰'`
-- [x] `message = (summary or 기본메시지) + token_line`
+- [ ] `AiUsageLog.java` 생성
+  - [ ] 필드: `id`, `userId`, `notificationId`, `model`, `inputTokens`, `outputTokens`, `totalTokens`(삽입·수정 불가), `sessionAt`, `createdAt`, `updatedAt`, `deletedAt`
+  - [ ] `@Builder`, `@NoArgsConstructor(AccessLevel.PROTECTED)`, `@Getter` 적용
+  - [ ] `softDelete()` 메서드 구현
+
+### Projection Interfaces
+
+- [ ] `AiUsageDataPoint.java` 인터페이스 생성
+  - [ ] `getPeriodLabel()`, `getTotalInput()`, `getTotalOutput()`, `getSessionCount()` 메서드 정의
+- [ ] `ModelUsageDataPoint.java` 인터페이스 생성
+  - [ ] `getModel()`, `getTotalTokens()`, `getSessionCount()` 메서드 정의
+
+### AiUsageLogRepository
+
+- [ ] `AiUsageLogRepository.java` 생성
+  - [ ] `findDailyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'YYYY-MM-DD')`
+  - [ ] `findWeeklyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'IYYY-"W"IW')`
+  - [ ] `findMonthlyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'YYYY-MM')`
+  - [ ] `findModelDistributionInRange(Long userId, Instant since, Instant until)` — native SQL
+  - [ ] `sumInputTokensInRange(Long userId, Instant since, Instant until)` — JPQL
+  - [ ] `sumOutputTokensInRange(Long userId, Instant since, Instant until)` — JPQL
+  - [ ] `countSessionsInRange(Long userId, Instant since, Instant until)` — JPQL
+  - [ ] `existsByNotificationId(Long notificationId)` — 파생 메서드
+
+### AiUsageGranularity Enum
+
+- [ ] `AiUsageGranularity.java` 생성 (`com.notio.analytics.dto`)
+  - [ ] `DAILY`, `WEEKLY`, `MONTHLY` 값 정의
+  - [ ] `from(String value)` — 파싱 실패 시 `NotioException(INVALID_REQUEST)` throw
+  - [ ] `maxDays()` — DAILY: 90, WEEKLY: 365, MONTHLY: 730
+  - [ ] `defaultDays()` — DAILY: 7, WEEKLY: 56, MONTHLY: 365
+
+### AiUsageResponse Record DTO
+
+- [ ] `AiUsageResponse.java` 생성 (`com.notio.analytics.dto`)
+  - [ ] 최상위 필드: `granularity`, `startDate`, `endDate`, `totalInputTokens`, `totalOutputTokens`, `totalSessions`, `mostUsedModel`(nullable), `trend`, `modelDistribution`
+  - [ ] 중첩 record `AiUsagePeriodPoint(String label, long inputTokens, long outputTokens, long sessions)` 정의
+  - [ ] 중첩 record `AiUsageModelShare(String model, long totalTokens, long sessions)` 정의
+
+### AiUsageLogService
+
+- [ ] `AiUsageLogService.java` 생성 (`com.notio.analytics.service`)
+  - [ ] `logFromNotification(Notification saved)` 구현
+    - [ ] `source != CLAUDE` → 즉시 return
+    - [ ] `existsByNotificationId` 중복 체크 → 중복이면 return
+    - [ ] `metadata` JSON 파싱 → `usage.input_tokens`, `usage.output_tokens`, `model` 추출
+    - [ ] 입출력 토큰 모두 0 → return (fallback 페이로드 케이스)
+    - [ ] `session_at`: `notification.timestamp` 파싱, 실패 시 `notification.created_at` fallback
+    - [ ] `AiUsageLog` 빌드 후 save
+    - [ ] `event=ai_usage_log_created` / `event=ai_usage_log_skip` 로그 기록
+  - [ ] `getAiUsage(Long userId, AiUsageGranularity granularity, LocalDate startDate, LocalDate endDate)` 구현
+    - [ ] `startDate`/`endDate` null → `granularity.defaultDays()`로 자동 설정
+    - [ ] `endDate - startDate > granularity.maxDays()` → `NotioException(INVALID_REQUEST)`
+    - [ ] `startDate > endDate` → `NotioException(INVALID_REQUEST)`
+    - [ ] `since`/`until` UTC Instant 변환 (`endDate.plusDays(1)` 사용)
+    - [ ] 총합·세션 수 조회 (InRange 쿼리)
+    - [ ] 트렌드 조회 (granularity별 native 쿼리)
+    - [ ] 모델 분포 조회
+    - [ ] `AiUsageResponse` 조립 후 반환
 
 ---
 
-## Phase 4: payload에 usage, model 추가
+## Phase 3: 기존 파일 수정
 
-**목적**: 백엔드가 metadata JSONB에 저장할 수 있도록 payload 확장
+### NotificationService
 
-- [x] `usage.input_tokens`, `usage.output_tokens` 추출
-  - [x] `usage = data.get('usage', {})`
-  - [x] `input_tokens = usage.get('input_tokens', 0)`
-  - [x] `output_tokens = usage.get('output_tokens', 0)`
-- [x] `model = data.get('model', '')` 추출
-- [x] payload에 `'usage'` 객체 추가
-  ```json
-  "usage": { "input_tokens": 1234, "output_tokens": 567 }
-  ```
-- [x] payload에 `'model'` 문자열 추가
+- [ ] `AiUsageLogService` 생성자 주입 추가
+- [ ] `saveNotification()` 내부 Branch C 아래 **Branch D** 추가
+  - [ ] `CompletableFuture.runAsync(() -> aiUsageLogService.logFromNotification(saved), VIRTUAL_THREAD_EXECUTOR)` 비동기 호출
+  - [ ] `catch (Exception e)` → `log.warn("event=ai_usage_log_failed notification_id={} user_id={} exception_type={}", ...)` 로그
+
+### AnalyticsController
+
+- [ ] `AiUsageLogService` 생성자 주입 추가
+- [ ] `GET /api/v1/analytics/ai-usage` 엔드포인트 추가
+  - [ ] `@RequestParam(defaultValue = "DAILY") String granularity`
+  - [ ] `@RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate startDate`
+  - [ ] `@RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate endDate`
+  - [ ] `Authentication` 파라미터로 현재 userId 추출
+  - [ ] `ApiResponse.success(aiUsageLogService.getAiUsage(...))` 반환
 
 ---
 
-## Phase 5: 백엔드 webhook 핸들러 확인
+## Phase 4: 테스트
 
-**목적**: 새 필드(`usage`, `model`)가 metadata JSONB에 정상 저장되는지 확인
-
-- [x] Claude webhook handler에서 `usage`, `model` 필드를 `metadata` 컬럼에 저장하는 로직 확인
-  - [x] 이미 처리 중이면 변경 없음 — 확인만
-    > `ClaudeWebhookHandler`가 payload 전체 Map을 `NotificationEvent.metadata`로 전달 → `NotificationService.convertMetadataToJson()`이 JSONB로 직렬화. `usage`, `model`은 payload 최상위 키이므로 별도 파싱 없이 자동 포함됨.
-  - [x] 누락 시 `ClaudeWebhookHandler` 또는 관련 Service에 저장 로직 추가 — 이미 처리됨, 변경 없음
-- [x] DB에서 metadata 컬럼 조회하여 실제 저장 확인
-  > 코드 레벨 확인 완료: `Notification.metadata` (`@Column(columnDefinition = "jsonb")`)에 payload 전체가 저장되므로 `usage`, `model` 포함이 보장됨
-  ```sql
-  SELECT metadata FROM notifications WHERE source = 'CLAUDE' ORDER BY created_at DESC LIMIT 1;
-  ```
+- [ ] `AiUsageLogServiceTest` 단위 테스트 작성
+  - [ ] `logFromNotification` — 정상 저장 케이스
+  - [ ] `logFromNotification` — source != CLAUDE → skip
+  - [ ] `logFromNotification` — 중복 notification_id → skip
+  - [ ] `logFromNotification` — 토큰 모두 0 → skip
+  - [ ] `logFromNotification` — metadata 파싱 실패 → skip (경고 로그)
+  - [ ] `getAiUsage` — 날짜 범위 초과 → `INVALID_REQUEST`
+  - [ ] `getAiUsage` — startDate > endDate → `INVALID_REQUEST`
+  - [ ] `getAiUsage` — 기본값 적용 (null 파라미터)
+- [ ] `@WebMvcTest(AnalyticsController)` 슬라이스 테스트
+  - [ ] 파라미터 없음 → 200 + DAILY 기본값 응답
+  - [ ] `granularity=INVALID` → 400 + INVALID_REQUEST
+  - [ ] `granularity=DAILY&startDate=2026-01-01&endDate=2026-12-31` (91일 초과) → 400
 
 ---
 
 ## 최종 검증
 
-- [x] 정상 케이스 — `last_assistant_message` 포함
-  ```bash
-  echo '{"session_id":"test","transcript_path":"","model":"claude-sonnet-4-6","usage":{"input_tokens":1234,"output_tokens":567},"last_assistant_message":"테스트 작업이 완료되었습니다. 파일 3개를 수정했습니다."}' | bash .claude/hooks/send-stop-webhook.sh
-  ```
-  > message에 본문 + `\n\n입력 1,234 토큰 / 출력 567 토큰` 정상 포함 확인
-- [x] Fallback 케이스 — `last_assistant_message` 누락, `transcript_path` 사용
-  ```bash
-  echo '{"session_id":"test","transcript_path":"/tmp/test_transcript.jsonl","model":"claude-sonnet-4-6","usage":{"input_tokens":100,"output_tokens":50}}' | bash .claude/hooks/send-stop-webhook.sh
-  ```
-  > transcript JSONL에서 마지막 assistant text block 추출 정상 확인
-- [x] 특수문자 케이스 — 따옴표, 백슬래시, 줄바꿈 포함 메시지 파싱 오류 없음 확인
-  > stdin 파이프 방식(`json.load(sys.stdin)`)으로 특수문자 포함 JSON 정상 파싱 확인
-- [x] 토큰 0 케이스 — `token_line` 미표시 확인
-  ```bash
-  echo '{"session_id":"test","transcript_path":"","model":"claude-sonnet-4-6","usage":{"input_tokens":0,"output_tokens":0},"last_assistant_message":"작업 완료"}' | bash .claude/hooks/send-stop-webhook.sh
-  ```
-  > `input_tokens == 0 and output_tokens == 0` 조건에서 `token_line = ''` 정상 확인
-- [x] HTTP 응답 200 확인 (curl 출력)
-  > `{"success":true,"data":{"notification_id":345,"processed_at":"2026-05-15T06:33:12Z"}}`
+- [ ] Flyway V15 적용 확인: `SELECT * FROM flyway_schema_history WHERE version = '15'`
+- [ ] 테스트 webhook POST → `ai_usage_logs` 행 생성 + `event=ai_usage_log_created` 로그 확인
+- [ ] 토큰 0 페이로드 → 행 미생성 + `event=ai_usage_log_skip reason=zero_tokens` 확인
+- [ ] 동일 notification_id 중복 전송 → 1행만 존재 확인
+- [ ] `GET /api/v1/analytics/ai-usage` (파라미터 없음) → 200 + 기본 범위 응답
+- [ ] `GET /api/v1/analytics/ai-usage?granularity=DAILY&startDate=2026-04-01&endDate=2026-04-30` → 30개 이하 포인트, label YYYY-MM-DD 포맷
+- [ ] `GET /api/v1/analytics/ai-usage?granularity=DAILY&startDate=2026-01-01&endDate=2026-12-31` → 400 + INVALID_REQUEST
+- [ ] `startDate > endDate` → 400 + INVALID_REQUEST
+- [ ] `granularity=INVALID` → 400 + INVALID_REQUEST
