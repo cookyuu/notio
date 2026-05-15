@@ -155,7 +155,7 @@ public class OllamaLlmProvider implements LlmProvider {
             MDC.remove("outcome");
             MDC.remove("event");
         }
-        llmMetrics.recordLlmCall(mode, "success", elapsed);
+        llmMetrics.recordLlmCall("success", elapsed);
     }
 
     private void logLlmFailed(final String mode, final Instant startedAt, final Throwable exception) {
@@ -176,7 +176,7 @@ public class OllamaLlmProvider implements LlmProvider {
             MDC.remove("outcome");
             MDC.remove("event");
         }
-        llmMetrics.recordLlmCall(mode, outcome, elapsed);
+        llmMetrics.recordLlmCall(outcome, elapsed);
     }
 
     private long resolveTimeoutMs(final String mode) {

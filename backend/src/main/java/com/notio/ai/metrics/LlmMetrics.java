@@ -14,7 +14,8 @@ public class LlmMetrics {
         this.notioMetrics = notioMetrics;
     }
 
-    public void recordLlmCall(final String mode, final String outcome, final Duration duration) {
-        notioMetrics.recordTimer("notio_llm_call_duration", Tags.of("mode", mode, "outcome", outcome), duration);
+    public void recordLlmCall(final String outcome, final Duration duration) {
+        notioMetrics.incrementCounter("notio_llm_call_total", Tags.of("outcome", outcome));
+        notioMetrics.recordTimer("notio_llm_call_duration", Tags.of("outcome", outcome), duration);
     }
 }

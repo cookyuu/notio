@@ -51,8 +51,10 @@ class OllamaLlmProviderTest {
 
         provider.chat(new LlmPrompt("system", "user"));
 
+        assertThat(meterRegistry.get("notio_llm_call_total")
+            .tag("outcome", "success")
+            .counter().count()).isEqualTo(1);
         assertThat(meterRegistry.get("notio_llm_call_duration")
-            .tag("mode", "sync")
             .tag("outcome", "success")
             .timer().count()).isEqualTo(1);
     }
@@ -88,8 +90,10 @@ class OllamaLlmProviderTest {
             provider.chat(new LlmPrompt("system", "user"));
         } catch (NotioException ignored) {}
 
+        assertThat(meterRegistry.get("notio_llm_call_total")
+            .tag("outcome", "failure")
+            .counter().count()).isEqualTo(1);
         assertThat(meterRegistry.get("notio_llm_call_duration")
-            .tag("mode", "sync")
             .tag("outcome", "failure")
             .timer().count()).isEqualTo(1);
     }
@@ -113,8 +117,10 @@ class OllamaLlmProviderTest {
         )).isInstanceOf(java.util.concurrent.CancellationException.class);
 
         assertThat(chunk.get()).isEqualTo("첫 청크");
+        assertThat(meterRegistry.get("notio_llm_call_total")
+            .tag("outcome", "cancelled")
+            .counter().count()).isEqualTo(1);
         assertThat(meterRegistry.get("notio_llm_call_duration")
-            .tag("mode", "stream")
             .tag("outcome", "cancelled")
             .timer().count()).isEqualTo(1);
     }

@@ -39,10 +39,10 @@ public class AnthropicLlmProvider implements LlmProvider {
                 ))
             );
             String result = response.getResult().getOutput().getText();
-            llmMetrics.recordLlmCall("sync", "success", Duration.between(start, Instant.now()));
+            llmMetrics.recordLlmCall("success", Duration.between(start, Instant.now()));
             return result;
         } catch (Exception e) {
-            llmMetrics.recordLlmCall("sync", "failure", Duration.between(start, Instant.now()));
+            llmMetrics.recordLlmCall("failure", Duration.between(start, Instant.now()));
             throw exceptionTranslator.llmUnavailable(e);
         }
     }
