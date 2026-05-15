@@ -1,66 +1,129 @@
-# Task: send-stop-webhook.sh 개선 — 앱 검증 체크리스트
+# Task: AI Token Usage Analytics — Flutter 구현 체크리스트
 
-> **대상 버전**: v2.2
+> **대상 버전**: v2.3
 > **작성일**: 2026-05-15
 > **연관 Plan**: `docs/plans/v2/plan_fix.md`
 
 ---
 
-## Phase 1: 알림 수신 검증
+## Phase 1: 신규 파일 — Domain Entity
 
-**목적**: 개선된 webhook이 앱에 정상적으로 전달되는지 확인
-
-> **[코드 레벨 분석 — 2026-05-15]**
-> 현재 Flutter 앱에는 `firebase_messaging` / `firebase_core` / `flutter_local_notifications` 패키지가
-> `pubspec.yaml`에 포함되어 있지 않으며, FCM 메시지 핸들러 코드도 존재하지 않습니다.
-> 앱은 SSE + REST API 방식으로만 알림을 수신합니다.
-> 백엔드가 webhook payload의 `notification.title` / `notification.message`를
-> DB의 `title` / `body` 컬럼에 저장하면, 앱은 REST API 조회 시 이를 그대로 표시합니다.
-> (`NotificationDetailModel.fromJson` → `json['title']`, `json['body']` 사용 확인됨)
->
-> 아래 체크리스트 중 **앱 코드에서 확인 가능한 항목**은 `[x]`로 표기합니다.
-> FCM 푸시 알림 수신은 패키지 미설치로 인해 수동 검증 필요합니다.
-
-- [ ] Claude Code 작업 완료 후 Notio 앱에서 푸시 알림 수신 확인
-  - **수동 검증 필요** — FCM 패키지 미설치 상태. 현재 앱은 SSE 연결 또는 앱 포그라운드 진입 시 REST API 폴링으로만 알림을 확인함.
-- [x] 알림 title이 `'Claude Code 작업 완료'`인지 확인
-  - 백엔드가 webhook의 `notification.title`을 DB `title` 컬럼에 저장하고, `NotificationDetailModel.fromJson`이 `json['title']`을 읽어 `notification.title`로 표시함. 앱 코드 변경 불필요.
-- [x] 알림 message에 실제 작업 내용(`last_assistant_message`) 포함 확인
-  - 백엔드가 webhook의 `notification.message`를 DB `body` 컬럼에 저장하고, `NotificationDetailModel.fromJson`이 `json['body']`를 읽어 `notification.body`로 표시함. 앱 코드 변경 불필요.
-- [x] 알림 message 하단에 토큰 사용량 표시 확인
-  - 예: `입력 1,234 토큰 / 출력 567 토큰`
-  - `send-stop-webhook.sh`에서 토큰 라인을 message에 포함해 전송하고, 백엔드가 그대로 `body`에 저장함. 앱은 `notification.body`를 그대로 표시하므로 별도 처리 불필요.
-- [x] 메시지가 800자 초과 시 `...`으로 잘려서 표시되는지 확인
-  - 800자 잘림은 `send-stop-webhook.sh`에서 처리하고 백엔드가 저장함. 앱은 `body` 필드를 그대로 표시하며 추가 잘림 로직 없음.
+- [ ] `features/analytics/domain/entity/ai_usage_entity.dart` 생성
+  - [ ] `AiUsageGranularity` enum 정의 (`daily`, `weekly`, `monthly`)
+  - [ ] `AiUsagePeriodPoint` 클래스 정의 (`label`, `inputTokens`, `outputTokens`, `sessions`)
+  - [ ] `AiUsageModelShare` 클래스 정의 (`model`, `totalTokens`, `sessions`)
+  - [ ] `AiUsageEntity` 클래스 정의
+    - [ ] 필드: `granularity`, `startDate`, `endDate`, `totalInputTokens`, `totalOutputTokens`, `totalSessions`, `mostUsedModel`(nullable), `trend`, `modelDistribution`
+    - [ ] `int get totalTokens` computed getter
+    - [ ] `double get avgTokensPerSession` computed getter (totalSessions == 0 → 0.0)
 
 ---
 
-## Phase 2: 알림 상세 화면 검증
+## Phase 2: 신규 파일 — Data Model
 
-**목적**: 수신된 알림의 상세 내용이 UI에서 올바르게 렌더링되는지 확인
-
-- [ ] Notifications 화면에서 Claude Code 알림 카드 탭
-- [ ] 상세 모달/화면에서 전체 메시지(최대 800자 + 토큰 라인) 표시 확인
-- [ ] 토큰 라인 미표시 케이스 확인 — `usage`가 없거나 모두 0이면 토큰 라인 없음
+- [ ] `features/analytics/data/model/ai_usage_model.dart` 생성
+  - [ ] `AiUsageModel` 클래스 + `fromJson` 팩토리 메서드 구현
+  - [ ] Spring record 필드명(camelCase) 그대로 파싱
+  - [ ] `toEntity()` 메서드로 `AiUsageEntity` 변환
 
 ---
 
-## Phase 3: 백엔드 metadata 저장 검증
+## Phase 3: 신규 파일 — Widgets
 
-**목적**: `usage`, `model` 필드가 DB에 정상 저장되는지 확인
+### AiUsageSummaryCard
 
-- [ ] 알림 상세 API 응답에 `metadata` 필드 포함 여부 확인
-  ```
-  GET /api/v1/notifications/{id}
-  ```
-- [ ] `metadata.usage.input_tokens` 저장 여부 확인
-- [ ] `metadata.usage.output_tokens` 저장 여부 확인
-- [ ] `metadata.model` 저장 여부 확인
+- [ ] `features/analytics/presentation/widgets/ai_usage_summary_card.dart` 생성
+  - [ ] `GlassCard` 래핑
+  - [ ] 3-stat row: 총 입력 / 총 출력 / 세션 수 (숫자 abbreviated: 1.2K, 300K 등)
+  - [ ] 아래: 주요 모델명 + 세션당 평균 토큰 표시
+
+### TokenTrendChart
+
+- [ ] `features/analytics/presentation/widgets/token_trend_chart.dart` 생성
+  - [ ] `GlassCard` + `LineChart` (fl_chart) 래핑
+  - [ ] 입력 라인: `AppColors.violet`, 출력 라인: `AppColors.info`
+  - [ ] X축: trend label 문자열 (DAILY: `05/15`, WEEKLY: `W20`, MONTHLY: `5월`)
+  - [ ] Y축: 축약 숫자 (`12K`, `1.2M`)
+  - [ ] 터치 툴팁: label + 입력/출력 각각 표시
+  - [ ] 빈 데이터 상태: "데이터가 없습니다" 고정 높이(200) 렌더링
+
+### ModelDistributionChart
+
+- [ ] `features/analytics/presentation/widgets/model_distribution_chart.dart` 생성
+  - [ ] `GlassCard` + `PieChart` (donut, `SourceDistributionChart` 패턴 참고)
+  - [ ] 색상: `[primary, info, success, warning, error]` 순환
+  - [ ] 범례: 모델명(20자 truncate) + `"X,XXX tok"` 표시
+  - [ ] 단일 모델: 100% 풀 원형 렌더링
+
+---
+
+## Phase 4: 기존 파일 수정 — Data Layer
+
+### analytics_remote_datasource.dart
+
+- [ ] `AiUsageFilter` import 추가
+- [ ] `fetchAiUsage(AiUsageFilter filter)` 메서드 추가
+  - [ ] `GET /api/v1/analytics/ai-usage` 호출
+  - [ ] query params: `granularity`(toUpperCase), `startDate`("yyyy-MM-dd"), `endDate`("yyyy-MM-dd")
+  - [ ] `response.data['success'] == true` → `AiUsageModel.fromJson(response.data['data'])` 반환
+  - [ ] 실패 시 `Exception(response.data['error']['message'])` throw
+
+### analytics_repository.dart (interface)
+
+- [ ] `fetchAiUsage(AiUsageFilter filter)` 추상 메서드 추가
+
+### analytics_repository_impl.dart
+
+- [ ] `fetchAiUsage(AiUsageFilter filter)` 구현 (datasource 위임)
+
+---
+
+## Phase 5: 기존 파일 수정 — Providers
+
+### analytics_providers.dart
+
+- [ ] `AiUsageFilter` 값 객체 정의
+  - [ ] 필드: `granularity`, `startDate`, `endDate`
+  - [ ] `defaultFor(AiUsageGranularity g)` static 팩토리 메서드
+    - [ ] DAILY → 최근 7일 (now - 6일 ~ now)
+    - [ ] WEEKLY → 최근 8주 (now - 55일 ~ now)
+    - [ ] MONTHLY → 최근 12개월 (1년 전 ~ now)
+- [ ] `aiUsageFilterProvider` `StateProvider<AiUsageFilter>` 추가 (초기값: DAILY 기본)
+- [ ] `aiUsageProvider` `FutureProvider.family<AiUsageEntity, AiUsageFilter>` 추가
+- [ ] 기존 refresh 로직에 `ref.invalidate(aiUsageProvider(ref.read(aiUsageFilterProvider)))` 추가
+
+---
+
+## Phase 6: 기존 파일 수정 — analytics_screen.dart
+
+- [ ] `ConsumerWidget` → `ConsumerStatefulWidget` 전환
+- [ ] `DefaultTabController(length: 2)` 래핑
+- [ ] `TabBar` 추가: `알림 통계` | `AI 토큰`
+- [ ] `TabBarView` 구성
+  - [ ] Tab 0: 기존 Analytics 내용을 `_NotificationAnalyticsTab` 위젯으로 추출
+  - [ ] Tab 1: `_AiUsageTab` 신규 구현
+- [ ] `_GranularitySelectorRow` 위젯 구현
+  - [ ] `일별` | `주별` | `월별` ChoiceChip 렌더링
+  - [ ] 변경 시 `AiUsageFilter.defaultFor(newGranularity)`로 provider state 업데이트
+- [ ] `_DateRangeSelector` 위젯 구현
+  - [ ] Row: [캘린더 아이콘] [시작일 버튼] ~ [종료일 버튼]
+  - [ ] 탭 → `showDateRangePicker()` 실행
+  - [ ] 날짜 포맷: `"2026.04.01"` 형태
+  - [ ] granularity 칩 변경 시 날짜 범위 자동 리셋
+- [ ] `_AiUsageTab` 본문 구현
+  - [ ] `aiUsageProvider(filter).when` 처리
+    - [ ] `data`: `SingleChildScrollView` → `AiUsageSummaryCard`, `TokenTrendChart`, `ModelDistributionChart`
+    - [ ] `loading`: `CircularProgressIndicator`
+    - [ ] `error`: 에러 메시지 + 재시도 버튼
 
 ---
 
 ## 최종 검증
 
-- [ ] 정상 케이스: 실제 Claude Code 세션 종료 후 앱 알림 E2E 확인
-- [ ] 작업 없이 종료 케이스: 기본 메시지 `'Claude Code 작업이 완료되었습니다.'` 표시 확인
-- [ ] 기존 알림 기능 회귀 없음 확인 — Slack·GitHub 알림 정상 수신
+- [ ] `flutter analyze` 경고 0개
+- [ ] 탭 전환 → 각 탭 스크롤 위치 독립 유지 확인
+- [ ] Granularity 칩 변경 → 날짜 범위 자동 리셋 → 데이터 재조회 확인
+- [ ] 날짜 범위 picker → 시작/종료일 선택 → 선택된 날짜 표시 + 데이터 재조회 확인
+- [ ] DAILY에서 91일 이상 선택 → 서버 400 응답 → 에러 상태 렌더링 확인
+- [ ] 빈 데이터 → 각 차트 빈 상태 렌더링 (에러 없음) 확인
+- [ ] 새로고침 → 양 탭 데이터 갱신 + 현재 필터 유지 확인
