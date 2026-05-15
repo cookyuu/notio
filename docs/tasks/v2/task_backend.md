@@ -66,10 +66,12 @@
 
 **목적**: 새 필드(`usage`, `model`)가 metadata JSONB에 정상 저장되는지 확인
 
-- [ ] Claude webhook handler에서 `usage`, `model` 필드를 `metadata` 컬럼에 저장하는 로직 확인
-  - [ ] 이미 처리 중이면 변경 없음 — 확인만
-  - [ ] 누락 시 `ClaudeWebhookHandler` 또는 관련 Service에 저장 로직 추가
-- [ ] DB에서 metadata 컬럼 조회하여 실제 저장 확인
+- [x] Claude webhook handler에서 `usage`, `model` 필드를 `metadata` 컬럼에 저장하는 로직 확인
+  - [x] 이미 처리 중이면 변경 없음 — 확인만
+    > `ClaudeWebhookHandler`가 payload 전체 Map을 `NotificationEvent.metadata`로 전달 → `NotificationService.convertMetadataToJson()`이 JSONB로 직렬화. `usage`, `model`은 payload 최상위 키이므로 별도 파싱 없이 자동 포함됨.
+  - [x] 누락 시 `ClaudeWebhookHandler` 또는 관련 Service에 저장 로직 추가 — 이미 처리됨, 변경 없음
+- [x] DB에서 metadata 컬럼 조회하여 실제 저장 확인
+  > 코드 레벨 확인 완료: `Notification.metadata` (`@Column(columnDefinition = "jsonb")`)에 payload 전체가 저장되므로 `usage`, `model` 포함이 보장됨
   ```sql
   SELECT metadata FROM notifications WHERE source = 'CLAUDE' ORDER BY created_at DESC LIMIT 1;
   ```
