@@ -43,7 +43,7 @@ public class PromptBuilder {
 
         userPrompt.append("\n위 알림을 채팅 플랫폼 전달용으로 요약해주세요.");
 
-        return new LlmPrompt(systemPrompt, userPrompt.toString());
+        return LlmPrompt.of(systemPrompt, userPrompt.toString());
     }
 
     public LlmPrompt buildDigestSummaryPrompt(List<Notification> notifications) {
@@ -70,7 +70,7 @@ public class PromptBuilder {
 
         userPrompt.append("위 알림들을 하나의 묶음 요약 메시지로 작성해주세요.");
 
-        return new LlmPrompt(systemPrompt, userPrompt.toString());
+        return LlmPrompt.of(systemPrompt, userPrompt.toString());
     }
 
     private String truncate(String text, int maxLen) {
