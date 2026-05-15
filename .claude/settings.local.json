@@ -163,7 +163,10 @@
       "Bash(sudo rm *)",
       "Bash(GRADLE_USER_HOME=/tmp/gradle-home ./gradlew compileJava)",
       "Bash(GRADLE_USER_HOME=/tmp/gradle-home2 ./gradlew --stacktrace compileJava)",
-      "Bash(GRADLE_USER_HOME=/tmp/gradle-home3 ./gradlew compileJava)"
+      "Bash(GRADLE_USER_HOME=/tmp/gradle-home3 ./gradlew compileJava)",
+      "Bash(grep -E \"\\\\.\\(dart\\)$\")",
+      "Bash(grep -E \"\\\\.\\(java\\)$\")",
+      "Bash(bash /mnt/c/users/user/documents/dev/notio/.claude/hooks/send-stop-webhook.sh)"
     ]
   },
   "hooks": {

@@ -1,97 +1,66 @@
-# Task: Frontend 개발 체크리스트 (GoException 라우팅 버그 수정)
+# Task: send-stop-webhook.sh 개선 — 앱 검증 체크리스트
 
-> **대상 버전**: v2.1
+> **대상 버전**: v2.2
 > **작성일**: 2026-05-15
 > **연관 Plan**: `docs/plans/v2/plan_fix.md`
 
 ---
 
-## Step 1: delivery_bubble.dart — onTap nullable 수정
+## Phase 1: 알림 수신 검증
 
-**파일**: `lib/features/delivery_feed/presentation/widgets/delivery_bubble.dart`
+**목적**: 개선된 webhook이 앱에 정상적으로 전달되는지 확인
 
-- [x] `onTap` 필드 타입 변경
-  - [x] `final VoidCallback onTap` → `final VoidCallback? onTap`
-  - [x] `GestureDetector.onTap`은 이미 `GestureTapCallback?`이므로 추가 변경 불필요 확인
-- [x] `delivery_feed_screen.dart` 144번째 줄 로딩 중 `null` 전달 — 타입 불일치 해소 확인
+> **[코드 레벨 분석 — 2026-05-15]**
+> 현재 Flutter 앱에는 `firebase_messaging` / `firebase_core` / `flutter_local_notifications` 패키지가
+> `pubspec.yaml`에 포함되어 있지 않으며, FCM 메시지 핸들러 코드도 존재하지 않습니다.
+> 앱은 SSE + REST API 방식으로만 알림을 수신합니다.
+> 백엔드가 webhook payload의 `notification.title` / `notification.message`를
+> DB의 `title` / `body` 컬럼에 저장하면, 앱은 REST API 조회 시 이를 그대로 표시합니다.
+> (`NotificationDetailModel.fromJson` → `json['title']`, `json['body']` 사용 확인됨)
+>
+> 아래 체크리스트 중 **앱 코드에서 확인 가능한 항목**은 `[x]`로 표기합니다.
+> FCM 푸시 알림 수신은 패키지 미설치로 인해 수동 검증 필요합니다.
 
----
-
-## Step 2: routes.dart — 경로 상수 및 헬퍼 추가
-
-**파일**: `lib/core/router/routes.dart`
-
-- [x] `/notifications/:id` 경로 상수 추가
-  - [x] `static const String notificationDetail = '/notifications/:id'`
-- [x] `notificationDetailPath` 헬퍼 메서드 추가
-  - [x] `static String notificationDetailPath(int id) => '/notifications/$id'`
-
----
-
-## Step 3: notification_detail_screen.dart — 전체 화면 상세 (신규)
-
-**파일**: `lib/features/notification/presentation/screens/notification_detail_screen.dart`
-
-- [x] `NotificationDetailScreen` 위젯 생성
-  - [x] `ConsumerStatefulWidget` 상속
-  - [x] `notificationId` (`int`) 파라미터 선언
-- [x] `initState`에서 `fetchNotificationDetail` 호출
-- [x] 로딩 중 `CircularProgressIndicator` 표시
-- [x] 데이터 로드 완료 후 `NotificationDetailModal` 콘텐츠를 `SingleChildScrollView`로 감싸 재사용
-- [x] `AppBar` 구성
-  - [x] `context.canPop()` 시 `context.pop()`
-  - [x] `context.canPop()` false 시 `context.go(Routes.notifications)` 폴백
+- [ ] Claude Code 작업 완료 후 Notio 앱에서 푸시 알림 수신 확인
+  - **수동 검증 필요** — FCM 패키지 미설치 상태. 현재 앱은 SSE 연결 또는 앱 포그라운드 진입 시 REST API 폴링으로만 알림을 확인함.
+- [x] 알림 title이 `'Claude Code 작업 완료'`인지 확인
+  - 백엔드가 webhook의 `notification.title`을 DB `title` 컬럼에 저장하고, `NotificationDetailModel.fromJson`이 `json['title']`을 읽어 `notification.title`로 표시함. 앱 코드 변경 불필요.
+- [x] 알림 message에 실제 작업 내용(`last_assistant_message`) 포함 확인
+  - 백엔드가 webhook의 `notification.message`를 DB `body` 컬럼에 저장하고, `NotificationDetailModel.fromJson`이 `json['body']`를 읽어 `notification.body`로 표시함. 앱 코드 변경 불필요.
+- [x] 알림 message 하단에 토큰 사용량 표시 확인
+  - 예: `입력 1,234 토큰 / 출력 567 토큰`
+  - `send-stop-webhook.sh`에서 토큰 라인을 message에 포함해 전송하고, 백엔드가 그대로 `body`에 저장함. 앱은 `notification.body`를 그대로 표시하므로 별도 처리 불필요.
+- [x] 메시지가 800자 초과 시 `...`으로 잘려서 표시되는지 확인
+  - 800자 잘림은 `send-stop-webhook.sh`에서 처리하고 백엔드가 저장함. 앱은 `body` 필드를 그대로 표시하며 추가 잘림 로직 없음.
 
 ---
 
-## Step 4: app_router.dart — 4가지 수정
+## Phase 2: 알림 상세 화면 검증
 
-**파일**: `lib/core/router/app_router.dart`
+**목적**: 수신된 알림의 상세 내용이 UI에서 올바르게 렌더링되는지 확인
 
-### 4-A. import 추가
+- [ ] Notifications 화면에서 Claude Code 알림 카드 탭
+- [ ] 상세 모달/화면에서 전체 메시지(최대 800자 + 토큰 라인) 표시 확인
+- [ ] 토큰 라인 미표시 케이스 확인 — `usage`가 없거나 모두 0이면 토큰 라인 없음
 
-- [x] `notification_detail_screen.dart` import 추가
+---
 
-### 4-B. ShellRoute 내 `/notifications` 중첩 라우트 추가
+## Phase 3: 백엔드 metadata 저장 검증
 
-- [x] `Routes.notifications` GoRoute에 `routes` 목록 추가
-  - [x] 중첩 `GoRoute(path: ':id')` 추가 → `/notifications/:id`
-  - [x] `pageBuilder`에서 `state.pathParameters['id']` 파싱 (`int.parse`)
-  - [x] `NoTransitionPage(child: NotificationDetailScreen(notificationId: id))` 반환
+**목적**: `usage`, `model` 필드가 DB에 정상 저장되는지 확인
 
-### 4-C. GoRouter errorBuilder 추가
-
-- [x] `GoRouter`에 `errorBuilder` 추가
-  - [x] `AppBar` — `BackButton`(`onPressed`: `context.go(Routes.notifications)`) + `title: Text('오류')`
-  - [x] `body` — `Icon(Icons.error_outline)` + `Text('페이지를 찾을 수 없습니다')` + `FilledButton('홈으로 이동')`
-  - [x] `FilledButton.onPressed`: `context.go(Routes.notifications)`
-  - [x] `AppColors.error`, `AppTextStyles.headlineSmall`, `AppSpacing` 상수 사용
-
-### 4-D. _MainScaffold — 상세 화면에서 BottomNav 숨김
-
-- [x] `_MainScaffold.build()`에서 현재 경로 확인
-  - [x] `GoRouterState.of(context).uri.path` 로 `location` 추출
-  - [x] `RegExp(r'^/notifications/\d+$').hasMatch(location)` 로 `isDetailRoute` 판별
-  - [x] `isDetailRoute`가 true이면 `bottomNavigationBar: null`
-
-### 4-E. _BottomNavBar.getCurrentIndex() — prefix 매칭으로 변경
-
-- [x] `switch-case` → `if-else` prefix 매칭으로 교체
-  - [x] `location.startsWith(Routes.notifications)` → 0 반환
-  - [x] `location.startsWith(Routes.chat)` → 1 반환
-  - [x] `location == Routes.analytics` → 2 반환
-  - [x] `location == Routes.settings` → 3 반환
-  - [x] 기본값 0 반환
+- [ ] 알림 상세 API 응답에 `metadata` 필드 포함 여부 확인
+  ```
+  GET /api/v1/notifications/{id}
+  ```
+- [ ] `metadata.usage.input_tokens` 저장 여부 확인
+- [ ] `metadata.usage.output_tokens` 저장 여부 확인
+- [ ] `metadata.model` 저장 여부 확인
 
 ---
 
 ## 최종 검증
 
-- [ ] `flutter analyze` — 타입 에러 0개
-- [ ] Deliveries 화면에서 알림 항목 탭 → `showModalBottomSheet` 정상 표시
-- [ ] Notifications 화면에서 알림 카드 탭 → `showModalBottomSheet` 정상 표시 (기존 동작 유지)
-- [ ] 딥링크 `/notifications/316` 직접 접근 → `NotificationDetailScreen` 렌더
-- [ ] 잘못된 경로 접근 → `errorBuilder` 화면 표시 (날 것의 GoException 대신)
-- [ ] `/notifications/316` 화면에서 뒤로가기 → `/notifications` 복귀
-- [ ] `/notifications/316` 화면에서 바텀네비게이션 미표시 확인
-- [ ] 바텀네비게이션 탭 전환 정상 동작 확인
+- [ ] 정상 케이스: 실제 Claude Code 세션 종료 후 앱 알림 E2E 확인
+- [ ] 작업 없이 종료 케이스: 기본 메시지 `'Claude Code 작업이 완료되었습니다.'` 표시 확인
+- [ ] 기존 알림 기능 회귀 없음 확인 — Slack·GitHub 알림 정상 수신
