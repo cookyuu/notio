@@ -162,10 +162,10 @@
 
 **파일**: `ai/config/NotioAiProperties.java`
 
-- [ ] `record` 타입 확인 (`@ConfigurationProperties(prefix = "notio.ai")`)
-- [ ] `summarizeSources` 필드 추가
-  - [ ] `@DefaultValue("CLAUDE,CODEX") List<String> summarizeSources`
-- [ ] 기존 필드 유지: `provider`, `llmTimeout`, `embeddingTimeout`
+- [x] `record` 타입 확인 (`@ConfigurationProperties(prefix = "notio.ai")`)
+- [x] `summarizeSources` 필드 추가
+  - [x] `@DefaultValue("CLAUDE,CODEX") List<String> summarizeSources`
+- [x] 기존 필드 유지: `provider`, `llmTimeout`, `embeddingTimeout`
 
 ---
 
