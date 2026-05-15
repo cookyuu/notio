@@ -22,65 +22,65 @@
 
 ### AiUsageLog Entity
 
-- [ ] `AiUsageLog.java` 생성
-  - [ ] 필드: `id`, `userId`, `notificationId`, `model`, `inputTokens`, `outputTokens`, `totalTokens`(삽입·수정 불가), `sessionAt`, `createdAt`, `updatedAt`, `deletedAt`
-  - [ ] `@Builder`, `@NoArgsConstructor(AccessLevel.PROTECTED)`, `@Getter` 적용
-  - [ ] `softDelete()` 메서드 구현
+- [x] `AiUsageLog.java` 생성
+  - [x] 필드: `id`, `userId`, `notificationId`, `model`, `inputTokens`, `outputTokens`, `totalTokens`(삽입·수정 불가), `sessionAt`, `createdAt`, `updatedAt`, `deletedAt`
+  - [x] `@Builder`, `@NoArgsConstructor(AccessLevel.PROTECTED)`, `@Getter` 적용
+  - [x] `softDelete()` 메서드 구현
 
 ### Projection Interfaces
 
-- [ ] `AiUsageDataPoint.java` 인터페이스 생성
-  - [ ] `getPeriodLabel()`, `getTotalInput()`, `getTotalOutput()`, `getSessionCount()` 메서드 정의
-- [ ] `ModelUsageDataPoint.java` 인터페이스 생성
-  - [ ] `getModel()`, `getTotalTokens()`, `getSessionCount()` 메서드 정의
+- [x] `AiUsageDataPoint.java` 인터페이스 생성
+  - [x] `getPeriodLabel()`, `getTotalInput()`, `getTotalOutput()`, `getSessionCount()` 메서드 정의
+- [x] `ModelUsageDataPoint.java` 인터페이스 생성
+  - [x] `getModel()`, `getTotalTokens()`, `getSessionCount()` 메서드 정의
 
 ### AiUsageLogRepository
 
-- [ ] `AiUsageLogRepository.java` 생성
-  - [ ] `findDailyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'YYYY-MM-DD')`
-  - [ ] `findWeeklyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'IYYY-"W"IW')`
-  - [ ] `findMonthlyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'YYYY-MM')`
-  - [ ] `findModelDistributionInRange(Long userId, Instant since, Instant until)` — native SQL
-  - [ ] `sumInputTokensInRange(Long userId, Instant since, Instant until)` — JPQL
-  - [ ] `sumOutputTokensInRange(Long userId, Instant since, Instant until)` — JPQL
-  - [ ] `countSessionsInRange(Long userId, Instant since, Instant until)` — JPQL
-  - [ ] `existsByNotificationId(Long notificationId)` — 파생 메서드
+- [x] `AiUsageLogRepository.java` 생성
+  - [x] `findDailyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'YYYY-MM-DD')`
+  - [x] `findWeeklyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'IYYY-"W"IW')`
+  - [x] `findMonthlyInRange(Long userId, Instant since, Instant until)` — native SQL, `to_char(..., 'YYYY-MM')`
+  - [x] `findModelDistributionInRange(Long userId, Instant since, Instant until)` — native SQL
+  - [x] `sumInputTokensInRange(Long userId, Instant since, Instant until)` — JPQL
+  - [x] `sumOutputTokensInRange(Long userId, Instant since, Instant until)` — JPQL
+  - [x] `countSessionsInRange(Long userId, Instant since, Instant until)` — JPQL
+  - [x] `existsByNotificationId(Long notificationId)` — 파생 메서드
 
 ### AiUsageGranularity Enum
 
-- [ ] `AiUsageGranularity.java` 생성 (`com.notio.analytics.dto`)
-  - [ ] `DAILY`, `WEEKLY`, `MONTHLY` 값 정의
-  - [ ] `from(String value)` — 파싱 실패 시 `NotioException(INVALID_REQUEST)` throw
-  - [ ] `maxDays()` — DAILY: 90, WEEKLY: 365, MONTHLY: 730
-  - [ ] `defaultDays()` — DAILY: 7, WEEKLY: 56, MONTHLY: 365
+- [x] `AiUsageGranularity.java` 생성 (`com.notio.analytics.dto`)
+  - [x] `DAILY`, `WEEKLY`, `MONTHLY` 값 정의
+  - [x] `from(String value)` — 파싱 실패 시 `NotioException(INVALID_REQUEST)` throw
+  - [x] `maxDays()` — DAILY: 90, WEEKLY: 365, MONTHLY: 730
+  - [x] `defaultDays()` — DAILY: 7, WEEKLY: 56, MONTHLY: 365
 
 ### AiUsageResponse Record DTO
 
-- [ ] `AiUsageResponse.java` 생성 (`com.notio.analytics.dto`)
-  - [ ] 최상위 필드: `granularity`, `startDate`, `endDate`, `totalInputTokens`, `totalOutputTokens`, `totalSessions`, `mostUsedModel`(nullable), `trend`, `modelDistribution`
-  - [ ] 중첩 record `AiUsagePeriodPoint(String label, long inputTokens, long outputTokens, long sessions)` 정의
-  - [ ] 중첩 record `AiUsageModelShare(String model, long totalTokens, long sessions)` 정의
+- [x] `AiUsageResponse.java` 생성 (`com.notio.analytics.dto`)
+  - [x] 최상위 필드: `granularity`, `startDate`, `endDate`, `totalInputTokens`, `totalOutputTokens`, `totalSessions`, `mostUsedModel`(nullable), `trend`, `modelDistribution`
+  - [x] 중첩 record `AiUsagePeriodPoint(String label, long inputTokens, long outputTokens, long sessions)` 정의
+  - [x] 중첩 record `AiUsageModelShare(String model, long totalTokens, long sessions)` 정의
 
 ### AiUsageLogService
 
-- [ ] `AiUsageLogService.java` 생성 (`com.notio.analytics.service`)
-  - [ ] `logFromNotification(Notification saved)` 구현
-    - [ ] `source != CLAUDE` → 즉시 return
-    - [ ] `existsByNotificationId` 중복 체크 → 중복이면 return
-    - [ ] `metadata` JSON 파싱 → `usage.input_tokens`, `usage.output_tokens`, `model` 추출
-    - [ ] 입출력 토큰 모두 0 → return (fallback 페이로드 케이스)
-    - [ ] `session_at`: `notification.timestamp` 파싱, 실패 시 `notification.created_at` fallback
-    - [ ] `AiUsageLog` 빌드 후 save
-    - [ ] `event=ai_usage_log_created` / `event=ai_usage_log_skip` 로그 기록
-  - [ ] `getAiUsage(Long userId, AiUsageGranularity granularity, LocalDate startDate, LocalDate endDate)` 구현
-    - [ ] `startDate`/`endDate` null → `granularity.defaultDays()`로 자동 설정
-    - [ ] `endDate - startDate > granularity.maxDays()` → `NotioException(INVALID_REQUEST)`
-    - [ ] `startDate > endDate` → `NotioException(INVALID_REQUEST)`
-    - [ ] `since`/`until` UTC Instant 변환 (`endDate.plusDays(1)` 사용)
-    - [ ] 총합·세션 수 조회 (InRange 쿼리)
-    - [ ] 트렌드 조회 (granularity별 native 쿼리)
-    - [ ] 모델 분포 조회
-    - [ ] `AiUsageResponse` 조립 후 반환
+- [x] `AiUsageLogService.java` 생성 (`com.notio.analytics.service`)
+  - [x] `logFromNotification(Notification saved)` 구현
+    - [x] `source != CLAUDE` → 즉시 return
+    - [x] `existsByNotificationId` 중복 체크 → 중복이면 return
+    - [x] `metadata` JSON 파싱 → `usage.input_tokens`, `usage.output_tokens`, `model` 추출
+    - [x] 입출력 토큰 모두 0 → return (fallback 페이로드 케이스)
+    - [x] `session_at`: `notification.timestamp` 파싱, 실패 시 `notification.created_at` fallback
+    - [x] `AiUsageLog` 빌드 후 save
+    - [x] `event=ai_usage_log_created` / `event=ai_usage_log_skip` 로그 기록
+  - [x] `getAiUsage(Long userId, AiUsageGranularity granularity, LocalDate startDate, LocalDate endDate)` 구현
+    - [x] `startDate`/`endDate` null → `granularity.defaultDays()`로 자동 설정
+    - [x] `endDate - startDate > granularity.maxDays()` → `NotioException(INVALID_REQUEST)`
+    - [x] `startDate > endDate` → `NotioException(INVALID_REQUEST)`
+    - [x] `since`/`until` UTC Instant 변환 (`endDate.plusDays(1)` 사용)
+    - [x] 총합·세션 수 조회 (InRange 쿼리)
+    - [x] 트렌드 조회 (granularity별 native 쿼리)
+    - [x] 모델 분포 조회
+    - [x] `AiUsageResponse` 조립 후 반환
 
 ---
 
