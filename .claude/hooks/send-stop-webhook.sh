@@ -22,6 +22,8 @@ try:
     total_output_tokens = 0
     extracted_message = ''
 
+    model = data.get('model', '')
+
     if transcript_path and os.path.exists(transcript_path):
         with open(transcript_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -30,13 +32,17 @@ try:
                     continue
                 try:
                     entry = json.loads(line)
-                    if entry.get('role') == 'assistant':
-                        for block in entry.get('content', []):
+                    # 실제 transcript 구조: type='assistant', 내용은 entry['message'] 안에 있음
+                    if entry.get('type') == 'assistant':
+                        message_obj = entry.get('message', {})
+                        for block in message_obj.get('content', []):
                             if isinstance(block, dict) and block.get('type') == 'text':
                                 extracted_message = block.get('text', '')
-                        entry_usage = entry.get('usage', {})
+                        entry_usage = message_obj.get('usage', {})
                         total_input_tokens += entry_usage.get('input_tokens', 0)
                         total_output_tokens += entry_usage.get('output_tokens', 0)
+                        if not model:
+                            model = message_obj.get('model', '')
                 except Exception:
                     continue
 
@@ -49,7 +55,6 @@ try:
 
     input_tokens = total_input_tokens
     output_tokens = total_output_tokens
-    model = data.get('model', '')
 
     summary = last_assistant_message[:800] + '...' if len(last_assistant_message) > 800 else last_assistant_message
 
