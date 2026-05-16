@@ -96,31 +96,31 @@
 
 ## Phase 6: 기존 파일 수정 — analytics_screen.dart
 
-- [ ] `ConsumerWidget` → `ConsumerStatefulWidget` 전환
-- [ ] `DefaultTabController(length: 2)` 래핑
-- [ ] `TabBar` 추가: `알림 통계` | `AI 토큰`
-- [ ] `TabBarView` 구성
-  - [ ] Tab 0: 기존 Analytics 내용을 `_NotificationAnalyticsTab` 위젯으로 추출
-  - [ ] Tab 1: `_AiUsageTab` 신규 구현
-- [ ] `_GranularitySelectorRow` 위젯 구현
-  - [ ] `일별` | `주별` | `월별` ChoiceChip 렌더링
-  - [ ] 변경 시 `AiUsageFilter.defaultFor(newGranularity)`로 provider state 업데이트
-- [ ] `_DateRangeSelector` 위젯 구현
-  - [ ] Row: [캘린더 아이콘] [시작일 버튼] ~ [종료일 버튼]
-  - [ ] 탭 → `showDateRangePicker()` 실행
-  - [ ] 날짜 포맷: `"2026.04.01"` 형태
-  - [ ] granularity 칩 변경 시 날짜 범위 자동 리셋
-- [ ] `_AiUsageTab` 본문 구현
-  - [ ] `aiUsageProvider(filter).when` 처리
-    - [ ] `data`: `SingleChildScrollView` → `AiUsageSummaryCard`, `TokenTrendChart`, `ModelDistributionChart`
-    - [ ] `loading`: `CircularProgressIndicator`
-    - [ ] `error`: 에러 메시지 + 재시도 버튼
+- [x] `ConsumerWidget` → `ConsumerStatefulWidget` 전환
+- [x] `DefaultTabController(length: 2)` 래핑
+- [x] `TabBar` 추가: `알림 통계` | `AI 토큰`
+- [x] `TabBarView` 구성
+  - [x] Tab 0: 기존 Analytics 내용을 `_NotificationAnalyticsTab` 위젯으로 추출
+  - [x] Tab 1: `_AiUsageTab` 신규 구현
+- [x] `_GranularitySelectorRow` 위젯 구현
+  - [x] `일별` | `주별` | `월별` ChoiceChip 렌더링
+  - [x] 변경 시 `AiUsageFilter.defaultFor(newGranularity)`로 provider state 업데이트
+- [x] `_DateRangeSelector` 위젯 구현
+  - [x] Row: [캘린더 아이콘] [시작일 버튼] ~ [종료일 버튼]
+  - [x] 탭 → `showDateRangePicker()` 실행
+  - [x] 날짜 포맷: `"2026.04.01"` 형태
+  - [x] granularity 칩 변경 시 날짜 범위 자동 리셋
+- [x] `_AiUsageTab` 본문 구현
+  - [x] `aiUsageProvider(filter).when` 처리
+    - [x] `data`: `SingleChildScrollView` → `AiUsageSummaryCard`, `TokenTrendChart`, `ModelDistributionChart`
+    - [x] `loading`: `CircularProgressIndicator`
+    - [x] `error`: 에러 메시지 + 재시도 버튼
 
 ---
 
 ## 최종 검증
 
-- [ ] `flutter analyze` 경고 0개
+- [x] `flutter analyze` 경고 0개
 - [ ] 탭 전환 → 각 탭 스크롤 위치 독립 유지 확인
 - [ ] Granularity 칩 변경 → 날짜 범위 자동 리셋 → 데이터 재조회 확인
 - [ ] 날짜 범위 picker → 시작/종료일 선택 → 선택된 날짜 표시 + 데이터 재조회 확인
