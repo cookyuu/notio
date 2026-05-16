@@ -32,28 +32,28 @@
 
 ### AiUsageSummaryCard
 
-- [ ] `features/analytics/presentation/widgets/ai_usage_summary_card.dart` 생성
-  - [ ] `GlassCard` 래핑
-  - [ ] 3-stat row: 총 입력 / 총 출력 / 세션 수 (숫자 abbreviated: 1.2K, 300K 등)
-  - [ ] 아래: 주요 모델명 + 세션당 평균 토큰 표시
+- [x] `features/analytics/presentation/widgets/ai_usage_summary_card.dart` 생성
+  - [x] `GlassCard` 래핑
+  - [x] 3-stat row: 총 입력 / 총 출력 / 세션 수 (숫자 abbreviated: 1.2K, 300K 등)
+  - [x] 아래: 주요 모델명 + 세션당 평균 토큰 표시
 
 ### TokenTrendChart
 
-- [ ] `features/analytics/presentation/widgets/token_trend_chart.dart` 생성
-  - [ ] `GlassCard` + `LineChart` (fl_chart) 래핑
-  - [ ] 입력 라인: `AppColors.violet`, 출력 라인: `AppColors.info`
-  - [ ] X축: trend label 문자열 (DAILY: `05/15`, WEEKLY: `W20`, MONTHLY: `5월`)
-  - [ ] Y축: 축약 숫자 (`12K`, `1.2M`)
-  - [ ] 터치 툴팁: label + 입력/출력 각각 표시
-  - [ ] 빈 데이터 상태: "데이터가 없습니다" 고정 높이(200) 렌더링
+- [x] `features/analytics/presentation/widgets/token_trend_chart.dart` 생성
+  - [x] `GlassCard` + `LineChart` (fl_chart) 래핑
+  - [x] 입력 라인: `AppColors.violet`, 출력 라인: `AppColors.info`
+  - [x] X축: trend label 문자열 (DAILY: `05/15`, WEEKLY: `W20`, MONTHLY: `5월`)
+  - [x] Y축: 축약 숫자 (`12K`, `1.2M`)
+  - [x] 터치 툴팁: label + 입력/출력 각각 표시
+  - [x] 빈 데이터 상태: "데이터가 없습니다" 고정 높이(200) 렌더링
 
 ### ModelDistributionChart
 
-- [ ] `features/analytics/presentation/widgets/model_distribution_chart.dart` 생성
-  - [ ] `GlassCard` + `PieChart` (donut, `SourceDistributionChart` 패턴 참고)
-  - [ ] 색상: `[primary, info, success, warning, error]` 순환
-  - [ ] 범례: 모델명(20자 truncate) + `"X,XXX tok"` 표시
-  - [ ] 단일 모델: 100% 풀 원형 렌더링
+- [x] `features/analytics/presentation/widgets/model_distribution_chart.dart` 생성
+  - [x] `GlassCard` + `PieChart` (donut, `SourceDistributionChart` 패턴 참고)
+  - [x] 색상: `[primary, info, success, warning, error]` 순환
+  - [x] 범례: 모델명(20자 truncate) + `"X,XXX tok"` 표시
+  - [x] 단일 모델: 100% 풀 원형 렌더링
 
 ---
 
