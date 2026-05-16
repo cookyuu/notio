@@ -21,10 +21,10 @@
 
 ## Phase 2: 신규 파일 — Data Model
 
-- [ ] `features/analytics/data/model/ai_usage_model.dart` 생성
-  - [ ] `AiUsageModel` 클래스 + `fromJson` 팩토리 메서드 구현
-  - [ ] Spring record 필드명(camelCase) 그대로 파싱
-  - [ ] `toEntity()` 메서드로 `AiUsageEntity` 변환
+- [x] `features/analytics/data/model/ai_usage_model.dart` 생성
+  - [x] `AiUsageModel` 클래스 + `fromJson` 팩토리 메서드 구현
+  - [x] Spring record 필드명(camelCase) 그대로 파싱
+  - [x] `toEntity()` 메서드로 `AiUsageEntity` 변환
 
 ---
 
