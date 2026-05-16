@@ -88,9 +88,9 @@
     - [x] DAILY → 최근 7일 (now - 6일 ~ now)
     - [x] WEEKLY → 최근 8주 (now - 55일 ~ now)
     - [x] MONTHLY → 최근 12개월 (1년 전 ~ now)
-- [ ] `aiUsageFilterProvider` `StateProvider<AiUsageFilter>` 추가 (초기값: DAILY 기본)
-- [ ] `aiUsageProvider` `FutureProvider.family<AiUsageEntity, AiUsageFilter>` 추가
-- [ ] 기존 refresh 로직에 `ref.invalidate(aiUsageProvider(ref.read(aiUsageFilterProvider)))` 추가
+- [x] `aiUsageFilterProvider` `StateProvider<AiUsageFilter>` 추가 (초기값: DAILY 기본)
+- [x] `aiUsageProvider` `FutureProvider.family<AiUsageEntity, AiUsageFilter>` 추가
+- [x] 기존 refresh 로직에 `ref.invalidate(aiUsageProvider(ref.read(aiUsageFilterProvider)))` 추가
 
 ---
 

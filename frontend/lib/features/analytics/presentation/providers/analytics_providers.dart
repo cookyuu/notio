@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notio_app/core/network/dio_client.dart';
 import 'package:notio_app/features/analytics/data/datasource/analytics_remote_datasource.dart';
 import 'package:notio_app/features/analytics/data/repository/analytics_repository_impl.dart';
+import 'package:notio_app/features/analytics/domain/entity/ai_usage_entity.dart';
 import 'package:notio_app/features/analytics/domain/entity/weekly_analytics_entity.dart';
 import 'package:notio_app/features/analytics/domain/repository/analytics_repository.dart';
 import 'package:notio_app/shared/constant/api_constants.dart';
@@ -36,6 +37,18 @@ final weeklyAnalyticsProvider = FutureProvider<WeeklyAnalyticsEntity>((ref) asyn
   return repository.fetchWeeklySummary();
 });
 
+/// Current AI usage filter (granularity + date range)
+final aiUsageFilterProvider = StateProvider<AiUsageFilter>(
+  (ref) => AiUsageFilter.defaultFor(AiUsageGranularity.daily),
+);
+
+/// AI token usage data for a given filter
+final aiUsageProvider =
+    FutureProvider.family<AiUsageEntity, AiUsageFilter>((ref, filter) async {
+  final repository = ref.watch(analyticsRepositoryProvider);
+  return repository.fetchAiUsage(filter);
+});
+
 /// Provider to manually refresh analytics
 ///
 /// This invalidates the cache and refetches data
@@ -44,7 +57,8 @@ final refreshAnalyticsProvider = Provider<void Function()>((ref) {
     // Recreate the repository first so its in-memory cache is dropped.
     ref.invalidate(analyticsRepositoryProvider);
 
-    // Invalidate the future provider to trigger a refetch
+    // Invalidate the future providers to trigger a refetch
     ref.invalidate(weeklyAnalyticsProvider);
+    ref.invalidate(aiUsageProvider(ref.read(aiUsageFilterProvider)));
   };
 });
