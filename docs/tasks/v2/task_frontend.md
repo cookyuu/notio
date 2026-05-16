@@ -61,20 +61,20 @@
 
 ### analytics_remote_datasource.dart
 
-- [ ] `AiUsageFilter` import 추가
-- [ ] `fetchAiUsage(AiUsageFilter filter)` 메서드 추가
-  - [ ] `GET /api/v1/analytics/ai-usage` 호출
-  - [ ] query params: `granularity`(toUpperCase), `startDate`("yyyy-MM-dd"), `endDate`("yyyy-MM-dd")
-  - [ ] `response.data['success'] == true` → `AiUsageModel.fromJson(response.data['data'])` 반환
-  - [ ] 실패 시 `Exception(response.data['error']['message'])` throw
+- [x] `AiUsageFilter` import 추가
+- [x] `fetchAiUsage(AiUsageFilter filter)` 메서드 추가
+  - [x] `GET /api/v1/analytics/ai-usage` 호출
+  - [x] query params: `granularity`(toUpperCase), `startDate`("yyyy-MM-dd"), `endDate`("yyyy-MM-dd")
+  - [x] `response.data['success'] == true` → `AiUsageModel.fromJson(response.data['data'])` 반환
+  - [x] 실패 시 `Exception(response.data['error']['message'])` throw
 
 ### analytics_repository.dart (interface)
 
-- [ ] `fetchAiUsage(AiUsageFilter filter)` 추상 메서드 추가
+- [x] `fetchAiUsage(AiUsageFilter filter)` 추상 메서드 추가
 
 ### analytics_repository_impl.dart
 
-- [ ] `fetchAiUsage(AiUsageFilter filter)` 구현 (datasource 위임)
+- [x] `fetchAiUsage(AiUsageFilter filter)` 구현 (datasource 위임)
 
 ---
 
@@ -82,12 +82,12 @@
 
 ### analytics_providers.dart
 
-- [ ] `AiUsageFilter` 값 객체 정의
-  - [ ] 필드: `granularity`, `startDate`, `endDate`
-  - [ ] `defaultFor(AiUsageGranularity g)` static 팩토리 메서드
-    - [ ] DAILY → 최근 7일 (now - 6일 ~ now)
-    - [ ] WEEKLY → 최근 8주 (now - 55일 ~ now)
-    - [ ] MONTHLY → 최근 12개월 (1년 전 ~ now)
+- [x] `AiUsageFilter` 값 객체 정의 (`ai_usage_entity.dart`에 위치 — 순환 의존 방지)
+  - [x] 필드: `granularity`, `startDate`, `endDate`
+  - [x] `defaultFor(AiUsageGranularity g)` static 팩토리 메서드
+    - [x] DAILY → 최근 7일 (now - 6일 ~ now)
+    - [x] WEEKLY → 최근 8주 (now - 55일 ~ now)
+    - [x] MONTHLY → 최근 12개월 (1년 전 ~ now)
 - [ ] `aiUsageFilterProvider` `StateProvider<AiUsageFilter>` 추가 (초기값: DAILY 기본)
 - [ ] `aiUsageProvider` `FutureProvider.family<AiUsageEntity, AiUsageFilter>` 추가
 - [ ] 기존 refresh 로직에 `ref.invalidate(aiUsageProvider(ref.read(aiUsageFilterProvider)))` 추가
