@@ -22,12 +22,12 @@ class WeeklyAnalyticsModel {
 
   factory WeeklyAnalyticsModel.fromJson(Map<String, dynamic> json) {
     return WeeklyAnalyticsModel(
-      totalNotifications: json['total_notifications'] as int,
-      unreadNotifications: json['unread_notifications'] as int,
-      sourceDistribution: Map<String, int>.from(json['source_distribution'] as Map),
-      priorityDistribution: Map<String, int>.from(json['priority_distribution'] as Map),
-      dailyTrend: Map<String, int>.from(json['daily_trend'] as Map),
-      insight: json['insight'] as String,
+      totalNotifications: (json['total_notifications'] as int?) ?? 0,
+      unreadNotifications: (json['unread_notifications'] as int?) ?? 0,
+      sourceDistribution: Map<String, int>.from((json['source_distribution'] as Map?) ?? {}),
+      priorityDistribution: Map<String, int>.from((json['priority_distribution'] as Map?) ?? {}),
+      dailyTrend: Map<String, int>.from((json['daily_trend'] as Map?) ?? {}),
+      insight: (json['insight'] as String?) ?? '',
     );
   }
 

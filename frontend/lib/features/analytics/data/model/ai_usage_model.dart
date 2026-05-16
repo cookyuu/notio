@@ -25,17 +25,17 @@ class AiUsageModel {
 
   factory AiUsageModel.fromJson(Map<String, dynamic> json) {
     return AiUsageModel(
-      granularity: json['granularity'] as String,
-      startDate: json['startDate'] as String,
-      endDate: json['endDate'] as String,
-      totalInputTokens: json['totalInputTokens'] as int,
-      totalOutputTokens: json['totalOutputTokens'] as int,
-      totalSessions: json['totalSessions'] as int,
-      mostUsedModel: json['mostUsedModel'] as String?,
-      trend: (json['trend'] as List<dynamic>)
+      granularity: (json['granularity'] as String?) ?? 'DAILY',
+      startDate: (json['start_date'] as String?) ?? '',
+      endDate: (json['end_date'] as String?) ?? '',
+      totalInputTokens: (json['total_input_tokens'] as int?) ?? 0,
+      totalOutputTokens: (json['total_output_tokens'] as int?) ?? 0,
+      totalSessions: (json['total_sessions'] as int?) ?? 0,
+      mostUsedModel: json['most_used_model'] as String?,
+      trend: ((json['trend'] as List<dynamic>?) ?? [])
           .map((e) => AiUsagePeriodPointModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      modelDistribution: (json['modelDistribution'] as List<dynamic>)
+      modelDistribution: ((json['model_distribution'] as List<dynamic>?) ?? [])
           .map((e) => AiUsageModelShareModel.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
@@ -44,8 +44,8 @@ class AiUsageModel {
   AiUsageEntity toEntity() {
     return AiUsageEntity(
       granularity: _parseGranularity(granularity),
-      startDate: DateTime.parse(startDate),
-      endDate: DateTime.parse(endDate),
+      startDate: startDate.isNotEmpty ? DateTime.parse(startDate) : DateTime.now(),
+      endDate: endDate.isNotEmpty ? DateTime.parse(endDate) : DateTime.now(),
       totalInputTokens: totalInputTokens,
       totalOutputTokens: totalOutputTokens,
       totalSessions: totalSessions,
@@ -82,10 +82,10 @@ class AiUsagePeriodPointModel {
 
   factory AiUsagePeriodPointModel.fromJson(Map<String, dynamic> json) {
     return AiUsagePeriodPointModel(
-      label: json['label'] as String,
-      inputTokens: json['inputTokens'] as int,
-      outputTokens: json['outputTokens'] as int,
-      sessions: json['sessions'] as int,
+      label: (json['label'] as String?) ?? '',
+      inputTokens: (json['input_tokens'] as int?) ?? 0,
+      outputTokens: (json['output_tokens'] as int?) ?? 0,
+      sessions: (json['sessions'] as int?) ?? 0,
     );
   }
 
@@ -112,9 +112,9 @@ class AiUsageModelShareModel {
 
   factory AiUsageModelShareModel.fromJson(Map<String, dynamic> json) {
     return AiUsageModelShareModel(
-      model: json['model'] as String,
-      totalTokens: json['totalTokens'] as int,
-      sessions: json['sessions'] as int,
+      model: (json['model'] as String?) ?? '',
+      totalTokens: (json['total_tokens'] as int?) ?? 0,
+      sessions: (json['sessions'] as int?) ?? 0,
     );
   }
 

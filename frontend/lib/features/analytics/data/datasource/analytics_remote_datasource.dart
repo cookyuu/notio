@@ -39,12 +39,19 @@ class AnalyticsRemoteDataSource {
       );
 
       if (response.data['success'] == true) {
-        return AiUsageModel.fromJson(response.data['data']);
+        final data = response.data['data'];
+        if (data == null) throw Exception('응답 데이터가 없습니다.');
+        return AiUsageModel.fromJson(data as Map<String, dynamic>);
       } else {
-        throw Exception(response.data['error']['message']);
+        final error = response.data['error'];
+        throw Exception(error != null ? error['message'] : '알 수 없는 오류');
       }
     } on DioException catch (e) {
       throw Exception('네트워크 오류: ${e.message}');
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('[AiUsage] parse error: $e\n$st');
+      rethrow;
     }
   }
 }
