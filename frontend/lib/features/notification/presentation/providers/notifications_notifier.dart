@@ -27,7 +27,7 @@ class NotificationsState {
     List<NotificationSummaryEntity>? notifications,
     bool? isLoading,
     String? error,
-    NotificationSource? selectedSource,
+    Object? selectedSource = _sentinel,
     int? page,
     bool? hasMore,
   }) {
@@ -35,12 +35,16 @@ class NotificationsState {
       notifications: notifications ?? this.notifications,
       isLoading: isLoading ?? this.isLoading,
       error: error,
-      selectedSource: selectedSource ?? this.selectedSource,
+      selectedSource: selectedSource == _sentinel
+          ? this.selectedSource
+          : selectedSource as NotificationSource?,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
     );
   }
 }
+
+const _sentinel = Object();
 
 /// Notifications Notifier
 class NotificationsNotifier extends StateNotifier<NotificationsState> {
