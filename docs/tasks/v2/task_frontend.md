@@ -8,14 +8,14 @@
 
 ## Phase 1: 신규 파일 — Domain Entity
 
-- [ ] `features/analytics/domain/entity/ai_usage_entity.dart` 생성
-  - [ ] `AiUsageGranularity` enum 정의 (`daily`, `weekly`, `monthly`)
-  - [ ] `AiUsagePeriodPoint` 클래스 정의 (`label`, `inputTokens`, `outputTokens`, `sessions`)
-  - [ ] `AiUsageModelShare` 클래스 정의 (`model`, `totalTokens`, `sessions`)
-  - [ ] `AiUsageEntity` 클래스 정의
-    - [ ] 필드: `granularity`, `startDate`, `endDate`, `totalInputTokens`, `totalOutputTokens`, `totalSessions`, `mostUsedModel`(nullable), `trend`, `modelDistribution`
-    - [ ] `int get totalTokens` computed getter
-    - [ ] `double get avgTokensPerSession` computed getter (totalSessions == 0 → 0.0)
+- [x] `features/analytics/domain/entity/ai_usage_entity.dart` 생성
+  - [x] `AiUsageGranularity` enum 정의 (`daily`, `weekly`, `monthly`)
+  - [x] `AiUsagePeriodPoint` 클래스 정의 (`label`, `inputTokens`, `outputTokens`, `sessions`)
+  - [x] `AiUsageModelShare` 클래스 정의 (`model`, `totalTokens`, `sessions`)
+  - [x] `AiUsageEntity` 클래스 정의
+    - [x] 필드: `granularity`, `startDate`, `endDate`, `totalInputTokens`, `totalOutputTokens`, `totalSessions`, `mostUsedModel`(nullable), `trend`, `modelDistribution`
+    - [x] `int get totalTokens` computed getter
+    - [x] `double get avgTokensPerSession` computed getter (totalSessions == 0 → 0.0)
 
 ---
 
