@@ -127,10 +127,10 @@
 
 - [ ] Flyway V15 적용 확인: `SELECT * FROM flyway_schema_history WHERE version = '15'`
 - [ ] 테스트 webhook POST → `ai_usage_logs` 행 생성 + `event=ai_usage_log_created` 로그 확인
-- [ ] 토큰 0 페이로드 → 행 미생성 + `event=ai_usage_log_skip reason=zero_tokens` 확인
-- [ ] 동일 notification_id 중복 전송 → 1행만 존재 확인
-- [ ] `GET /api/v1/analytics/ai-usage` (파라미터 없음) → 200 + 기본 범위 응답
+- [x] 토큰 0 페이로드 → 행 미생성 + `event=ai_usage_log_skip reason=zero_tokens` 확인 — `AiUsageLogServiceTest#logFromNotificationSkipsWhenBothTokensAreZero`
+- [x] 동일 notification_id 중복 전송 → 1행만 존재 확인 — `AiUsageLogServiceTest#logFromNotificationSkipsWhenNotificationIdAlreadyExists`
+- [x] `GET /api/v1/analytics/ai-usage` (파라미터 없음) → 200 + 기본 범위 응답 — `AnalyticsControllerTest#aiUsageReturnsOkWithDailyDefaultWhenNoParams`
 - [ ] `GET /api/v1/analytics/ai-usage?granularity=DAILY&startDate=2026-04-01&endDate=2026-04-30` → 30개 이하 포인트, label YYYY-MM-DD 포맷
-- [ ] `GET /api/v1/analytics/ai-usage?granularity=DAILY&startDate=2026-01-01&endDate=2026-12-31` → 400 + INVALID_REQUEST
-- [ ] `startDate > endDate` → 400 + INVALID_REQUEST
-- [ ] `granularity=INVALID` → 400 + INVALID_REQUEST
+- [x] `GET /api/v1/analytics/ai-usage?granularity=DAILY&startDate=2026-01-01&endDate=2026-12-31` → 400 + INVALID_REQUEST — `AnalyticsControllerTest#aiUsageReturnsBadRequestWhenDateRangeExceedsMaxDays`
+- [x] `startDate > endDate` → 400 + INVALID_REQUEST — `AiUsageLogServiceTest#getAiUsageThrowsInvalidRequestWhenStartDateIsAfterEndDate`
+- [x] `granularity=INVALID` → 400 + INVALID_REQUEST — `AnalyticsControllerTest#aiUsageReturnsBadRequestWhenGranularityIsInvalid`
